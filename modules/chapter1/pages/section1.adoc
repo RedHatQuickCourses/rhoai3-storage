@@ -1,70 +1,49 @@
-= Architecture: Data Connections and Cluster Storage
-:navtitle: Architecture Deep Dive
-:toc: macro
-
-// Antora metadata
-:page-role: architecture-concept
-:description: Technical deep dive into RHOAI data connectivity, injection mechanism, pipeline flow, and storage modes.
+= The Blueprint: Anatomy of RHOAI Storage
+:role: Technical Deep Dive
+:audience: Platform Engineers & Architects
+:description: A detailed breakdown of the storage subsystems, protocol abstractions, and persistence layers in RHOAI 3.
 
 [.lead]
-*"Where the data lives" and "how the pod gets it" are two different problems. RHOAI separates them.*
+*To build a factory that scales, you must understand the machinery under the floorboards.*
 
-To build a reliable AI factory, you must understand how credentials and data flow from external systems (S3, OCI) and internal storage (PVCs) into your workloads. In Red Hat OpenShift AI (RHOAI), this is achieved through a clear separation: **Data Connections** for external access, and **Cluster Storage** for persistence and handoff.
+In the previous module, we established *why* RHOAI decouples data from compute. Now, we will examine *how* the platform executes this. As a Platform Engineer, you are not just managing disks; you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory."
 
-== System Requirements (The Foundation)
+This architecture relies on three distinct storage mechanisms working in concert: **Data Connections**, **Cluster Storage (PVCs)**, and **Databases**.
 
-Before designing your storage strategy, ensure your cluster meets these requirements:
+image::images/rhoai-storage-architecture-diagram.png
 
-* **Underlying storage:** The cluster must have a **default Storage Class** with dynamic provisioning. Without it, PVCs will not bind.
-* **Object storage:** S3-compatible storage is **mandatory** for pipelines and for model serving that pulls from object stores. Data Connections will reference this storage.
-* **Database shift (RHOAI 3):** Metadata for Model Registry and TrustyAI moves from PVC-backed storage to **external databases** (MySQL/PostgreSQL). Plan for this when upgrading or designing new deployments.
+== 1. The Gateway: Data Connections (External)
+RHOAI does not store your massive datasets inside the cluster. Instead, it uses **Data Connections** as a "Gateway" to external storage.
 
-== The Core Concept: Two Planes
+* **The Mechanism:** A Data Connection is a Kubernetes Secret containing specific annotations (e.g., `opendatahub.io/connection-type-protocol: "s3"`).
+* **The Runtime Injection:** When a user attaches a connection to a Workbench or Model Server, the RHOAI Operator injects the credentials as environment variables (e.g., `AWS_ACCESS_KEY_ID`, `AWS_S3_ENDPOINT`) directly into the Pod.
+* **Supported Protocols:**
+    ** **S3-Compatible:** For Data Lakes, Pipeline Artifacts, and standard Model Registries.
+    ** **URI:** For HTTP/HTTPS based model repositories.
+    ** **OCI (Modelcars):** For pulling models packaged as container images from registries like Quay.io. This leverages the container runtime's caching layer for massive deduplication.
 
-* **Data Connections (The gateway):** A Kubernetes Secret abstraction. The platform uses it to inject environment variables (e.g., `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_ENDPOINT`) directly into the pod at runtime. The application never sees a config file; it reads from the environment.
-* **Cluster Storage (The engine):** Persistent Volume Claims (PVCs). These provide block or file storage *inside* the cluster. Used for workbench home directories, pipeline workspaces, and—where supported—shared "golden" datasets.
+== 2. The Workspace: Cluster Storage (Internal)
+While Data Connections handle "Inflow/Outflow," **Cluster Storage** handles the "Work in Progress." This is governed by OpenShift Storage Classes.
 
-== Injection Mechanism: How Data Connections Work
+* **ReadWriteOnce (RWO):** The default mode. Maps 1:1 with a user's Workbench (e.g., `/opt/app-root/src`). This acts as the user's "Home Directory" and persists across reboots.
+* **ReadWriteMany (RWX):** The collaboration engine. Required for distributed training and shared team workspaces. You *must* enable an RWX-capable Storage Class (like NFS, CephFS, or ODF) to support these workflows.
+* **Pipeline Workspaces:** The "High-Speed Conveyor Belt." Pipelines use ephemeral PVCs to pass intermediate data between steps, avoiding the latency of uploading/downloading to S3 for every single task.
 
-When you attach a Data Connection to a workbench or a serving runtime:
-
- 1. You select a **Data Connection** (which points to a Secret).
- 2. RHOAI mounts or injects the Secret contents into the pod (e.g., as environment variables or a mounted file).
- 3. The application (e.g., S3 client, training script) reads credentials and endpoint from the environment. No hardcoded keys.
-
+== 3. The Metadata Layer: The Shift to Databases (RHOAI 3)
 [IMPORTANT]
-.RHOAI 3 Protocol Annotation
+.Critical Architecture Change in RHOAI 3
 ====
-In RHOAI 3, use the **connection-type protocol** annotation when defining or referencing Data Connections. Avoid deprecated formats. The correct annotation is `opendatahub.io/connection-type-protocol` (or the current documented equivalent in your RHOAI version). This ensures the dashboard and controllers interpret the connection correctly.
-====
-
-== Pipeline Flow: S3, Workspaces, and the Registry
-
-A typical pipeline flow in RHOAI looks like this:
-
-* **Input:** Raw data or artifacts in **S3** (accessed via a Data Connection).
-* **Execution:** Pipeline steps use **PVC Workspaces** to pass intermediate data between steps. Data is written once to the workspace and read by the next step—no need to push back to S3 between every step.
-* **Output:** Final artifacts (e.g., model weights) can be written to S3 and/or registered in the **Model Registry** (which in RHOAI 3 uses an external database, not a PVC).
-
-This design reduces latency and egress: the heavy data movement happens once (S3 → workspace at start; workspace → S3 at end), not between every step.
-
-== Access Modes: RWO vs. RWX
-
-The choice of **access mode** for your PVCs is critical:
-
-* **RWO (ReadWriteOnce):** The volume can be mounted by only one node at a time. This is the **safe, default** choice for individual workbenches and most pipelines. Use RWO when you do not need multiple pods to share the same volume.
-* **RWX (ReadWriteMany):** The volume can be mounted by multiple nodes (and thus multiple pods) at once. Required for **shared datasets**—e.g., multiple researchers mounting the same "golden" dataset. RWX is more complex (depends on storage backend support, e.g., NFS, CephFS) and can have different performance and failure semantics. Use only when sharing is a requirement.
-
-[WARNING]
-.RWX and Risk
-====
-RWX is powerful but introduces operational complexity. Ensure your storage backend supports it and that you understand the failure and locking behavior. Do not use RWX by default; use it only when the Collaborator pattern (shared dataset) is required.
+In previous versions, metadata was often stored in SQLite files on PVCs. RHOAI 3 moves production metadata to **Relational and Vector Databases** for scalability.
 ====
 
-== Observability and Security
+* **Model Registry:** Now requires an external **MySQL** database (5.x/8.x) to store model lineage and version history.
+* **Llama Stack (RAG):** Requires **PostgreSQL (pgvector)** or **Milvus** for vector embeddings. The "Inline" (PVC-based) vector store is for testing only; production requires a "Remote" provider.
 
-* **Encryption:** For self-signed or corporate CA–signed object storage, you can configure custom CA bundles so that TLS verification succeeds and traffic remains encrypted.
-* **Credentials:** Data Connections keep credentials in Secrets. Restrict who can create or edit these Secrets; use RBAC so that only authorized users can attach connections to their projects.
+== System Requirements Checklist
+Before proceeding to the lab, ensure your underlying cluster meets these specs:
 
----
-*Now that you understand the architecture, choose the right path for your use case.*
+* [ ] **Default Storage Class:** Must support dynamic provisioning.
+* [ ] **Capacity:** Recommended minimum of **1 TB** additional disk storage for AI artifacts.
+* [ ] **Object Storage:** An S3-compatible endpoint (MinIO, AWS, Noobaa) is *mandatory* for Pipelines and Model Serving.
+
+*Now that you understand the blueprint, let's pick up the tools.*

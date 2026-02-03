@@ -1,6 +1,6 @@
 site:
   title: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage
-  start_page: rhoai3-storage::ROOT::index.adoc
+  start_page: rhoai3-storage::index.adoc
 
 content:
   sources:

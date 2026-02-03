@@ -1,5 +1,5 @@
 name: rhoai3-storage
 title: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage
-version: 1
+version: 3.2
 nav:
 - modules/ROOT/nav.adoc

@@ -1,54 +1,50 @@
-= Taxonomy & Glossary
-:navtitle: Taxonomy & Glossary
-:toc: macro
-
-// Antora metadata
-:page-role: reference
-:description: Definitions of Data Connection, PVC, Modelcar, Pipeline Workspace, and RHOAI 3 storage-related terms.
+= Choosing Your Path: Storage Strategies for the AI Lifecycle
+:role: Strategic Guide
+:audience: Platform Engineers & Architects
+:description: A decision framework for selecting the right storage protocols for Experimentation, Collaboration, and Production.
 
 [.lead]
-*Shared vocabulary prevents misconfiguration. Use this page as the single source of truth for terms.*
+*One size does not fit all. In AI, using the wrong storage strategy isn't just slow—it breaks the workflow.*
 
-This section defines the key terms used in RHOAI data connectivity and storage. Use it when designing your strategy or when discussing options with your team.
+As a Platform Engineer, your users will come to you with different needs. A researcher exploring a new dataset has different requirements than an MLOps engineer deploying a high-availability model.
 
-== Core Terms
+RHOAI 3 provides three "Well-Lit Paths." Your job is to guide your users to the right one.
 
-=== Data Connection
+== Path 1: The Explorer (Individual Development)
+**Scenario:** A data scientist needs to clone a git repo, install custom Python libraries, and experiment with a small dataset.
+**The Solution:** **ReadWriteOnce (RWO) PVCs.**
 
-A **Data Connection** is an abstraction over external data access. In RHOAI, it is backed by a Kubernetes Secret that holds credentials and endpoint information (e.g., S3 keys, OCI registry credentials). When you attach a Data Connection to a workbench or serving runtime, the platform injects these values into the pod (e.g., as environment variables) so that the application can access the external system without hardcoded keys.
+* **How it works:** When a user launches a Workbench, RHOAI provisions a dedicated PVC mounted to `/opt/app-root/src`.
+* **Why this path?**
+    ** **Performance:** Block storage (RWO) is typically faster and lower latency than shared file systems.
+    ** **Isolation:** Changes made here do not affect other team members.
+    ** **Cost Control:** Admins can set default limits (e.g., 20GB) to prevent runaway costs.
 
-* **Use for:** S3 buckets, URI-based data sources, OCI registries (e.g., Modelcars).
-* **Benefit:** Centralized, auditable, rotatable credentials; same code across environments by swapping the connection.
+== Path 2: The Collaborator (Team Research)
+**Scenario:** Five data scientists need to analyze the same 500GB "Golden Dataset."
+**The Anti-Pattern:** Everyone downloads a copy to their RWO drive (2.5TB total usage).
+**The Solution:** **ReadWriteMany (RWX) Shared Volumes.**
 
-=== PVC (Persistent Volume Claim)
+* **How it works:** You provision a Shared Volume backed by an RWX-capable storage class (e.g., OpenShift Data Foundation / CephFS).
+* **Why this path?**
+    ** **Efficiency:** The data exists once. Everyone mounts it simultaneously.
+    ** **Velocity:** No download time. Data is immediately available to the whole squad.
+    ** **Checkpointing:** In distributed training, worker nodes save checkpoints to this shared space so the master node can aggregate them.
 
-A **Persistent Volume Claim** is a request for storage that is satisfied by the cluster's storage layer (a Persistent Volume). In RHOAI, PVCs are used for workbench home directories (so your notebooks and caches survive pod restarts) and for **Pipeline Workspaces** (so data can be passed between pipeline steps without re-uploading to S3 after each step).
+== Path 3: The Engineer (Production Serving)
+**Scenario:** You need to deploy a trained model to production with minimal latency and fast startup times.
+**The Anti-Pattern:** The model server downloads the 20GB model file from S3 every time a pod scales up.
+**The Solution:** **OCI Containers (Modelcars).**
 
-* **Access modes:** RWO (single node) or RWX (multi-node, for shared datasets).
-* **Benefit:** Persistence and fast handoff; less egress and latency than "everything through S3."
+* **How it works:** Instead of treating the model as a file, you package it as a container image stored in an OCI Registry (like Quay.io).
+* **Why this path?**
+    ** **Startup Speed:** No "download phase." The container runtime pulls layers, often leveraging node-level caching.
+    ** **Deduplication:** If you deploy 50 replicas of the same model, the storage footprint is minimized via layer sharing.
 
-=== Modelcar
-
-A **Modelcar** is a method of distributing and serving models using **OCI container images**. Instead of downloading raw model weights from S3 or Hugging Face at container start, the model is packaged as an image (e.g., on `registry.redhat.io`). The serving runtime pulls the image; layers are cached. This reduces startup time and fits enterprise image supply chains (mirroring, scanning, signing).
-
-* **Use for:** Production model serving when you want fast cold start and deduplication.
-* **RHOAI:** Prefer Modelcars when available; attach via OCI Data Connection or catalog reference.
-
-=== Pipeline Workspace
-
-A **Pipeline Workspace** is a PVC (or a volume backed by one) that is shared across pipeline steps. Step 1 writes intermediate artifacts to the workspace; Step 2 reads from it. This avoids writing every intermediate result back to S3 and reading it again in the next step—reducing latency and egress cost.
-
-* **Flow:** S3 (input) → workspace (intermediate) → S3 and/or Model Registry (output).
-
-== RHOAI 3–Specific Shifts
-
-=== Llama Stack Storage
-
-In **RHOAI 3**, Llama Stack and related components no longer rely on SQLite on a PVC for all metadata. They require **PostgreSQL** and **Vector Stores** (e.g., Milvus, pgvector) for scalable, production-ready state. Plan for these backing services when deploying Llama Stack–based applications.
-
-=== Metadata and Databases
-
-RHOAI 3 moves metadata for the **Model Registry** and **TrustyAI** from PVC-backed storage to **external databases** (MySQL/PostgreSQL). Ensure these databases are provisioned and that connection details are correctly configured in the platform.
-
----
-*With the taxonomy clear, proceed to Lab Environment Setup to apply it hands-on.*
+[IMPORTANT]
+.Strategic Rule of Thumb
+====
+* **Persist Code?** Use RWO.
+* **Share Data?** Use RWX.
+* **Serve Models?** Use OCI or S3 Connections.
+====

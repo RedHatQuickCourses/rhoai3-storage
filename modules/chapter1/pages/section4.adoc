@@ -1,139 +1,52 @@
-= Lab: Environment Setup and Your First Connected Deployment
-:navtitle: Lab Environment Setup
-:toc: macro
-
-// Antora metadata
-:page-role: hands-on-lab
-:description: Configure storage classes, create a Data Connection with RHOAI 3 protocol, and deploy a model with the connection attached.
+= RHOAI 3 Connectivity Taxonomy
+:role: Reference Guide
+:audience: Platform Engineers
+:description: The official dictionary of storage terms, protocols, and required configurations for RHOAI 3.
 
 [.lead]
-*Theory is over. It is time to connect.*
+*To speak the language of the platform, you must master the vocabulary.*
 
-In this lab, you will take on the role of a **platform engineer**. Your goal is to configure cluster storage, create a Data Connection using the RHOAI 3 protocol, and deploy a model so that the serving runtime receives credentials via the connection—no hardcoded keys.
+RHOAI 3 introduces specific terminology and deprecates older formats. Use this guide to ensure your configurations validate correctly against the new API standards.
 
-[IMPORTANT]
-.Prerequisites
+== Core Primitives
+
+=== Data Connection (The Gateway)
+A Kubernetes resource containing configuration parameters (key-value pairs) to access external data.
+* **Storage Location:** Stored securely as a Kubernetes Secret.
+* **Injection:** Injected into Pods as Environment Variables.
+* **Scope:** Namespace-isolated (cannot be shared across projects).
+
+=== Connection Types (The Template)
+An administrator-defined template that dictates what fields a user must provide.
+* **Example:** An admin creates a "Corporate S3" type requiring `Bucket`, `Endpoint`, and `Region`.
+* **Value:** Ensures standardization across the enterprise.
+
+== Protocol Specifications (RHOAI 3 Updates)
+
+[WARNING]
+.Deprecation Alert
 ====
-* **Cluster:** OpenShift cluster with Red Hat OpenShift AI 3 installed (~1 TB storage recommended for labs).
-* **GPU operators:** Installed if you plan to deploy model serving that requires GPUs.
-* **Permissions:** Ability to create StorageClasses (or use existing ones), Secrets, and to deploy resources in a Data Science Project.
-* **CLI:** `oc` installed and authenticated.
-====
-
-== Step 1: Verify Storage Classes
-
-The cluster must have a default Storage Class and, if you will use the Collaborator path (shared dataset), an **RWX-capable** Storage Class.
-
-. **List Storage Classes and identify the default:**
-+
-[source,bash]
-----
-oc get storageclass
-----
-+
-* **Default:** One storage class should have the annotation `storageclass.kubernetes.io/is-default-class=true`. If none is default, set one or use the default provided by your platform.
-
-. **Check for RWX support (optional, for shared datasets):**
-+
-[source,bash]
-----
-oc get storageclass -o custom-columns=NAME:.metadata.name,ALLOWVOLUMEEXPANSION:.allowVolumeExpansion,VOLUMEBINDINGMODE:.volumeBindingMode
-----
-+
-If you need RWX, ensure at least one storage class supports `ReadWriteMany` (e.g., NFS, CephFS). Not all classes do; consult your cluster administrator.
-
-== Step 2: Create a Data Connection (RHOAI 3 Protocol)
-
-Data Connections are backed by Secrets. In RHOAI 3, use the correct **connection-type protocol** annotation so the dashboard and controllers recognize the connection.
-
-. **Create a Secret with S3 (or your object store) credentials in the target project:**
-+
-[source,bash]
-----
-# Replace with your project and credentials
-export PROJECT=my-data-science-project
-oc create secret generic aws-connection-s3 \
-  -n $PROJECT \
-  --from-literal=AWS_ACCESS_KEY_ID='<access-key>' \
-  --from-literal=AWS_SECRET_ACCESS_KEY='<secret-key>' \
-  --from-literal=AWS_S3_BUCKET='<bucket-name>' \
-  --from-literal=AWS_S3_ENDPOINT='<endpoint-url>' \
-  --type=Opaque
-----
-
-. **Annotate the Secret for RHOAI 3 Data Connection recognition:**
-+
-[source,bash]
-----
-oc annotate secret aws-connection-s3 -n $PROJECT \
-  opendatahub.io/connection-type-protocol=s3
-----
-+
-[NOTE]
-.Annotation and format
-====
-Use the annotation format required by your RHOAI 3.x version. The exact key may be `opendatahub.io/connection-type-protocol` or as documented in the current RHOAI release. Avoid deprecated connection formats.
+The annotation `opendatahub.io/connection-type-ref` is **deprecated**.
+You must now use `opendatahub.io/connection-type-protocol` for all new connection secrets.
 ====
 
-. **Verify in the dashboard:** In the OpenShift AI Dashboard, go to **Settings → Data connections** (or the equivalent in your project). The connection should appear and be available when creating workbenches or deployments.
+=== 1. S3-Compatible Object Storage (`s3`)
+* **Use Case:** The default for Data Lakes, Pipeline Artifacts, and standard Model Serving.
+* **Required Fields:** Access Key, Secret Key, Endpoint, Bucket.
+* **Note:** For self-signed certificates (MinIO), you must inject the Bundle CA.
 
-== Step 3: Deploy a Model with the Data Connection Attached
+=== 2. OCI Model Registry (`oci`)
+* **Use Case:** "Modelcars"—pulling models from container registries.
+* **Performance:** optimal for large-scale inference deployments.
 
-To prove the glue works end-to-end, deploy a model that loads from object storage and receives credentials via the Data Connection.
+=== 3. URI (`uri`)
+* **Use Case:** HTTP/HTTPS based model repositories.
+* **Limitation:** Generally read-only; less secure than S3/OCI connections.
 
-. **In the OpenShift AI Dashboard:** Navigate to **Model Catalog** or **Deploy model**.
-. **Select a Serving Runtime** and the model (or use one that references S3/object storage).
-. **Attach the Data Connection** you created so that the runtime injects S3 credentials into the model server pod.
-. **Deploy.** The pod should start and load the model using the injected environment variables (no keys in the image or in config maps).
+== The Database Shift (New in RHOAI 3)
+RHOAI 3 moves away from file-based metadata for critical components.
 
-. **Verify from the CLI:**
-+
-[source,bash]
-----
-oc get pods -n $PROJECT
-oc get inferenceservice -n $PROJECT
-----
-+
-Confirm the inference pod is running and that the deployment shows the correct data connection.
-
-== Step 4: Optional—Pipeline Workspace (PVC) Check
-
-If your cluster has dynamic provisioning, create a small PVC to confirm RWO binding works:
-
-[source,bash]
-----
-oc apply -f - <<EOF
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: test-pvc
-  namespace: $PROJECT
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
-  storageClassName: ""   # Use default; or set to your default class name
-EOF
-----
-+
-[source,bash]
-----
-oc get pvc test-pvc -n $PROJECT
-----
-+
-*Expected:* Status `Bound`. If it stays `Pending`, check StorageClass and provisioner.
-
-== Handoff: What's Next
-
-Your environment is connected. You have:
-
-* A default (and optionally RWX) Storage Class verified.
-* A Data Connection created with the RHOAI 3 protocol annotation.
-* A model deployment that uses the connection for credentials.
-
-Proceed to the **QuickStart** or pipeline repository of your choice to run a full pipeline that uses S3 for artifacts and PVC workspaces for intermediate data—or revisit the Well-Lit Paths to implement the Explorer, Collaborator, or Engineer pattern in your own project.
-
----
-*When something breaks, use the Troubleshooting section next.*
+* **Model Registry:** Now requires **MySQL** (5.x or 8.x) external database.
+* **Llama Stack (RAG):**
+    ** **Vector Store:** Requires **Milvus** or **PostgreSQL (pgvector)**.
+    ** **Metadata:** SQLite is removed for production; PostgreSQL is mandated.

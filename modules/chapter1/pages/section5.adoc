@@ -1,97 +1,42 @@
-= Troubleshooting & Day 2 Operations
-:navtitle: Troubleshooting
-:toc: macro
-
-// Antora metadata
-:page-role: troubleshooting-guide
-:description: How to debug Data Connection and storage issues in RHOAI.
+= The Sharp Edges: Field Notes for Platform Engineers
+:role: Operational Guide
+:audience: Platform Engineers & SREs
+:description: Critical "gotchas," configuration warnings, and troubleshooting tips derived from real-world RHOAI deployments.
 
 [.lead]
-*A connection that does not inject is worse than no connection. You need to know how to look under the hood.*
+*Configuration is easy. Day-2 Operations are where the battle is won.*
 
-Even with a solid storage strategy, credentials can be wrong, PVCs can stay Pending, or the dashboard may not show your connection. This section gives you the **SRE playbook** for data connectivity and storage in RHOAI.
+Now that your storage architecture is built, you need to maintain it. Based on RHOAI 3 best practices, here are the five most common "sharp edges" that trip up Platform Engineers.
 
-== 1. Data Connection Not Injecting (Pod Cannot See Credentials)
+== 1. The "Protocol" Pitfall (Connectivity)
+When configuring Data Connections for S3-compatible stores (like MinIO or NooBaa), the most frequent error is **Endpoint Formatting**.
 
-**Symptom:** The workbench or model server pod runs, but the application fails to access S3 (e.g., "Access Denied" or "No credentials found").
+* **The Error:** Providing an endpoint like `minio-api.cluster.local`.
+* **The Fix:** You *must* prefix the protocol.
+    ** Correct: `http://minio-api.cluster.local:9000` or `https://s3.us-east-1.amazonaws.com`.
+    ** Why? The Boto3 client injected into the workbench requires the full URI scheme to resolve correctly.
 
-**Check 1: Is the Secret present and correctly named?**
+== 2. The "Restart" Risk (PVC Management)
+You might receive a ticket from a user asking for more disk space: *"My 20GB Workbench is full."*
 
-[source,bash]
-----
-oc get secret -n <project> | grep -E 'aws|s3|connection'
-----
-+
-The name must match what the dashboard or deployment expects (e.g., `aws-connection-s3`).
+* **The Action:** You go to **Settings -> Cluster settings** and increase the default PVC size to 50GB.
+* **The Warning:** Changing the default PVC size triggers a **restart** of the Workbench Pod.
+* **Best Practice:** Perform global storage resizing during maintenance windows. For individual users, expand the PVC manually via the OpenShift Console (`Storage -> PersistentVolumeClaims`) to avoid disrupting the entire cluster configuration.
 
-**Check 2: Does the pod have the Secret mounted or as env vars?**
+== 3. The "Corruption" Danger (RWX Volumes)
+Shared storage (ReadWriteMany) is powerful, but it is not magic. It is a shared file system.
 
-[source,bash]
-----
-oc get pod <pod-name> -n <project> -o yaml | grep -A 20 volumes:
-oc get pod <pod-name> -n <project> -o yaml | grep -A 30 env:
-----
-+
-Look for the Secret reference and the expected keys (e.g., `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`).
+* **The Risk:** If two users run a script that writes to the *exact same file* (e.g., `model_weights.h5`) simultaneously, you will experience **data corruption** or data loss.
+* **The Rule:** Use RWX for **reading** shared datasets. If users need to **write**, they should write to their personal (RWO) folder or use unique filenames (e.g., `experiment_userA_v1.log`).
 
-**Check 3: RHOAI 3 protocol annotation**
+== 4. The "Trust" Gap (Certificates)
+If you are using an on-premise Object Store (MinIO) secured with **Self-Signed Certificates**, your Data Connections will fail silently.
 
-Ensure the Secret has the correct annotation so RHOAI treats it as a Data Connection:
+* **The Symptom:** Workbenches hang or Pipeline steps fail with `SSL: CERTIFICATE_VERIFY_FAILED`.
+* **The Fix:** You must inject the **Cluster CA Bundle** into the component. RHOAI components (Pipelines, Model Serving) need to "trust" your storage backend. Ensure your custom CA bundles are configured in the `DSCI` (Data Science Cluster Initialization) resource.
 
-[source,bash]
-----
-oc get secret <connection-secret> -n <project> -o yaml
-----
-+
-Look for `opendatahub.io/connection-type-protocol` (or the current RHOAI 3 key). If missing, add it and re-attach the connection to the workbench or deployment.
+== 5. The Database Mandate (RHOAI 3 Specific)
+Do not attempt to use SQLite for production Model Registries.
 
-== 2. PVC Stuck in Pending
-
-**Symptom:** `oc get pvc` shows `Pending` for a long time.
-
-**Check 1: Is there a default Storage Class?**
-
-[source,bash]
-----
-oc get storageclass
-----
-+
-At least one must be marked as default. If the PVC does not specify `storageClassName`, the default is used.
-
-**Check 2: Are there enough resources?**
-
-[source,bash]
-----
-oc describe pvc <pvc-name> -n <project>
-----
-+
-Read the **Events** at the bottom. Common causes: "no persistent volumes available," "provisioner not found," or "storage class not found."
-
-**Check 3: RWX and backend support**
-
-If you requested **ReadWriteMany**, confirm that the Storage Class you used actually supports RWX. Many default classes are RWO-only. Switch to an RWX-capable class (e.g., NFS, CephFS) or use RWO if sharing is not required.
-
-== 3. Pipeline Workspace Not Shared Between Steps
-
-**Symptom:** Step 2 does not see output from Step 1 in the workspace.
-
-* **Verify the pipeline definition** uses the same workspace name/volume for both steps.
-* **Check the PVC** used by the pipeline run: `oc get pvc -n <project>` and ensure it is `Bound`.
-* **Check the step logs** to see the path they are reading/writing; ensure they agree.
-
-== 4. Model Server Fails to Load from S3
-
-**Symptom:** Inference deployment fails with S3 or "model not found" errors.
-
-* **Confirm the Data Connection** is attached to the **InferenceService** (or the resource that deploys the model server).
-* **Confirm the Secret keys** match what the model server expects (e.g., `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, endpoint, bucket). Some images expect different env var names; check the image documentation.
-* **Network:** Ensure the pod can reach the S3 endpoint (firewall, egress, private link). Test from a debug pod if needed.
-
-== 5. Encryption and Self-Signed Certificates
-
-If your object storage uses a self-signed or corporate CA certificate, the client inside the pod may reject the TLS connection. Configure the platform or the image to use the appropriate CA bundle (e.g., mount a ConfigMap with the CA and set `SSL_CERT_FILE` or the equivalent).
-
----
-*You now have the full lifecycle: design, deploy, and fix. The glue is in your hands.*
-
-xref:index.adoc[Return to Introduction]
+* **The Change:** RHOAI 3 deprecates file-based databases for the Model Registry.
+* **The Requirement:** You must provision an external **MySQL (8.x)** or **PostgreSQL** database. Using local PVCs for metadata will result in performance bottlenecks and is not supported for production SLAs.
