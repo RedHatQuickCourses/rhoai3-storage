@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Knowledge Check: Verify Your Architecture Skills :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
+    <meta name="description" content="A short quiz to validate understanding of RHOAI 3 Storage and Connectivity concepts.">
+    <meta name="generator" content="Antora 3.1.3">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://www.redhat.com" target="_blank"><img src="../../../_/img/redhat-logo.png" height="40px" alt="Red Hat"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://github.com/RedHatQuickCourses/REPLACEREPONAME/issues" target="_blank">Report Issues</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="rhoai3-storage" data-version="3.2">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction &amp; Value</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</span>
+    <span class="version">3.2</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">3.2</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></li>
+    <li><a href="quiz.html">Knowledge Check: Verify Your Architecture Skills</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Knowledge Check: Verify Your Architecture Skills</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>Did you master the factory floor? Let&#8217;s find out.</strong></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_question_1_the_strategy"><a class="anchor" href="#_question_1_the_strategy"></a>Question 1: The Strategy</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Scenario:</strong> A team of 5 researchers needs to access a read-only 2TB dataset of satellite imagery simultaneously. They do not need to modify the images.
+<strong>Which storage class strategy is most appropriate?</strong></p>
+</div>
+<div class="ulist checklist">
+<ul class="checklist">
+<li>
+<p><i class="fa fa-square-o"></i> A. Provision 5 separate RWO volumes and copy the data to each one.</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> B. Provision one RWO volume and have them take turns.</p>
+</li>
+<li>
+<p><i class="fa fa-check-square-o"></i> C. Provision one RWX (ReadWriteMany) volume and mount it to all 5 workbenches as Read-Only.</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> D. Store the images in a Git repository.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><em>Answer: C. RWX is designed for collaborative access to shared data without duplication.</em></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_question_2_the_security"><a class="anchor" href="#_question_2_the_security"></a>Question 2: The Security</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Scenario:</strong> You need to rotate the AWS Access Keys used by the "Fraud Detection" team.
+<strong>How do you update the credentials without breaking their code?</strong></p>
+</div>
+<div class="ulist checklist">
+<ul class="checklist">
+<li>
+<p><i class="fa fa-square-o"></i> A. Email the new keys to the team and ask them to update their notebooks.</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> B. Update the hardcoded values in the <code>deployment.yaml</code> file.</p>
+</li>
+<li>
+<p><i class="fa fa-check-square-o"></i> C. Update the Kubernetes Secret associated with the Data Connection.</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> D. Delete the workbench and recreate it.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><em>Answer: C. Data Connections abstract credentials into Secrets. Updating the Secret automatically propagates the new values to the environment variables upon the next pod start.</em></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_question_3_the_architecture_rhoai_3"><a class="anchor" href="#_question_3_the_architecture_rhoai_3"></a>Question 3: The Architecture (RHOAI 3)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Scenario:</strong> You are deploying a production Model Registry in RHOAI 3.
+<strong>Where should the metadata be stored?</strong></p>
+</div>
+<div class="ulist checklist">
+<ul class="checklist">
+<li>
+<p><i class="fa fa-square-o"></i> A. In a text file on a PVC.</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> B. In an SQLite database on the local node.</p>
+</li>
+<li>
+<p><i class="fa fa-check-square-o"></i> C. In an external MySQL or PostgreSQL database.</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> D. In the OpenShift etcd key-value store.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><em>Answer: C. RHOAI 3 requires external databases (MySQL/Postgres) for production components like Model Registry and Llama Stack to ensure scalability.</em></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_question_4_the_configuration"><a class="anchor" href="#_question_4_the_configuration"></a>Question 4: The Configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Scenario:</strong> A user reports their workbench is restarting unexpectedly. You recently changed the global "Default PVC Size" in the Cluster Settings.
+<strong>Is this related?</strong></p>
+</div>
+<div class="ulist checklist">
+<ul class="checklist">
+<li>
+<p><i class="fa fa-check-square-o"></i> A. Yes, changing the default PVC size triggers a rollout restart of workbench pods.</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> B. No, PVC settings only affect new workbenches.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><em>Answer: A. Modifying the PVC size setting in the dashboard restarts workbench pods and makes them unavailable for up to 30 seconds.</em></p>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <img src="../../../_/img/rhl-logo-red.png" height="40px" alt="Red Hat"  href="https://redhat.com" >
+</footer><script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

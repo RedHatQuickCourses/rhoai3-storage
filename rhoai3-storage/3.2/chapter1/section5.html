@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>The Sharp Edges: Field Notes for Platform Engineers :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
+    <meta name="description" content="Critical "gotchas," configuration warnings, and troubleshooting tips derived from real-world RHOAI deployments.">
+    <meta name="generator" content="Antora 3.1.3">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://www.redhat.com" target="_blank"><img src="../../../_/img/redhat-logo.png" height="40px" alt="Red Hat"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://github.com/RedHatQuickCourses/REPLACEREPONAME/issues" target="_blank">Report Issues</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="rhoai3-storage" data-version="3.2">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction &amp; Value</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</span>
+    <span class="version">3.2</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">3.2</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></li>
+    <li><a href="section5.html">The Sharp Edges: Field Notes for Platform Engineers</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">The Sharp Edges: Field Notes for Platform Engineers</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>Configuration is easy. Day-2 Operations are where the battle is won.</strong></p>
+</div>
+<div class="paragraph">
+<p>Now that your storage architecture is built, you need to maintain it. Based on RHOAI 3 best practices, here are the five most common "sharp edges" that trip up Platform Engineers.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_1_the_protocol_pitfall_connectivity"><a class="anchor" href="#_1_the_protocol_pitfall_connectivity"></a>1. The "Protocol" Pitfall (Connectivity)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When configuring Data Connections for S3-compatible stores (like MinIO or NooBaa), the most frequent error is <strong>Endpoint Formatting</strong>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Error:</strong> Providing an endpoint like <code>minio-api.cluster.local</code>.</p>
+</li>
+<li>
+<p><strong>The Fix:</strong> You <strong>must</strong> prefix the protocol.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Correct: <code><a href="http://minio-api.cluster.local:9000" class="bare">http://minio-api.cluster.local:9000</a></code> or <code><a href="https://s3.us-east-1.amazonaws.com" class="bare">https://s3.us-east-1.amazonaws.com</a></code>.</p>
+</li>
+<li>
+<p>Why? The Boto3 client injected into the workbench requires the full URI scheme to resolve correctly.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_2_the_restart_risk_pvc_management"><a class="anchor" href="#_2_the_restart_risk_pvc_management"></a>2. The "Restart" Risk (PVC Management)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You might receive a ticket from a user asking for more disk space: <strong>"My 20GB Workbench is full."</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Action:</strong> You go to <strong>Settings &#8594; Cluster settings</strong> and increase the default PVC size to 50GB.</p>
+</li>
+<li>
+<p><strong>The Warning:</strong> Changing the default PVC size triggers a <strong>restart</strong> of the Workbench Pod.</p>
+</li>
+<li>
+<p><strong>Best Practice:</strong> Perform global storage resizing during maintenance windows. For individual users, expand the PVC manually via the OpenShift Console (<code>Storage &#8594; PersistentVolumeClaims</code>) to avoid disrupting the entire cluster configuration.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_3_the_corruption_danger_rwx_volumes"><a class="anchor" href="#_3_the_corruption_danger_rwx_volumes"></a>3. The "Corruption" Danger (RWX Volumes)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Shared storage (ReadWriteMany) is powerful, but it is not magic. It is a shared file system.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Risk:</strong> If two users run a script that writes to the <strong>exact same file</strong> (e.g., <code>model_weights.h5</code>) simultaneously, you will experience <strong>data corruption</strong> or data loss.</p>
+</li>
+<li>
+<p><strong>The Rule:</strong> Use RWX for <strong>reading</strong> shared datasets. If users need to <strong>write</strong>, they should write to their personal (RWO) folder or use unique filenames (e.g., <code>experiment_userA_v1.log</code>).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_4_the_trust_gap_certificates"><a class="anchor" href="#_4_the_trust_gap_certificates"></a>4. The "Trust" Gap (Certificates)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If you are using an on-premise Object Store (MinIO) secured with <strong>Self-Signed Certificates</strong>, your Data Connections will fail silently.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Symptom:</strong> Workbenches hang or Pipeline steps fail with <code>SSL: CERTIFICATE_VERIFY_FAILED</code>.</p>
+</li>
+<li>
+<p><strong>The Fix:</strong> You must inject the <strong>Cluster CA Bundle</strong> into the component. RHOAI components (Pipelines, Model Serving) need to "trust" your storage backend. Ensure your custom CA bundles are configured in the <code>DSCI</code> (Data Science Cluster Initialization) resource.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_5_the_database_mandate_rhoai_3_specific"><a class="anchor" href="#_5_the_database_mandate_rhoai_3_specific"></a>5. The Database Mandate (RHOAI 3 Specific)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Do not attempt to use SQLite for production Model Registries.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Change:</strong> RHOAI 3 deprecates file-based databases for the Model Registry.</p>
+</li>
+<li>
+<p><strong>The Requirement:</strong> You must provision an external <strong>MySQL (8.x)</strong> or <strong>PostgreSQL</strong> database. Using local PVCs for metadata will result in performance bottlenecks and is not supported for production SLAs.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <img src="../../../_/img/rhl-logo-red.png" height="40px" alt="Red Hat"  href="https://redhat.com" >
+</footer><script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

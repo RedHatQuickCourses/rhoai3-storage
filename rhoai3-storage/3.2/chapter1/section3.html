@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Choosing Your Path: Storage Strategies for the AI Lifecycle :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
+    <meta name="description" content="A decision framework for selecting the right storage protocols for Experimentation, Collaboration, and Production.">
+    <meta name="generator" content="Antora 3.1.3">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://www.redhat.com" target="_blank"><img src="../../../_/img/redhat-logo.png" height="40px" alt="Red Hat"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://github.com/RedHatQuickCourses/REPLACEREPONAME/issues" target="_blank">Report Issues</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="rhoai3-storage" data-version="3.2">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction &amp; Value</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</span>
+    <span class="version">3.2</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">3.2</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></li>
+    <li><a href="section3.html">Choosing Your Path: Storage Strategies for the AI Lifecycle</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Choosing Your Path: Storage Strategies for the AI Lifecycle</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>One size does not fit all. In AI, using the wrong storage strategy isn&#8217;t just slow—it breaks the workflow.</strong></p>
+</div>
+<div class="paragraph">
+<p>As a Platform Engineer, your users will come to you with different needs. A researcher exploring a new dataset has different requirements than an MLOps engineer deploying a high-availability model.</p>
+</div>
+<div class="paragraph">
+<p>RHOAI 3 provides three "Well-Lit Paths." Your job is to guide your users to the right one.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_path_1_the_explorer_individual_development"><a class="anchor" href="#_path_1_the_explorer_individual_development"></a>Path 1: The Explorer (Individual Development)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Scenario:</strong> A data scientist needs to clone a git repo, install custom Python libraries, and experiment with a small dataset.
+<strong>The Solution:</strong> <strong>ReadWriteOnce (RWO) PVCs.</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>How it works:</strong> When a user launches a Workbench, RHOAI provisions a dedicated PVC mounted to <code>/opt/app-root/src</code>.</p>
+</li>
+<li>
+<p><strong>Why this path?</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Performance:</strong> Block storage (RWO) is typically faster and lower latency than shared file systems.</p>
+</li>
+<li>
+<p><strong>Isolation:</strong> Changes made here do not affect other team members.</p>
+</li>
+<li>
+<p><strong>Cost Control:</strong> Admins can set default limits (e.g., 20GB) to prevent runaway costs.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_path_2_the_collaborator_team_research"><a class="anchor" href="#_path_2_the_collaborator_team_research"></a>Path 2: The Collaborator (Team Research)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Scenario:</strong> Five data scientists need to analyze the same 500GB "Golden Dataset."
+<strong>The Anti-Pattern:</strong> Everyone downloads a copy to their RWO drive (2.5TB total usage).
+<strong>The Solution:</strong> <strong>ReadWriteMany (RWX) Shared Volumes.</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>How it works:</strong> You provision a Shared Volume backed by an RWX-capable storage class (e.g., OpenShift Data Foundation / CephFS).</p>
+</li>
+<li>
+<p><strong>Why this path?</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Efficiency:</strong> The data exists once. Everyone mounts it simultaneously.</p>
+</li>
+<li>
+<p><strong>Velocity:</strong> No download time. Data is immediately available to the whole squad.</p>
+</li>
+<li>
+<p><strong>Checkpointing:</strong> In distributed training, worker nodes save checkpoints to this shared space so the master node can aggregate them.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_path_3_the_engineer_production_serving"><a class="anchor" href="#_path_3_the_engineer_production_serving"></a>Path 3: The Engineer (Production Serving)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Scenario:</strong> You need to deploy a trained model to production with minimal latency and fast startup times.
+<strong>The Anti-Pattern:</strong> The model server downloads the 20GB model file from S3 every time a pod scales up.
+<strong>The Solution:</strong> <strong>OCI Containers (Modelcars).</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>How it works:</strong> Instead of treating the model as a file, you package it as a container image stored in an OCI Registry (like Quay.io).</p>
+</li>
+<li>
+<p><strong>Why this path?</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Startup Speed:</strong> No "download phase." The container runtime pulls layers, often leveraging node-level caching.</p>
+</li>
+<li>
+<p><strong>Deduplication:</strong> If you deploy 50 replicas of the same model, the storage footprint is minimized via layer sharing.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title">Strategic Rule of Thumb</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Persist Code?</strong> Use RWO.</p>
+</li>
+<li>
+<p><strong>Share Data?</strong> Use RWX.</p>
+</li>
+<li>
+<p><strong>Serve Models?</strong> Use OCI or S3 Connections.</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <img src="../../../_/img/rhl-logo-red.png" height="40px" alt="Red Hat"  href="https://redhat.com" >
+</footer><script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

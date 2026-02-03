@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>The AI Backbone: Breaking the Cycle of Credential Sprawl :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
+    <meta name="description" content="Understanding the critical role of Data Connections and Storage Classes in the AI lifecycle.">
+    <meta name="generator" content="Antora 3.1.3">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://www.redhat.com" target="_blank"><img src="../../../_/img/redhat-logo.png" height="40px" alt="Red Hat"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://github.com/RedHatQuickCourses/REPLACEREPONAME/issues" target="_blank">Report Issues</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="rhoai3-storage" data-version="3.2">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction &amp; Value</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</span>
+    <span class="version">3.2</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">3.2</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></li>
+    <li><a href="index.html">The AI Backbone: Breaking the Cycle of Credential Sprawl</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">The AI Backbone: Breaking the Cycle of Credential Sprawl</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>Data is the fuel for AI. But without the right plumbing, it&#8217;s just a fire hazard.</strong></p>
+</div>
+<div class="paragraph">
+<p>In a mature DevOps environment, no platform engineer would allow a developer to hardcode database passwords directly into their application source code. You use secrets management. You use environment abstraction. You use distinct storage classes for performance.</p>
+</div>
+<div class="paragraph">
+<p>Yet, walk into a typical Data Science team, and you will see the "Anti-Pattern" everywhere: AWS Access Keys hardcoded into Jupyter Notebook cells, massive datasets duplicated across twenty different local drives, and <code>boto3</code> scripts that break the moment you try to move them from a laptop to a production cluster.</p>
+</div>
+<div class="paragraph">
+<p>This is <strong>Credential Sprawl</strong>. [cite_start]It creates security risks, locks you into specific environments, and makes collaboration impossible[cite: 7, 8].</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">The Core Sales Objection</div>
+<div class="paragraph">
+<p><strong>"Why can&#8217;t our data scientists just use standard S3 libraries and hardcode their keys? It&#8217;s faster."</strong></p>
+</div>
+<div class="paragraph">
+<p>It is faster for <strong>one</strong> person, once. It is a disaster for an enterprise. Hardcoding keys means you cannot rotate credentials without breaking code. It means you cannot move from Dev to Prod without rewriting scripts. [cite_start]It means you have zero governance over where your data is going[cite: 7, 9].</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_solution_the_rhoai_connectivity_layer"><a class="anchor" href="#_the_solution_the_rhoai_connectivity_layer"></a>The Solution: The RHOAI Connectivity Layer</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Red Hat OpenShift AI (RHOAI) 3</strong> solves this by decoupling <strong>Data</strong> from <strong>Compute</strong>.</p>
+</div>
+<div class="paragraph">
+<p>Instead of embedding storage details into the workload, RHOAI uses two architectural primitives to abstract the infrastructure:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong class="cite_start">Data Connections:</strong> A secure, Kubernetes-native way to inject credentials and endpoints into Workbenches and Model Servers without the user ever seeing the raw keys[cite: 1, 2].</p>
+</li>
+<li>
+<p><strong class="cite_start">Storage Classes (PVCs):</strong> A dynamic system for provisioning high-performance, persistent disk storage that survives workbench shutdowns and enables real-time collaboration[cite: 1, 24].</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>image::images/rhoai-data-connectivity-architecture.png</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_three_pillars_of_value"><a class="anchor" href="#_three_pillars_of_value"></a>Three Pillars of Value</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>By implementing the RHOAI Storage Architecture, you deliver three capabilities that "manual scripting" cannot match:</p>
+</div>
+<div class="sect2">
+<h3 id="_1_security_compliance_the_abstraction"><a class="anchor" href="#_1_security_compliance_the_abstraction"></a>1. Security &amp; Compliance ("The Abstraction")</h3>
+<div class="paragraph">
+<p>When a data scientist uses a <strong>Data Connection</strong>, they are not typing an Access Key. They are referencing a secure Kubernetes Secret managed by you, the Platform Engineer.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Win:</strong> You can rotate the underlying AWS or MinIO keys centrally.</p>
+</li>
+<li>
+<p><strong class="cite_start">The Benefit:</strong> The data scientist&#8217;s code never changes, and the secure credentials never appear in their notebook source control[cite: 5, 8].</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_hybrid_portability_the_universal_adapter"><a class="anchor" href="#_2_hybrid_portability_the_universal_adapter"></a>2. Hybrid Portability ("The Universal Adapter")</h3>
+<div class="paragraph">
+<p>In a real-world AI factory, models are developed in a "Sandbox" (Dev), trained on a "Cluster" (Test), and deployed to "Edge" (Prod).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong class="cite_start">The Win:</strong> RHOAI Data Connections use standard protocols (S3, URI, OCI) to create a consistent interface[cite: 13].</p>
+</li>
+<li>
+<p><strong>The Benefit:</strong> The same training pipeline code runs in every environment. You simply swap the "Connection" reference from the <strong>Dev Bucket</strong> to the <strong>Prod Bucket</strong>. [cite_start]No code rewrites required[cite: 9, 10].</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_velocity_collaboration_the_shared_workspace"><a class="anchor" href="#_3_velocity_collaboration_the_shared_workspace"></a>3. Velocity &amp; Collaboration ("The Shared Workspace")</h3>
+<div class="paragraph">
+<p>Downloading a 500GB dataset to twenty different laptops is a waste of time and bandwidth.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong class="cite_start">The Win:</strong> RHOAI leverages <strong>ReadWriteMany (RWX)</strong> Storage Classes[cite: 25].</p>
+</li>
+<li>
+<p><strong>The Mechanism:</strong> A single "Golden Dataset" is mounted to a shared volume.</p>
+</li>
+<li>
+<p><strong>The Benefit:</strong> The entire research team can mount that same volume to their independent workbenches simultaneously. [cite_start]They can explore, clean, and experiment on the data in real-time without duplication or network latency[cite: 26, 72].</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_your_mission_architect_the_backbone"><a class="anchor" href="#_your_mission_architect_the_backbone"></a>Your Mission: Architect the Backbone</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this course, you will move beyond simple storage provisioning. You will architect the <strong>data foundation</strong> for RHOAI 3.</p>
+</div>
+<div class="paragraph">
+<p>You will take on the role of a <strong>Lead Platform Engineer</strong> ensuring your data scientists can work securely and efficiently. You will execute the following technical workflow:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong class="cite_start">The Foundation:</strong> Configure <strong>Storage Classes</strong> to support high-performance RWO (Personal) and collaborative RWX (Shared) workspaces[cite: 21, 22].</p>
+</li>
+<li>
+<p><strong class="cite_start">The Gateway:</strong> Create and manage <strong>Data Connections</strong> for S3 Object Storage and OCI Model Registries, abstracting the credentials from the users[cite: 76, 77].</p>
+</li>
+<li>
+<p><strong class="cite_start">The Acceleration:</strong> Implement <strong>Pipeline Workspaces</strong> and <strong>Modelcars</strong> (OCI) to speed up training handoffs and reduce model deployment times[cite: 39, 19].</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title">Prerequisites</div>
+<div class="paragraph">
+<p>To successfully complete the hands-on sections of this course, you need:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Access to a <strong>Red Hat OpenShift AI 3</strong> cluster.</p>
+</li>
+<li>
+<p><code class="cite_start">cluster-admin</code> privileges (to configure Storage Classes and global connection types)[cite: 22].</p>
+</li>
+<li>
+<p>[cite_start]An external Object Store (AWS S3 or MinIO) to verify connectivity[cite: 13].</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p><strong>Ready to secure the flow? Let&#8217;s start by defining the storage foundation.</strong></p>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <img src="../../../_/img/rhl-logo-red.png" height="40px" alt="Red Hat"  href="https://redhat.com" >
+</footer><script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
