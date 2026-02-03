@@ -4,4 +4,6 @@
 * xref:section3.adoc[Taxonomy & Glossary]
 * xref:section4.adoc[Lab Environment Setup]
 * xref:section5.adoc[Troubleshooting]
+* xref:delete.adoc[Troubleshooting]
+
 * xref:quiz.adoc[Quiz]
