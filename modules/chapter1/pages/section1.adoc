@@ -1,6 +1,70 @@
-= Section 1
+= Architecture: Data Connections and Cluster Storage
+:navtitle: Architecture Deep Dive
+:toc: macro
 
-* Create multiple copies of this section as needed.
-* Remove any unnecessary sections or chapter pages.
-* Customize the section as appropriate.
-* Ensure that each page contains a manageable amount of content.
+// Antora metadata
+:page-role: architecture-concept
+:description: Technical deep dive into RHOAI data connectivity, injection mechanism, pipeline flow, and storage modes.
+
+[.lead]
+*"Where the data lives" and "how the pod gets it" are two different problems. RHOAI separates them.*
+
+To build a reliable AI factory, you must understand how credentials and data flow from external systems (S3, OCI) and internal storage (PVCs) into your workloads. In Red Hat OpenShift AI (RHOAI), this is achieved through a clear separation: **Data Connections** for external access, and **Cluster Storage** for persistence and handoff.
+
+== System Requirements (The Foundation)
+
+Before designing your storage strategy, ensure your cluster meets these requirements:
+
+* **Underlying storage:** The cluster must have a **default Storage Class** with dynamic provisioning. Without it, PVCs will not bind.
+* **Object storage:** S3-compatible storage is **mandatory** for pipelines and for model serving that pulls from object stores. Data Connections will reference this storage.
+* **Database shift (RHOAI 3):** Metadata for Model Registry and TrustyAI moves from PVC-backed storage to **external databases** (MySQL/PostgreSQL). Plan for this when upgrading or designing new deployments.
+
+== The Core Concept: Two Planes
+
+* **Data Connections (The gateway):** A Kubernetes Secret abstraction. The platform uses it to inject environment variables (e.g., `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_ENDPOINT`) directly into the pod at runtime. The application never sees a config file; it reads from the environment.
+* **Cluster Storage (The engine):** Persistent Volume Claims (PVCs). These provide block or file storage *inside* the cluster. Used for workbench home directories, pipeline workspaces, and—where supported—shared "golden" datasets.
+
+== Injection Mechanism: How Data Connections Work
+
+When you attach a Data Connection to a workbench or a serving runtime:
+
+ 1. You select a **Data Connection** (which points to a Secret).
+ 2. RHOAI mounts or injects the Secret contents into the pod (e.g., as environment variables or a mounted file).
+ 3. The application (e.g., S3 client, training script) reads credentials and endpoint from the environment. No hardcoded keys.
+
+[IMPORTANT]
+.RHOAI 3 Protocol Annotation
+====
+In RHOAI 3, use the **connection-type protocol** annotation when defining or referencing Data Connections. Avoid deprecated formats. The correct annotation is `opendatahub.io/connection-type-protocol` (or the current documented equivalent in your RHOAI version). This ensures the dashboard and controllers interpret the connection correctly.
+====
+
+== Pipeline Flow: S3, Workspaces, and the Registry
+
+A typical pipeline flow in RHOAI looks like this:
+
+* **Input:** Raw data or artifacts in **S3** (accessed via a Data Connection).
+* **Execution:** Pipeline steps use **PVC Workspaces** to pass intermediate data between steps. Data is written once to the workspace and read by the next step—no need to push back to S3 between every step.
+* **Output:** Final artifacts (e.g., model weights) can be written to S3 and/or registered in the **Model Registry** (which in RHOAI 3 uses an external database, not a PVC).
+
+This design reduces latency and egress: the heavy data movement happens once (S3 → workspace at start; workspace → S3 at end), not between every step.
+
+== Access Modes: RWO vs. RWX
+
+The choice of **access mode** for your PVCs is critical:
+
+* **RWO (ReadWriteOnce):** The volume can be mounted by only one node at a time. This is the **safe, default** choice for individual workbenches and most pipelines. Use RWO when you do not need multiple pods to share the same volume.
+* **RWX (ReadWriteMany):** The volume can be mounted by multiple nodes (and thus multiple pods) at once. Required for **shared datasets**—e.g., multiple researchers mounting the same "golden" dataset. RWX is more complex (depends on storage backend support, e.g., NFS, CephFS) and can have different performance and failure semantics. Use only when sharing is a requirement.
+
+[WARNING]
+.RWX and Risk
+====
+RWX is powerful but introduces operational complexity. Ensure your storage backend supports it and that you understand the failure and locking behavior. Do not use RWX by default; use it only when the Collaborator pattern (shared dataset) is required.
+====
+
+== Observability and Security
+
+* **Encryption:** For self-signed or corporate CA–signed object storage, you can configure custom CA bundles so that TLS verification succeeds and traffic remains encrypted.
+* **Credentials:** Data Connections keep credentials in Secrets. Restrict who can create or edit these Secrets; use RBAC so that only authorized users can attach connections to their projects.
+
+---
+*Now that you understand the architecture, choose the right path for your use case.*

@@ -1,6 +1,6 @@
 site:
-  title: FIXME Course Title
-  start_page: REPLACEREPONAME::index.adoc
+  title: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage
+  start_page: rhoai3-storage::ROOT::index.adoc
 
 content:
   sources:

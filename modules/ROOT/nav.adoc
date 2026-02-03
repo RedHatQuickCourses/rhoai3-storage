@@ -1,1 +1,6 @@
-* xref:index.adoc[]
+* xref:index.adoc[Introduction & Value]
+* xref:chapter1:section1.adoc[Architecture Deep Dive]
+* xref:chapter1:section2.adoc[The Well-Lit Paths]
+* xref:chapter1:section3.adoc[Taxonomy & Glossary]
+* xref:chapter1:section4.adoc[Lab Environment Setup]
+* xref:chapter1:section5.adoc[Troubleshooting]

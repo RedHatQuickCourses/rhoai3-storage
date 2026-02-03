@@ -1,6 +1,69 @@
-= Section 2
+= The Well-Lit Paths: Choosing Your Storage Strategy
+:navtitle: The Well-Lit Paths
+:toc: macro
 
-* Create multiple copies of this section as needed.
-* Remove any unnecessary sections or chapter pages.
-* Customize the section as appropriate.
-* Ensure that each page contains a manageable amount of content.
+// Antora metadata
+:page-role: solution-guide
+:description: Three proven patterns for data connectivity and storage in RHOAI—Explorer, Collaborator, Engineer.
+
+[.lead]
+*Not every workload needs the same storage pattern. Pick the path that fits the persona.*
+
+RHOAI supports multiple ways to connect data and persist state. This section describes three "well-lit paths"—proven patterns that map to common roles and use cases. Use them to design your storage strategy without reinventing the wheel.
+
+== Path 1: The Explorer (Interactive Data Science)
+
+**Persona:** A data scientist exploring raw data, running ad-hoc analysis, and iterating in a notebook or workbench.
+
+**Goal:** Pull data from external storage (e.g., S3) into a personal workbench without hardcoding keys. Persist workbench state (notebooks, caches) on a single node.
+
+* **Data Connections:** Create a Data Connection that points to your S3 (or URI) bucket. Attach it to the workbench. The workbench pod receives credentials via environment injection; your code uses standard S3 clients reading from env vars.
+* **PVC:** Use **RWO (ReadWriteOnce)** PVCs for the workbench's home directory. One volume per workbench; no sharing. Simple and safe.
+
+**Outcome:** Standardization—admins create connection templates; users just consume them. No keys in notebooks.
+
+== Path 2: The Collaborator (Shared Research)
+
+**Persona:** Multiple data scientists or MLOps engineers who need to read the same large "golden" dataset (e.g., a curated training set) without copying it per user.
+
+**Goal:** One copy of the data, many readers (or readers and writers with controlled access).
+
+* **Data source:** The golden dataset may be loaded once into cluster storage (e.g., from S3 via a pipeline or one-time job) or may already reside on a shared filesystem.
+* **PVC:** Use **RWX (ReadWriteMany)** storage class so that multiple workbenches (or pipeline pods) can mount the same PVC. Everyone sees the same data; no duplication.
+
+**Outcome:** Real-time collaboration on a single source of truth. Use only when your storage backend supports RWX and you have operational confidence in it.
+
+== Path 3: The Engineer (Production Serving)
+
+**Persona:** MLOps or platform engineer deploying models into production. Speed and consistency matter; raw weight downloads from S3 at cold start are slow.
+
+**Goal:** Serve models from a format that starts fast and fits enterprise supply chains (mirroring, scanning, signing).
+
+* **Data Connections:** Use **OCI Connections** (e.g., for **Modelcars**). Modelcars are models packaged as OCI container images. The serving runtime pulls the image; layers are cached. No large S3 download at pod start.
+* **Deployment:** Select the appropriate Serving Runtime and attach the Data Connection (or OCI reference) so the runtime can load the model from the image. Deployment is repeatable across environments by swapping the connection or image reference.
+
+**Outcome:** Faster rollout, layer deduplication, and alignment with existing container workflows. Prefer Modelcars over raw object storage when available.
+
+== Choosing Your Path
+
+|===
+| **Path** | **Use when** | **Data Connection** | **Storage (PVC)**
+
+| **Explorer**
+| Single user, interactive workbench, external data
+| S3 or URI connection attached to workbench
+| RWO for workbench persistence
+
+| **Collaborator**
+| Multiple users, one shared dataset
+| Optional (e.g., to load data once); focus on shared PVC
+| RWX for shared volume
+
+| **Engineer**
+| Production model serving, fast cold start
+| OCI / Modelcar connection
+| N/A (model in image or attached via connection)
+|===
+
+---
+*Next: Lock in the vocabulary with the Taxonomy & Glossary.*

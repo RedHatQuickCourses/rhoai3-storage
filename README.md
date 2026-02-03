@@ -1,60 +1,167 @@
-## Getting started with a new training content repository
+# Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage
 
-- Open the [course-starter-template](https://github.com/RedHatQuickCourses/course-starter-template)
+**From Credential Sprawl to Governed Connectivity**
 
-- Click on `Use This template` button and select `Create a new repository` option.
+> **The Problem:** Keys hardcoded in notebooks, data copied bucket-to-bucket, and siloed storage that blocks collaboration.  
+> **The Solution:** Data Connections (credentials in Kubernetes Secrets) and Cluster Storage (PVCs) so the same pipeline runs everywhere and Pipeline Workspaces reduce latency and egress.
 
-![use-this-template.png](./images/use-this-template.png)
+This repository contains a complete **course-in-a-box** that teaches platform engineers how to design and operate **data connectivity and storage** in Red Hat OpenShift AI (RHOAI) 3: architecture, well-lit paths (Explorer, Collaborator, Engineer), taxonomy, lab setup, and troubleshooting.
 
-- On `Create a new repository` page, Select the options as highlighted in the below image and then click `Create repository` button at the bottom of the page.
+---
 
-![create-new-repo.png](./images/create-new-repo.png)
+## Prerequisites
 
-- Clone this repository on your local system:
-```
-git clone git@github.com:RedHatQuickCourses/my-training-repository.git
-```
-NOTE: Use your repository url in the above command.
+* **Cluster:** Red Hat OpenShift AI 3 installed and accessible (~1 TB storage recommended for labs)
+* **Access:** Permissions to create Secrets, PVCs, and to configure or use StorageClasses (or `cluster-admin`)
+* **CLI:** `oc` installed and authenticated (`oc login`)
+* **Optional:** GPU operators installed if you will deploy model serving
 
-- Go in to the course repository directory and initialize the course.
-``` 
-cd my-training-repository/
-sh course-init.sh --type bfx --lab demo
-```
-NOTE: If you are using Mac, use *zsh* in place of *sh* in the above command.
+---
 
-Sample output:
-```
-Initializing my-training-repository . . . done
+## Quick Start: Connect Your Environment
 
-Please replace the specified strings in the files below and commit the changes before proceeding with the course development.
-antora.yml:title: REPLACE Course Title
-```
+Follow these steps to get Data Connections and cluster storage working so you can attach credentials to workbenches and deployments without hardcoding keys.
 
-- Edit the files prompted by course initialization script.
+### Step 1: Verify Storage Classes
 
-- Commit the changes done by course initialization script and your manual edits.
-```
- git status 
- git add -A; git commit -m "course initialization"
- git push origin main 
+Ensure the cluster has a default Storage Class (required for PVCs). If you need shared datasets, ensure an RWX-capable class exists.
+
+```bash
+oc get storageclass
 ```
 
-- Browse your git repository url 
+At least one storage class should be marked as default (`storageclass.kubernetes.io/is-default-class=true`).
 
-- On your github repo page, on left hand side pane, click on settings gear icon near `About` heading.
+### Step 2: Create a Data Connection (RHOAI 3 Protocol)
 
-- Click `Use your GitHub Pages website` option to select (checked) it and then click `Save changes` button.
+Create a Secret with your S3 (or object store) credentials in the target Data Science Project, then annotate it so RHOAI treats it as a Data Connection.
 
-![github-pages-setting](./images/github-pages-setting.png)
+```bash
+export PROJECT=my-data-science-project
 
-- You should now see the link to access the rendered content within that same block.
+oc create secret generic aws-connection-s3 \
+  -n $PROJECT \
+  --from-literal=AWS_ACCESS_KEY_ID='<access-key>' \
+  --from-literal=AWS_SECRET_ACCESS_KEY='<secret-key>' \
+  --from-literal=AWS_S3_BUCKET='<bucket-name>' \
+  --from-literal=AWS_S3_ENDPOINT='<endpoint-url>' \
+  --type=Opaque
 
-![quickcourse-rendered-url](./images/quickcourse-rendered-url.png)
+oc annotate secret aws-connection-s3 -n $PROJECT \
+  opendatahub.io/connection-type-protocol=s3
+```
 
-FIXME: highlight the relevant area on images.
+Use the annotation key required by your RHOAI 3.x release (see product documentation). Avoid deprecated connection formats.
 
-**SEE ALSO**
+### Step 3: Attach the Connection and Deploy a Model
 
-- [Development using devspace](./DEVSPACE.md)
-- [Guideline for editing your content](./USAGEGUIDE.adoc)
+1. In the **OpenShift AI Dashboard**, go to **Model Catalog** or **Deploy model**.
+2. Select a **Serving Runtime** and a model that uses object storage.
+3. **Attach the Data Connection** you created so the runtime injects S3 credentials into the model server pod.
+4. Deploy. The pod should load the model using injected environment variables.
+
+**Verify:**
+
+```bash
+oc get pods -n $PROJECT
+oc get inferenceservice -n $PROJECT
+```
+
+### Step 4: Optional—Test a PVC (RWO)
+
+Confirm dynamic provisioning works with a small PVC:
+
+```bash
+oc apply -f - <<EOF
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: test-pvc
+  namespace: $PROJECT
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+EOF
+
+oc get pvc test-pvc -n $PROJECT
+```
+
+Status should become `Bound`. If it stays `Pending`, check StorageClass and provisioner.
+
+---
+
+## Repository Structure
+
+```
+/
+├── modules/                     # Antora course source (AsciiDoc)
+│   ├── ROOT/pages/              # Home (includes chapter1)
+│   └── chapter1/pages/          # Introduction, Architecture, Well-Lit Paths,
+│                               # Taxonomy, Lab Setup, Troubleshooting
+├── antora.yml
+├── antora-playbook.yml
+└── README.md
+```
+
+---
+
+## View the Full Course (Antora)
+
+Build and view the full course with architecture details, well-lit paths, and troubleshooting:
+
+**Docker:**
+
+```bash
+docker run -u $(id -u) -v $PWD:/antora:Z --rm -t antora/antora antora-playbook.yml
+# open build/site/index.html
+```
+
+**NPM:**
+
+```bash
+npm install
+npx antora antora-playbook.yml
+# open build/site/index.html
+```
+
+---
+
+## Troubleshooting
+
+### Data Connection not injecting credentials
+
+* Verify the Secret exists and is named as expected: `oc get secret -n <project>`
+* Check the pod has the Secret as env or volume: `oc get pod <pod> -n <project> -o yaml`
+* Ensure the Secret has the RHOAI 3 connection-type annotation: `oc get secret <name> -n <project> -o yaml`
+
+### PVC stuck in Pending
+
+* Ensure a default Storage Class exists: `oc get storageclass`
+* Inspect PVC events: `oc describe pvc <pvc-name> -n <project>`
+* For RWX, use a storage class that supports ReadWriteMany (e.g., NFS, CephFS).
+
+### Model server cannot load from S3
+
+* Confirm the Data Connection is attached to the deployment.
+* Confirm Secret keys match what the image expects (e.g., `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`).
+* Verify network access from the pod to the S3 endpoint.
+
+---
+
+## Next Steps
+
+* **Explorer path:** Use Data Connections with RWO PVCs for individual workbenches.
+* **Collaborator path:** Enable RWX storage and mount a shared "golden" dataset to multiple workbenches.
+* **Engineer path:** Use OCI/Modelcar connections for production model serving and faster cold start.
+
+For full explanations, well-lit paths, taxonomy, and lab steps, use the Antora build or the course content in `modules/chapter1/`.
+
+---
+
+## Additional Resources
+
+* **OpenShift AI Documentation:** [Red Hat Documentation](https://access.redhat.com/documentation/en-us/red_hat_openshift_ai/)
+* **RHOAI 3:** Ensure you use the connection-type protocol and annotations documented for your release.
