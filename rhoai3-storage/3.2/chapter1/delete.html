@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>The Data "Glue" of RHOAI: From Credential Sprawl to Governed Connectivity :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
+    <meta name="generator" content="Antora 3.1.3">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://www.redhat.com" target="_blank"><img src="../../../_/img/redhat-logo.png" height="40px" alt="Red Hat"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://github.com/RedHatQuickCourses/REPLACEREPONAME/issues" target="_blank">Report Issues</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="rhoai3-storage" data-version="3.2">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction &amp; Value</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</span>
+    <span class="version">3.2</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">3.2</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></li>
+    <li><a href="delete.html">The Data "Glue" of RHOAI: From Credential Sprawl to Governed Connectivity</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">The Data "Glue" of RHOAI: From Credential Sprawl to Governed Connectivity</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>Stop hardcoding keys. Stop moving data that does not need to move. Start building the glue.</strong></p>
+</div>
+<div class="paragraph">
+<p>In the world of traditional software, we learned long ago that credentials do not belong in source code. We use secrets managers, IAM roles, and environment variables. We decouple configuration from code.</p>
+</div>
+<div class="paragraph">
+<p>Yet in many AI and ML teams, sensitive keys still live inside notebooks. Massive datasets are copied from bucket to bucket "just to be safe." Storage is siloed so that data scientists and MLOps engineers cannot share a single "golden" dataset without duplication and drift.</p>
+</div>
+<div class="paragraph">
+<p>This is <strong>credential sprawl</strong> and <strong>data gravity</strong>. And it is the primary blocker to scalable, compliant AI operations.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">The Core Sales Objection</div>
+<div class="paragraph">
+<p><strong>"Why do we need RHOAI Data Connections when we can just use public APIs or hardcode our S3 keys in the notebook?"</strong></p>
+</div>
+<div class="paragraph">
+<p>Because you cannot govern what you do not abstract. Public APIs put keys in developers' hands; RHOAI abstracts credentials into Kubernetes Secrets via <strong>Data Connections</strong>, ensuring compliance and secure rotation without breaking code. The same pipeline runs in Dev, Test, and Prod by swapping the connection reference—no environment-specific hardcoding.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_solution_data_connectivity_and_storage_architecture"><a class="anchor" href="#_the_solution_data_connectivity_and_storage_architecture"></a>The Solution: Data Connectivity and Storage Architecture</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <strong>Red Hat OpenShift AI (RHOAI)</strong> data connectivity and storage architecture is the "glue" that ties your AI factory together. It provides two pillars:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Data Connections:</strong> The gateway to external data (S3, URI, OCI). Credentials live in Kubernetes Secrets; pods receive them at runtime. Admins create templates; users consume them.</p>
+</li>
+<li>
+<p><strong>Cluster Storage:</strong> The engine for internal persistence. <strong>PVCs (Persistent Volume Claims)</strong> give workbenches and pipelines a place to store data without constantly re-uploading to object storage—reducing latency and egress cost.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Together, they decouple <strong>data location</strong> from <strong>compute location</strong>. The same code runs everywhere; only the connection reference changes.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_four_pillars_of_value"><a class="anchor" href="#_four_pillars_of_value"></a>Four Pillars of Value</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>By implementing RHOAI data connectivity and storage correctly, you unlock four capabilities that ad-hoc key management and copy-paste storage cannot provide:</p>
+</div>
+<div class="sect2">
+<h3 id="_1_security_governance_the_vault"><a class="anchor" href="#_1_security_governance_the_vault"></a>1. Security &amp; Governance ("The Vault")</h3>
+<div class="paragraph">
+<p>When developers manage their own keys, compliance becomes a guessing game. When keys are in notebooks or config files, rotation breaks production.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The win:</strong> Data Connections abstract credentials into Kubernetes Secrets. Only the platform injects them into pods at runtime.</p>
+</li>
+<li>
+<p><strong>The benefit:</strong> You achieve compliance by default. Rotate credentials without touching application code. Audit who has access to which connection.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_hybrid_portability_one_pipeline_many_environments"><a class="anchor" href="#_2_hybrid_portability_one_pipeline_many_environments"></a>2. Hybrid Portability ("One Pipeline, Many Environments")</h3>
+<div class="paragraph">
+<p>Copy-pasting bucket names and keys across Dev, Test, and Prod leads to drift and mistakes.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The win:</strong> The same pipeline code runs everywhere. You swap the <strong>Data Connection</strong> reference (e.g., Dev S3 vs. Prod S3); the code does not change.</p>
+</li>
+<li>
+<p><strong>The benefit:</strong> No environment-specific hardcoding. Promote pipelines with confidence.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_performance_roi_less_moving_more_computing"><a class="anchor" href="#_3_performance_roi_less_moving_more_computing"></a>3. Performance &amp; ROI ("Less Moving, More Computing")</h3>
+<div class="paragraph">
+<p>Constantly re-uploading intermediate data to S3 burns time and egress. Cold-starting models from raw downloads is slow.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The win:</strong> <strong>Pipeline Workspaces</strong> (PVCs) pass data between pipeline steps instantly, avoiding repeated uploads. <strong>Modelcars</strong> (OCI container images) cache models and reduce startup times.</p>
+</li>
+<li>
+<p><strong>The benefit:</strong> Faster pipelines, lower egress cost, better GPU utilization.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_real_time_collaboration_one_golden_dataset"><a class="anchor" href="#_4_real_time_collaboration_one_golden_dataset"></a>4. Real-Time Collaboration ("One Golden Dataset")</h3>
+<div class="paragraph">
+<p>When each researcher has a private copy of a 500GB dataset, storage and sync become a nightmare.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The win:</strong> RHOAI supports <strong>ReadWriteMany (RWX)</strong> storage classes. Multiple workbenches can mount the same "golden dataset" simultaneously—no duplication.</p>
+</li>
+<li>
+<p><strong>The benefit:</strong> Data scientists and MLOps engineers work from the same source of truth.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_your_mission_master_the_glue"><a class="anchor" href="#_your_mission_master_the_glue"></a>Your Mission: Master the Glue</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this course, you will not just read about connections and PVCs; you will <strong>design and apply</strong> a storage strategy. You will take on the role of a platform engineer tasked with breaking the cycle of credential sprawl and inefficient data transfer.</p>
+</div>
+<div class="paragraph">
+<p><strong>You will execute the following technical workflow:</strong></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Architecture:</strong> Understand how Data Connections inject credentials into pods, how pipeline artifacts flow between S3 and PVC workspaces, and the critical distinction between RWO and RWX storage.</p>
+</li>
+<li>
+<p><strong>The Well-Lit Paths:</strong> Choose the right pattern—Explorer (individual workbench), Collaborator (shared dataset), or Engineer (production serving with Modelcars).</p>
+</li>
+<li>
+<p><strong>Taxonomy:</strong> Master the glossary—Data Connection, PVC, Modelcar, Pipeline Workspace
+—and the RHOAI 3 shift (e.g., PostgreSQL and vector stores for Llama Stack).</p>
+</li>
+<li>
+<p><strong>Lab Setup:</strong> Configure storage classes, create a Data Connection using the RHOAI 3 protocol annotation, and deploy a model with the connection attached.</p>
+</li>
+<li>
+<p><strong>Operations:</strong> Troubleshoot connection failures, storage class issues, and access modes.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title">Prerequisites</div>
+<div class="paragraph">
+<p>To successfully complete the hands-on sections of this course, you need:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Access to a <strong>Red Hat OpenShift AI 3</strong> cluster (3.0+; 3.2 recommended).</p>
+</li>
+<li>
+<p>Permissions to create Secrets, PVCs, and to configure StorageClasses (or <code>cluster-admin</code>).</p>
+</li>
+<li>
+<p>The <code>oc</code> CLI tool installed in your terminal.</p>
+</li>
+<li>
+<p>Approximately <strong>1 TB</strong> of cluster storage recommended for labs; GPU operators installed if you will deploy model serving.</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<hr>
+<div class="paragraph">
+<p><strong>Ready to design your storage strategy? Let&#8217;s start with the architecture.</strong></p>
+</div>
+<div class="paragraph">
+<p>=======++======</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_architecture_data_connections_and_cluster_storage"><a class="anchor" href="#_architecture_data_connections_and_cluster_storage"></a>Architecture: Data Connections and Cluster Storage</h2>
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>"Where the data lives" and "how the pod gets it" are two different problems. RHOAI separates them.</strong></p>
+</div>
+<div class="paragraph">
+<p>To build a reliable AI factory, you must understand how credentials and data flow from external systems (S3, OCI) and internal storage (PVCs) into your workloads. In Red Hat OpenShift AI (RHOAI), this is achieved through a clear separation: <strong>Data Connections</strong> for external access, and <strong>Cluster Storage</strong> for persistence and handoff.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_system_requirements_the_foundation"><a class="anchor" href="#_system_requirements_the_foundation"></a>System Requirements (The Foundation)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Before designing your storage strategy, ensure your cluster meets these requirements:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Underlying storage:</strong> The cluster must have a <strong>default Storage Class</strong> with dynamic provisioning. Without it, PVCs will not bind.</p>
+</li>
+<li>
+<p><strong>Object storage:</strong> S3-compatible storage is <strong>mandatory</strong> for pipelines and for model serving that pulls from object stores. Data Connections will reference this storage.</p>
+</li>
+<li>
+<p><strong>Database shift (RHOAI 3):</strong> Metadata for Model Registry and TrustyAI moves from PVC-backed storage to <strong>external databases</strong> (MySQL/PostgreSQL). Plan for this when upgrading or designing new deployments.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_core_concept_two_planes"><a class="anchor" href="#_the_core_concept_two_planes"></a>The Core Concept: Two Planes</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Data Connections (The gateway):</strong> A Kubernetes Secret abstraction. The platform uses it to inject environment variables (e.g., <code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>, <code>S3_ENDPOINT</code>) directly into the pod at runtime. The application never sees a config file; it reads from the environment.</p>
+</li>
+<li>
+<p><strong>Cluster Storage (The engine):</strong> Persistent Volume Claims (PVCs). These provide block or file storage <strong>inside</strong> the cluster. Used for workbench home directories, pipeline workspaces, and—where supported—shared "golden" datasets.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_injection_mechanism_how_data_connections_work"><a class="anchor" href="#_injection_mechanism_how_data_connections_work"></a>Injection Mechanism: How Data Connections Work</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When you attach a Data Connection to a workbench or a serving runtime:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>You select a <strong>Data Connection</strong> (which points to a Secret).</p>
+</li>
+<li>
+<p>RHOAI mounts or injects the Secret contents into the pod (e.g., as environment variables or a mounted file).</p>
+</li>
+<li>
+<p>The application (e.g., S3 client, training script) reads credentials and endpoint from the environment. No hardcoded keys.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title">RHOAI 3 Protocol Annotation</div>
+<div class="paragraph">
+<p>In RHOAI 3, use the <strong>connection-type protocol</strong> annotation when defining or referencing Data Connections. Avoid deprecated formats. The correct annotation is <code>opendatahub.io/connection-type-protocol</code> (or the current documented equivalent in your RHOAI version). This ensures the dashboard and controllers interpret the connection correctly.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pipeline_flow_s3_workspaces_and_the_registry"><a class="anchor" href="#_pipeline_flow_s3_workspaces_and_the_registry"></a>Pipeline Flow: S3, Workspaces, and the Registry</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A typical pipeline flow in RHOAI looks like this:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Input:</strong> Raw data or artifacts in <strong>S3</strong> (accessed via a Data Connection).</p>
+</li>
+<li>
+<p><strong>Execution:</strong> Pipeline steps use <strong>PVC Workspaces</strong> to pass intermediate data between steps. Data is written once to the workspace and read by the next step—no need to push back to S3 between every step.</p>
+</li>
+<li>
+<p><strong>Output:</strong> Final artifacts (e.g., model weights) can be written to S3 and/or registered in the <strong>Model Registry</strong> (which in RHOAI 3 uses an external database, not a PVC).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This design reduces latency and egress: the heavy data movement happens once (S3 → workspace at start; workspace → S3 at end), not between every step.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_access_modes_rwo_vs_rwx"><a class="anchor" href="#_access_modes_rwo_vs_rwx"></a>Access Modes: RWO vs. RWX</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The choice of <strong>access mode</strong> for your PVCs is critical:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>RWO (ReadWriteOnce):</strong> The volume can be mounted by only one node at a time. This is the <strong>safe, default</strong> choice for individual workbenches and most pipelines. Use RWO when you do not need multiple pods to share the same volume.</p>
+</li>
+<li>
+<p><strong>RWX (ReadWriteMany):</strong> The volume can be mounted by multiple nodes (and thus multiple pods) at once. Required for <strong>shared datasets</strong>—e.g., multiple researchers mounting the same "golden" dataset. RWX is more complex (depends on storage backend support, e.g., NFS, CephFS) and can have different performance and failure semantics. Use only when sharing is a requirement.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="title">RWX and Risk</div>
+<div class="paragraph">
+<p>RWX is powerful but introduces operational complexity. Ensure your storage backend supports it and that you understand the failure and locking behavior. Do not use RWX by default; use it only when the Collaborator pattern (shared dataset) is required.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_observability_and_security"><a class="anchor" href="#_observability_and_security"></a>Observability and Security</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Encryption:</strong> For self-signed or corporate CA–signed object storage, you can configure custom CA bundles so that TLS verification succeeds and traffic remains encrypted.</p>
+</li>
+<li>
+<p><strong>Credentials:</strong> Data Connections keep credentials in Secrets. Restrict who can create or edit these Secrets; use RBAC so that only authorized users can attach connections to their projects.</p>
+</li>
+</ul>
+</div>
+<hr>
+<div class="paragraph">
+<p><strong>Now that you understand the architecture, choose the right path for your use case.</strong></p>
+</div>
+<div class="paragraph">
+<p>=======++======</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_taxonomy_glossary"><a class="anchor" href="#_taxonomy_glossary"></a>Taxonomy &amp; Glossary</h2>
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>Shared vocabulary prevents misconfiguration. Use this page as the single source of truth for terms.</strong></p>
+</div>
+<div class="paragraph">
+<p>This section defines the key terms used in RHOAI data connectivity and storage. Use it when designing your strategy or when discussing options with your team.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_core_terms"><a class="anchor" href="#_core_terms"></a>Core Terms</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_data_connection"><a class="anchor" href="#_data_connection"></a>Data Connection</h3>
+<div class="paragraph">
+<p>A <strong>Data Connection</strong> is an abstraction over external data access. In RHOAI, it is backed by a Kubernetes Secret that holds credentials and endpoint information (e.g., S3 keys, OCI registry credentials). When you attach a Data Connection to a workbench or serving runtime, the platform injects these values into the pod (e.g., as environment variables) so that the application can access the external system without hardcoded keys.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Use for:</strong> S3 buckets, URI-based data sources, OCI registries (e.g., Modelcars).</p>
+</li>
+<li>
+<p><strong>Benefit:</strong> Centralized, auditable, rotatable credentials; same code across environments by swapping the connection.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_pvc_persistent_volume_claim"><a class="anchor" href="#_pvc_persistent_volume_claim"></a>PVC (Persistent Volume Claim)</h3>
+<div class="paragraph">
+<p>A <strong>Persistent Volume Claim</strong> is a request for storage that is satisfied by the cluster&#8217;s storage layer (a Persistent Volume). In RHOAI, PVCs are used for workbench home directories (so your notebooks and caches survive pod restarts) and for <strong>Pipeline Workspaces</strong> (so data can be passed between pipeline steps without re-uploading to S3 after each step).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Access modes:</strong> RWO (single node) or RWX (multi-node, for shared datasets).</p>
+</li>
+<li>
+<p><strong>Benefit:</strong> Persistence and fast handoff; less egress and latency than "everything through S3."</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_modelcar"><a class="anchor" href="#_modelcar"></a>Modelcar</h3>
+<div class="paragraph">
+<p>A <strong>Modelcar</strong> is a method of distributing and serving models using <strong>OCI container images</strong>. Instead of downloading raw model weights from S3 or Hugging Face at container start, the model is packaged as an image (e.g., on <code>registry.redhat.io</code>). The serving runtime pulls the image; layers are cached. This reduces startup time and fits enterprise image supply chains (mirroring, scanning, signing).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Use for:</strong> Production model serving when you want fast cold start and deduplication.</p>
+</li>
+<li>
+<p><strong>RHOAI:</strong> Prefer Modelcars when available; attach via OCI Data Connection or catalog reference.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_pipeline_workspace"><a class="anchor" href="#_pipeline_workspace"></a>Pipeline Workspace</h3>
+<div class="paragraph">
+<p>A <strong>Pipeline Workspace</strong> is a PVC (or a volume backed by one) that is shared across pipeline steps. Step 1 writes intermediate artifacts to the workspace; Step 2 reads from it. This avoids writing every intermediate result back to S3 and reading it again in the next step—reducing latency and egress cost.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Flow:</strong> S3 (input) → workspace (intermediate) → S3 and/or Model Registry (output).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_rhoai_3specific_shifts"><a class="anchor" href="#_rhoai_3specific_shifts"></a>RHOAI 3–Specific Shifts</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_llama_stack_storage"><a class="anchor" href="#_llama_stack_storage"></a>Llama Stack Storage</h3>
+<div class="paragraph">
+<p>In <strong>RHOAI 3</strong>, Llama Stack and related components no longer rely on SQLite on a PVC for all metadata. They require <strong>PostgreSQL</strong> and <strong>Vector Stores</strong> (e.g., Milvus, pgvector) for scalable, production-ready state. Plan for these backing services when deploying Llama Stack–based applications.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_metadata_and_databases"><a class="anchor" href="#_metadata_and_databases"></a>Metadata and Databases</h3>
+<div class="paragraph">
+<p>RHOAI 3 moves metadata for the <strong>Model Registry</strong> and <strong>TrustyAI</strong> from PVC-backed storage to <strong>external databases</strong> (MySQL/PostgreSQL). Ensure these databases are provisioned and that connection details are correctly configured in the platform.</p>
+</div>
+<hr>
+<div class="paragraph">
+<p><strong>With the taxonomy clear, proceed to Lab Environment Setup to apply it hands-on.</strong></p>
+</div>
+<div class="paragraph">
+<p>=======++======</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_lab_environment_setup_and_your_first_connected_deployment"><a class="anchor" href="#_lab_environment_setup_and_your_first_connected_deployment"></a>Lab: Environment Setup and Your First Connected Deployment</h2>
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>Theory is over. It is time to connect.</strong></p>
+</div>
+<div class="paragraph">
+<p>In this lab, you will take on the role of a <strong>platform engineer</strong>. Your goal is to configure cluster storage, create a Data Connection using the RHOAI 3 protocol, and deploy a model so that the serving runtime receives credentials via the connection—no hardcoded keys.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title">Prerequisites</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Cluster:</strong> OpenShift cluster with Red Hat OpenShift AI 3 installed (~1 TB storage recommended for labs).</p>
+</li>
+<li>
+<p><strong>GPU operators:</strong> Installed if you plan to deploy model serving that requires GPUs.</p>
+</li>
+<li>
+<p><strong>Permissions:</strong> Ability to create StorageClasses (or use existing ones), Secrets, and to deploy resources in a Data Science Project.</p>
+</li>
+<li>
+<p><strong>CLI:</strong> <code>oc</code> installed and authenticated.</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_1_verify_storage_classes"><a class="anchor" href="#_step_1_verify_storage_classes"></a>Step 1: Verify Storage Classes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The cluster must have a default Storage Class and, if you will use the Collaborator path (shared dataset), an <strong>RWX-capable</strong> Storage Class.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>List Storage Classes and identify the default:</strong></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get storageclass</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Default:</strong> One storage class should have the annotation <code>storageclass.kubernetes.io/is-default-class=true</code>. If none is default, set one or use the default provided by your platform.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Check for RWX support (optional, for shared datasets):</strong></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get storageclass -o custom-columns=NAME:.metadata.name,ALLOWVOLUMEEXPANSION:.allowVolumeExpansion,VOLUMEBINDINGMODE:.volumeBindingMode</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you need RWX, ensure at least one storage class supports <code>ReadWriteMany</code> (e.g., NFS, CephFS). Not all classes do; consult your cluster administrator.</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_2_create_a_data_connection_rhoai_3_protocol"><a class="anchor" href="#_step_2_create_a_data_connection_rhoai_3_protocol"></a>Step 2: Create a Data Connection (RHOAI 3 Protocol)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Data Connections are backed by Secrets. In RHOAI 3, use the correct <strong>connection-type protocol</strong> annotation so the dashboard and controllers recognize the connection.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Create a Secret with S3 (or your object store) credentials in the target project:</strong></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Replace with your project and credentials
+export PROJECT=my-data-science-project
+oc create secret generic aws-connection-s3 \
+  -n $PROJECT \
+  --from-literal=AWS_ACCESS_KEY_ID='&lt;access-key&gt;' \
+  --from-literal=AWS_SECRET_ACCESS_KEY='&lt;secret-key&gt;' \
+  --from-literal=AWS_S3_BUCKET='&lt;bucket-name&gt;' \
+  --from-literal=AWS_S3_ENDPOINT='&lt;endpoint-url&gt;' \
+  --type=Opaque</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><strong>Annotate the Secret for RHOAI 3 Data Connection recognition:</strong></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc annotate secret aws-connection-s3 -n $PROJECT \
+  opendatahub.io/connection-type-protocol=s3</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Annotation and format</div>
+<div class="paragraph">
+<p>Use the annotation format required by your RHOAI 3.x version. The exact key may be <code>opendatahub.io/connection-type-protocol</code> or as documented in the current RHOAI release. Avoid deprecated connection formats.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p><strong>Verify in the dashboard:</strong> In the OpenShift AI Dashboard, go to <strong>Settings → Data connections</strong> (or the equivalent in your project). The connection should appear and be available when creating workbenches or deployments.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_3_deploy_a_model_with_the_data_connection_attached"><a class="anchor" href="#_step_3_deploy_a_model_with_the_data_connection_attached"></a>Step 3: Deploy a Model with the Data Connection Attached</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To prove the glue works end-to-end, deploy a model that loads from object storage and receives credentials via the Data Connection.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>In the OpenShift AI Dashboard:</strong> Navigate to <strong>Model Catalog</strong> or <strong>Deploy model</strong>.</p>
+</li>
+<li>
+<p><strong>Select a Serving Runtime</strong> and the model (or use one that references S3/object storage).</p>
+</li>
+<li>
+<p><strong>Attach the Data Connection</strong> you created so that the runtime injects S3 credentials into the model server pod.</p>
+</li>
+<li>
+<p><strong>Deploy.</strong> The pod should start and load the model using the injected environment variables (no keys in the image or in config maps).</p>
+</li>
+<li>
+<p><strong>Verify from the CLI:</strong></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pods -n $PROJECT
+oc get inferenceservice -n $PROJECT</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Confirm the inference pod is running and that the deployment shows the correct data connection.</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_4_optionalpipeline_workspace_pvc_check"><a class="anchor" href="#_step_4_optionalpipeline_workspace_pvc_check"></a>Step 4: Optional—Pipeline Workspace (PVC) Check</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If your cluster has dynamic provisioning, create a small PVC to confirm RWO binding works:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f - &lt;&lt;EOF
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: test-pvc
+  namespace: $PROJECT
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: ""   # Use default; or set to your default class name
+EOF</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>+</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pvc test-pvc -n $PROJECT</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>+
+<strong>Expected:</strong> Status <code>Bound</code>. If it stays <code>Pending</code>, check StorageClass and provisioner.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_handoff_whats_next"><a class="anchor" href="#_handoff_whats_next"></a>Handoff: What&#8217;s Next</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Your environment is connected. You have:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A default (and optionally RWX) Storage Class verified.</p>
+</li>
+<li>
+<p>A Data Connection created with the RHOAI 3 protocol annotation.</p>
+</li>
+<li>
+<p>A model deployment that uses the connection for credentials.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Proceed to the <strong>QuickStart</strong> or pipeline repository of your choice to run a full pipeline that uses S3 for artifacts and PVC workspaces for intermediate data—or revisit the Well-Lit Paths to implement the Explorer, Collaborator, or Engineer pattern in your own project.</p>
+</div>
+<hr>
+<div class="paragraph">
+<p><strong>When something breaks, use the Troubleshooting section next.</strong></p>
+</div>
+<div class="paragraph">
+<p>=======++======</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_troubleshooting_day_2_operations"><a class="anchor" href="#_troubleshooting_day_2_operations"></a>Troubleshooting &amp; Day 2 Operations</h2>
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>A connection that does not inject is worse than no connection. You need to know how to look under the hood.</strong></p>
+</div>
+<div class="paragraph">
+<p>Even with a solid storage strategy, credentials can be wrong, PVCs can stay Pending, or the dashboard may not show your connection. This section gives you the <strong>SRE playbook</strong> for data connectivity and storage in RHOAI.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_1_data_connection_not_injecting_pod_cannot_see_credentials"><a class="anchor" href="#_1_data_connection_not_injecting_pod_cannot_see_credentials"></a>1. Data Connection Not Injecting (Pod Cannot See Credentials)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Symptom:</strong> The workbench or model server pod runs, but the application fails to access S3 (e.g., "Access Denied" or "No credentials found").</p>
+</div>
+<div class="paragraph">
+<p><strong>Check 1: Is the Secret present and correctly named?</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get secret -n &lt;project&gt; | grep -E 'aws|s3|connection'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>+
+The name must match what the dashboard or deployment expects (e.g., <code>aws-connection-s3</code>).</p>
+</div>
+<div class="paragraph">
+<p><strong>Check 2: Does the pod have the Secret mounted or as env vars?</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pod &lt;pod-name&gt; -n &lt;project&gt; -o yaml | grep -A 20 volumes:
+oc get pod &lt;pod-name&gt; -n &lt;project&gt; -o yaml | grep -A 30 env:</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>+
+Look for the Secret reference and the expected keys (e.g., <code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>).</p>
+</div>
+<div class="paragraph">
+<p><strong>Check 3: RHOAI 3 protocol annotation</strong></p>
+</div>
+<div class="paragraph">
+<p>Ensure the Secret has the correct annotation so RHOAI treats it as a Data Connection:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get secret &lt;connection-secret&gt; -n &lt;project&gt; -o yaml</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>+
+Look for <code>opendatahub.io/connection-type-protocol</code> (or the current RHOAI 3 key). If missing, add it and re-attach the connection to the workbench or deployment.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_2_pvc_stuck_in_pending"><a class="anchor" href="#_2_pvc_stuck_in_pending"></a>2. PVC Stuck in Pending</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Symptom:</strong> <code>oc get pvc</code> shows <code>Pending</code> for a long time.</p>
+</div>
+<div class="paragraph">
+<p><strong>Check 1: Is there a default Storage Class?</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get storageclass</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>+
+At least one must be marked as default. If the PVC does not specify <code>storageClassName</code>, the default is used.</p>
+</div>
+<div class="paragraph">
+<p><strong>Check 2: Are there enough resources?</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc describe pvc &lt;pvc-name&gt; -n &lt;project&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>+
+Read the <strong>Events</strong> at the bottom. Common causes: "no persistent volumes available," "provisioner not found," or "storage class not found."</p>
+</div>
+<div class="paragraph">
+<p><strong>Check 3: RWX and backend support</strong></p>
+</div>
+<div class="paragraph">
+<p>If you requested <strong>ReadWriteMany</strong>, confirm that the Storage Class you used actually supports RWX. Many default classes are RWO-only. Switch to an RWX-capable class (e.g., NFS, CephFS) or use RWO if sharing is not required.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_3_pipeline_workspace_not_shared_between_steps"><a class="anchor" href="#_3_pipeline_workspace_not_shared_between_steps"></a>3. Pipeline Workspace Not Shared Between Steps</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Symptom:</strong> Step 2 does not see output from Step 1 in the workspace.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Verify the pipeline definition</strong> uses the same workspace name/volume for both steps.</p>
+</li>
+<li>
+<p><strong>Check the PVC</strong> used by the pipeline run: <code>oc get pvc -n &lt;project&gt;</code> and ensure it is <code>Bound</code>.</p>
+</li>
+<li>
+<p><strong>Check the step logs</strong> to see the path they are reading/writing; ensure they agree.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_4_model_server_fails_to_load_from_s3"><a class="anchor" href="#_4_model_server_fails_to_load_from_s3"></a>4. Model Server Fails to Load from S3</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Symptom:</strong> Inference deployment fails with S3 or "model not found" errors.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Confirm the Data Connection</strong> is attached to the <strong>InferenceService</strong> (or the resource that deploys the model server).</p>
+</li>
+<li>
+<p><strong>Confirm the Secret keys</strong> match what the model server expects (e.g., <code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>, endpoint, bucket). Some images expect different env var names; check the image documentation.</p>
+</li>
+<li>
+<p><strong>Network:</strong> Ensure the pod can reach the S3 endpoint (firewall, egress, private link). Test from a debug pod if needed.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_5_encryption_and_self_signed_certificates"><a class="anchor" href="#_5_encryption_and_self_signed_certificates"></a>5. Encryption and Self-Signed Certificates</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If your object storage uses a self-signed or corporate CA certificate, the client inside the pod may reject the TLS connection. Configure the platform or the image to use the appropriate CA bundle (e.g., mount a ConfigMap with the CA and set <code>SSL_CERT_FILE</code> or the equivalent).</p>
+</div>
+<hr>
+<div class="paragraph">
+<p><strong>You now have the full lifecycle: design, deploy, and fix. The glue is in your hands.</strong></p>
+</div>
+<div class="paragraph">
+<p><a href="index.html" class="xref page">Return to Introduction</a></p>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <img src="../../../_/img/rhl-logo-red.png" height="40px" alt="Red Hat"  href="https://redhat.com" >
+</footer><script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
