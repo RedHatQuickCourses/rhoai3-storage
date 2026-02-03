@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Troubleshooting &amp; Day 2 Operations :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
+    <link rel="prev" href="section4.html">
+    <meta name="generator" content="Antora 3.1.3">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://www.redhat.com" target="_blank"><img src="../../../_/img/redhat-logo.png" height="40px" alt="Red Hat"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://github.com/RedHatQuickCourses/REPLACEREPONAME/issues" target="_blank">Report Issues</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="rhoai3-storage" data-version="1">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction &amp; Value</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section1.html">Architecture Deep Dive</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section2.html">The Well-Lit Paths</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section3.html">Taxonomy &amp; Glossary</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section4.html">Lab Environment Setup</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="section5.html">Troubleshooting</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</span>
+    <span class="version">1</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">1</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></li>
+    <li><a href="section5.html">Troubleshooting</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Troubleshooting &amp; Day 2 Operations</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>A connection that does not inject is worse than no connection. You need to know how to look under the hood.</strong></p>
+</div>
+<div class="paragraph">
+<p>Even with a solid storage strategy, credentials can be wrong, PVCs can stay Pending, or the dashboard may not show your connection. This section gives you the <strong>SRE playbook</strong> for data connectivity and storage in RHOAI.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_1_data_connection_not_injecting_pod_cannot_see_credentials"><a class="anchor" href="#_1_data_connection_not_injecting_pod_cannot_see_credentials"></a>1. Data Connection Not Injecting (Pod Cannot See Credentials)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Symptom:</strong> The workbench or model server pod runs, but the application fails to access S3 (e.g., "Access Denied" or "No credentials found").</p>
+</div>
+<div class="paragraph">
+<p><strong>Check 1: Is the Secret present and correctly named?</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get secret -n &lt;project&gt; | grep -E 'aws|s3|connection'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>+
+The name must match what the dashboard or deployment expects (e.g., <code>aws-connection-s3</code>).</p>
+</div>
+<div class="paragraph">
+<p><strong>Check 2: Does the pod have the Secret mounted or as env vars?</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pod &lt;pod-name&gt; -n &lt;project&gt; -o yaml | grep -A 20 volumes:
+oc get pod &lt;pod-name&gt; -n &lt;project&gt; -o yaml | grep -A 30 env:</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>+
+Look for the Secret reference and the expected keys (e.g., <code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>).</p>
+</div>
+<div class="paragraph">
+<p><strong>Check 3: RHOAI 3 protocol annotation</strong></p>
+</div>
+<div class="paragraph">
+<p>Ensure the Secret has the correct annotation so RHOAI treats it as a Data Connection:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get secret &lt;connection-secret&gt; -n &lt;project&gt; -o yaml</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>+
+Look for <code>opendatahub.io/connection-type-protocol</code> (or the current RHOAI 3 key). If missing, add it and re-attach the connection to the workbench or deployment.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_2_pvc_stuck_in_pending"><a class="anchor" href="#_2_pvc_stuck_in_pending"></a>2. PVC Stuck in Pending</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Symptom:</strong> <code>oc get pvc</code> shows <code>Pending</code> for a long time.</p>
+</div>
+<div class="paragraph">
+<p><strong>Check 1: Is there a default Storage Class?</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get storageclass</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>+
+At least one must be marked as default. If the PVC does not specify <code>storageClassName</code>, the default is used.</p>
+</div>
+<div class="paragraph">
+<p><strong>Check 2: Are there enough resources?</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc describe pvc &lt;pvc-name&gt; -n &lt;project&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>+
+Read the <strong>Events</strong> at the bottom. Common causes: "no persistent volumes available," "provisioner not found," or "storage class not found."</p>
+</div>
+<div class="paragraph">
+<p><strong>Check 3: RWX and backend support</strong></p>
+</div>
+<div class="paragraph">
+<p>If you requested <strong>ReadWriteMany</strong>, confirm that the Storage Class you used actually supports RWX. Many default classes are RWO-only. Switch to an RWX-capable class (e.g., NFS, CephFS) or use RWO if sharing is not required.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_3_pipeline_workspace_not_shared_between_steps"><a class="anchor" href="#_3_pipeline_workspace_not_shared_between_steps"></a>3. Pipeline Workspace Not Shared Between Steps</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Symptom:</strong> Step 2 does not see output from Step 1 in the workspace.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Verify the pipeline definition</strong> uses the same workspace name/volume for both steps.</p>
+</li>
+<li>
+<p><strong>Check the PVC</strong> used by the pipeline run: <code>oc get pvc -n &lt;project&gt;</code> and ensure it is <code>Bound</code>.</p>
+</li>
+<li>
+<p><strong>Check the step logs</strong> to see the path they are reading/writing; ensure they agree.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_4_model_server_fails_to_load_from_s3"><a class="anchor" href="#_4_model_server_fails_to_load_from_s3"></a>4. Model Server Fails to Load from S3</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Symptom:</strong> Inference deployment fails with S3 or "model not found" errors.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Confirm the Data Connection</strong> is attached to the <strong>InferenceService</strong> (or the resource that deploys the model server).</p>
+</li>
+<li>
+<p><strong>Confirm the Secret keys</strong> match what the model server expects (e.g., <code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>, endpoint, bucket). Some images expect different env var names; check the image documentation.</p>
+</li>
+<li>
+<p><strong>Network:</strong> Ensure the pod can reach the S3 endpoint (firewall, egress, private link). Test from a debug pod if needed.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_5_encryption_and_self_signed_certificates"><a class="anchor" href="#_5_encryption_and_self_signed_certificates"></a>5. Encryption and Self-Signed Certificates</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If your object storage uses a self-signed or corporate CA certificate, the client inside the pod may reject the TLS connection. Configure the platform or the image to use the appropriate CA bundle (e.g., mount a ConfigMap with the CA and set <code>SSL_CERT_FILE</code> or the equivalent).</p>
+</div>
+<hr>
+<div class="paragraph">
+<p><strong>You now have the full lifecycle: design, deploy, and fix. The glue is in your hands.</strong></p>
+</div>
+<div class="paragraph">
+<p><a href="index.html" class="xref page">Return to Introduction</a></p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="section4.html">Lab Environment Setup</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <img src="../../../_/img/rhl-logo-red.png" height="40px" alt="Red Hat"  href="https://redhat.com" >
+</footer><script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

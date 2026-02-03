@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>The Well-Lit Paths: Choosing Your Storage Strategy :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
+    <link rel="prev" href="section1.html">
+    <link rel="next" href="section3.html">
+    <meta name="generator" content="Antora 3.1.3">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://www.redhat.com" target="_blank"><img src="../../../_/img/redhat-logo.png" height="40px" alt="Red Hat"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://github.com/RedHatQuickCourses/REPLACEREPONAME/issues" target="_blank">Report Issues</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="rhoai3-storage" data-version="1">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction &amp; Value</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section1.html">Architecture Deep Dive</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="section2.html">The Well-Lit Paths</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section3.html">Taxonomy &amp; Glossary</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section4.html">Lab Environment Setup</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section5.html">Troubleshooting</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</span>
+    <span class="version">1</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">1</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></li>
+    <li><a href="section2.html">The Well-Lit Paths</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">The Well-Lit Paths: Choosing Your Storage Strategy</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>Not every workload needs the same storage pattern. Pick the path that fits the persona.</strong></p>
+</div>
+<div class="paragraph">
+<p>RHOAI supports multiple ways to connect data and persist state. This section describes three "well-lit paths"—proven patterns that map to common roles and use cases. Use them to design your storage strategy without reinventing the wheel.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_path_1_the_explorer_interactive_data_science"><a class="anchor" href="#_path_1_the_explorer_interactive_data_science"></a>Path 1: The Explorer (Interactive Data Science)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Persona:</strong> A data scientist exploring raw data, running ad-hoc analysis, and iterating in a notebook or workbench.</p>
+</div>
+<div class="paragraph">
+<p><strong>Goal:</strong> Pull data from external storage (e.g., S3) into a personal workbench without hardcoding keys. Persist workbench state (notebooks, caches) on a single node.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Data Connections:</strong> Create a Data Connection that points to your S3 (or URI) bucket. Attach it to the workbench. The workbench pod receives credentials via environment injection; your code uses standard S3 clients reading from env vars.</p>
+</li>
+<li>
+<p><strong>PVC:</strong> Use <strong>RWO (ReadWriteOnce)</strong> PVCs for the workbench&#8217;s home directory. One volume per workbench; no sharing. Simple and safe.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Outcome:</strong> Standardization—admins create connection templates; users just consume them. No keys in notebooks.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_path_2_the_collaborator_shared_research"><a class="anchor" href="#_path_2_the_collaborator_shared_research"></a>Path 2: The Collaborator (Shared Research)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Persona:</strong> Multiple data scientists or MLOps engineers who need to read the same large "golden" dataset (e.g., a curated training set) without copying it per user.</p>
+</div>
+<div class="paragraph">
+<p><strong>Goal:</strong> One copy of the data, many readers (or readers and writers with controlled access).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Data source:</strong> The golden dataset may be loaded once into cluster storage (e.g., from S3 via a pipeline or one-time job) or may already reside on a shared filesystem.</p>
+</li>
+<li>
+<p><strong>PVC:</strong> Use <strong>RWX (ReadWriteMany)</strong> storage class so that multiple workbenches (or pipeline pods) can mount the same PVC. Everyone sees the same data; no duplication.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Outcome:</strong> Real-time collaboration on a single source of truth. Use only when your storage backend supports RWX and you have operational confidence in it.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_path_3_the_engineer_production_serving"><a class="anchor" href="#_path_3_the_engineer_production_serving"></a>Path 3: The Engineer (Production Serving)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Persona:</strong> MLOps or platform engineer deploying models into production. Speed and consistency matter; raw weight downloads from S3 at cold start are slow.</p>
+</div>
+<div class="paragraph">
+<p><strong>Goal:</strong> Serve models from a format that starts fast and fits enterprise supply chains (mirroring, scanning, signing).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Data Connections:</strong> Use <strong>OCI Connections</strong> (e.g., for <strong>Modelcars</strong>). Modelcars are models packaged as OCI container images. The serving runtime pulls the image; layers are cached. No large S3 download at pod start.</p>
+</li>
+<li>
+<p><strong>Deployment:</strong> Select the appropriate Serving Runtime and attach the Data Connection (or OCI reference) so the runtime can load the model from the image. Deployment is repeatable across environments by swapping the connection or image reference.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Outcome:</strong> Faster rollout, layer deduplication, and alignment with existing container workflows. Prefer Modelcars over raw object storage when available.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_choosing_your_path"><a class="anchor" href="#_choosing_your_path"></a>Choosing Your Path</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"><strong>Path</strong></th>
+<th class="tableblock halign-left valign-top"><strong>Use when</strong></th>
+<th class="tableblock halign-left valign-top"><strong>Data Connection</strong></th>
+<th class="tableblock halign-left valign-top"><strong>Storage (PVC)</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Explorer</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Single user, interactive workbench, external data</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S3 or URI connection attached to workbench</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RWO for workbench persistence</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Collaborator</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Multiple users, one shared dataset</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Optional (e.g., to load data once); focus on shared PVC</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RWX for shared volume</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Engineer</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Production model serving, fast cold start</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OCI / Modelcar connection</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A (model in image or attached via connection)</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<div class="paragraph">
+<p><strong>Next: Lock in the vocabulary with the Taxonomy &amp; Glossary.</strong></p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="section1.html">Architecture Deep Dive</a></span>
+  <span class="next"><a href="section3.html">Taxonomy &amp; Glossary</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <img src="../../../_/img/rhl-logo-red.png" height="40px" alt="Red Hat"  href="https://redhat.com" >
+</footer><script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

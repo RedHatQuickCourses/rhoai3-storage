@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Architecture: Data Connections and Cluster Storage :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
+    <link rel="prev" href="../index.html">
+    <link rel="next" href="section2.html">
+    <meta name="generator" content="Antora 3.1.3">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://www.redhat.com" target="_blank"><img src="../../../_/img/redhat-logo.png" height="40px" alt="Red Hat"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://github.com/RedHatQuickCourses/REPLACEREPONAME/issues" target="_blank">Report Issues</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="rhoai3-storage" data-version="1">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction &amp; Value</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="section1.html">Architecture Deep Dive</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section2.html">The Well-Lit Paths</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section3.html">Taxonomy &amp; Glossary</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section4.html">Lab Environment Setup</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section5.html">Troubleshooting</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</span>
+    <span class="version">1</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">1</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></li>
+    <li><a href="section1.html">Architecture Deep Dive</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Architecture: Data Connections and Cluster Storage</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>"Where the data lives" and "how the pod gets it" are two different problems. RHOAI separates them.</strong></p>
+</div>
+<div class="paragraph">
+<p>To build a reliable AI factory, you must understand how credentials and data flow from external systems (S3, OCI) and internal storage (PVCs) into your workloads. In Red Hat OpenShift AI (RHOAI), this is achieved through a clear separation: <strong>Data Connections</strong> for external access, and <strong>Cluster Storage</strong> for persistence and handoff.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_system_requirements_the_foundation"><a class="anchor" href="#_system_requirements_the_foundation"></a>System Requirements (The Foundation)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Before designing your storage strategy, ensure your cluster meets these requirements:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Underlying storage:</strong> The cluster must have a <strong>default Storage Class</strong> with dynamic provisioning. Without it, PVCs will not bind.</p>
+</li>
+<li>
+<p><strong>Object storage:</strong> S3-compatible storage is <strong>mandatory</strong> for pipelines and for model serving that pulls from object stores. Data Connections will reference this storage.</p>
+</li>
+<li>
+<p><strong>Database shift (RHOAI 3):</strong> Metadata for Model Registry and TrustyAI moves from PVC-backed storage to <strong>external databases</strong> (MySQL/PostgreSQL). Plan for this when upgrading or designing new deployments.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_core_concept_two_planes"><a class="anchor" href="#_the_core_concept_two_planes"></a>The Core Concept: Two Planes</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Data Connections (The gateway):</strong> A Kubernetes Secret abstraction. The platform uses it to inject environment variables (e.g., <code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>, <code>S3_ENDPOINT</code>) directly into the pod at runtime. The application never sees a config file; it reads from the environment.</p>
+</li>
+<li>
+<p><strong>Cluster Storage (The engine):</strong> Persistent Volume Claims (PVCs). These provide block or file storage <strong>inside</strong> the cluster. Used for workbench home directories, pipeline workspaces, and—where supported—shared "golden" datasets.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_injection_mechanism_how_data_connections_work"><a class="anchor" href="#_injection_mechanism_how_data_connections_work"></a>Injection Mechanism: How Data Connections Work</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When you attach a Data Connection to a workbench or a serving runtime:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>You select a <strong>Data Connection</strong> (which points to a Secret).</p>
+</li>
+<li>
+<p>RHOAI mounts or injects the Secret contents into the pod (e.g., as environment variables or a mounted file).</p>
+</li>
+<li>
+<p>The application (e.g., S3 client, training script) reads credentials and endpoint from the environment. No hardcoded keys.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title">RHOAI 3 Protocol Annotation</div>
+<div class="paragraph">
+<p>In RHOAI 3, use the <strong>connection-type protocol</strong> annotation when defining or referencing Data Connections. Avoid deprecated formats. The correct annotation is <code>opendatahub.io/connection-type-protocol</code> (or the current documented equivalent in your RHOAI version). This ensures the dashboard and controllers interpret the connection correctly.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pipeline_flow_s3_workspaces_and_the_registry"><a class="anchor" href="#_pipeline_flow_s3_workspaces_and_the_registry"></a>Pipeline Flow: S3, Workspaces, and the Registry</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A typical pipeline flow in RHOAI looks like this:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Input:</strong> Raw data or artifacts in <strong>S3</strong> (accessed via a Data Connection).</p>
+</li>
+<li>
+<p><strong>Execution:</strong> Pipeline steps use <strong>PVC Workspaces</strong> to pass intermediate data between steps. Data is written once to the workspace and read by the next step—no need to push back to S3 between every step.</p>
+</li>
+<li>
+<p><strong>Output:</strong> Final artifacts (e.g., model weights) can be written to S3 and/or registered in the <strong>Model Registry</strong> (which in RHOAI 3 uses an external database, not a PVC).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This design reduces latency and egress: the heavy data movement happens once (S3 → workspace at start; workspace → S3 at end), not between every step.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_access_modes_rwo_vs_rwx"><a class="anchor" href="#_access_modes_rwo_vs_rwx"></a>Access Modes: RWO vs. RWX</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The choice of <strong>access mode</strong> for your PVCs is critical:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>RWO (ReadWriteOnce):</strong> The volume can be mounted by only one node at a time. This is the <strong>safe, default</strong> choice for individual workbenches and most pipelines. Use RWO when you do not need multiple pods to share the same volume.</p>
+</li>
+<li>
+<p><strong>RWX (ReadWriteMany):</strong> The volume can be mounted by multiple nodes (and thus multiple pods) at once. Required for <strong>shared datasets</strong>—e.g., multiple researchers mounting the same "golden" dataset. RWX is more complex (depends on storage backend support, e.g., NFS, CephFS) and can have different performance and failure semantics. Use only when sharing is a requirement.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="title">RWX and Risk</div>
+<div class="paragraph">
+<p>RWX is powerful but introduces operational complexity. Ensure your storage backend supports it and that you understand the failure and locking behavior. Do not use RWX by default; use it only when the Collaborator pattern (shared dataset) is required.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_observability_and_security"><a class="anchor" href="#_observability_and_security"></a>Observability and Security</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Encryption:</strong> For self-signed or corporate CA–signed object storage, you can configure custom CA bundles so that TLS verification succeeds and traffic remains encrypted.</p>
+</li>
+<li>
+<p><strong>Credentials:</strong> Data Connections keep credentials in Secrets. Restrict who can create or edit these Secrets; use RBAC so that only authorized users can attach connections to their projects.</p>
+</li>
+</ul>
+</div>
+<hr>
+<div class="paragraph">
+<p><strong>Now that you understand the architecture, choose the right path for your use case.</strong></p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="../index.html">Introduction &amp; Value</a></span>
+  <span class="next"><a href="section2.html">The Well-Lit Paths</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <img src="../../../_/img/rhl-logo-red.png" height="40px" alt="Red Hat"  href="https://redhat.com" >
+</footer><script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

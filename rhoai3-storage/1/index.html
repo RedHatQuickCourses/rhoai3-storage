@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Making RHOAI Data Connectivity and Storage Work for You :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
+    <link rel="next" href="chapter1/section1.html">
+    <meta name="generator" content="Antora 3.1.3">
+    <link rel="stylesheet" href="../../_/css/site.css">
+    <script>var uiRootPath = '../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://www.redhat.com" target="_blank"><img src="../../_/img/redhat-logo.png" height="40px" alt="Red Hat"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="../..">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://github.com/RedHatQuickCourses/REPLACEREPONAME/issues" target="_blank">Report Issues</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="rhoai3-storage" data-version="1">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="index.html">Introduction &amp; Value</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="chapter1/section1.html">Architecture Deep Dive</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="chapter1/section2.html">The Well-Lit Paths</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="chapter1/section3.html">Taxonomy &amp; Glossary</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="chapter1/section4.html">Lab Environment Setup</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="chapter1/section5.html">Troubleshooting</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</span>
+    <span class="version">1</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="index.html">1</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></li>
+    <li><a href="index.html">Introduction &amp; Value</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Making RHOAI Data Connectivity and Storage Work for You</h1>
+<h1 id="_the_data_glue_of_rhoai_from_credential_sprawl_to_governed_connectivity" class="sect0"><a class="anchor" href="#_the_data_glue_of_rhoai_from_credential_sprawl_to_governed_connectivity"></a>The Data "Glue" of RHOAI: From Credential Sprawl to Governed Connectivity</h1>
+<div class="paragraph lead">
+<p><strong>Stop hardcoding keys. Stop moving data that does not need to move. Start building the glue.</strong></p>
+</div>
+<div class="paragraph">
+<p>In the world of traditional software, we learned long ago that credentials do not belong in source code. We use secrets managers, IAM roles, and environment variables. We decouple configuration from code.</p>
+</div>
+<div class="paragraph">
+<p>Yet in many AI and ML teams, sensitive keys still live inside notebooks. Massive datasets are copied from bucket to bucket "just to be safe." Storage is siloed so that data scientists and MLOps engineers cannot share a single "golden" dataset without duplication and drift.</p>
+</div>
+<div class="paragraph">
+<p>This is <strong>credential sprawl</strong> and <strong>data gravity</strong>. And it is the primary blocker to scalable, compliant AI operations.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">The Core Sales Objection</div>
+<div class="paragraph">
+<p><strong>"Why do we need RHOAI Data Connections when we can just use public APIs or hardcode our S3 keys in the notebook?"</strong></p>
+</div>
+<div class="paragraph">
+<p>Because you cannot govern what you do not abstract. Public APIs put keys in developers' hands; RHOAI abstracts credentials into Kubernetes Secrets via <strong>Data Connections</strong>, ensuring compliance and secure rotation without breaking code. The same pipeline runs in Dev, Test, and Prod by swapping the connection reference—no environment-specific hardcoding.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect1">
+<h2 id="_the_solution_data_connectivity_and_storage_architecture"><a class="anchor" href="#_the_solution_data_connectivity_and_storage_architecture"></a>The Solution: Data Connectivity and Storage Architecture</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <strong>Red Hat OpenShift AI (RHOAI)</strong> data connectivity and storage architecture is the "glue" that ties your AI factory together. It provides two pillars:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Data Connections:</strong> The gateway to external data (S3, URI, OCI). Credentials live in Kubernetes Secrets; pods receive them at runtime. Admins create templates; users consume them.</p>
+</li>
+<li>
+<p><strong>Cluster Storage:</strong> The engine for internal persistence. <strong>PVCs (Persistent Volume Claims)</strong> give workbenches and pipelines a place to store data without constantly re-uploading to object storage—reducing latency and egress cost.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Together, they decouple <strong>data location</strong> from <strong>compute location</strong>. The same code runs everywhere; only the connection reference changes.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_four_pillars_of_value"><a class="anchor" href="#_four_pillars_of_value"></a>Four Pillars of Value</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>By implementing RHOAI data connectivity and storage correctly, you unlock four capabilities that ad-hoc key management and copy-paste storage cannot provide:</p>
+</div>
+<div class="sect2">
+<h3 id="_1_security_governance_the_vault"><a class="anchor" href="#_1_security_governance_the_vault"></a>1. Security &amp; Governance ("The Vault")</h3>
+<div class="paragraph">
+<p>When developers manage their own keys, compliance becomes a guessing game. When keys are in notebooks or config files, rotation breaks production.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The win:</strong> Data Connections abstract credentials into Kubernetes Secrets. Only the platform injects them into pods at runtime.</p>
+</li>
+<li>
+<p><strong>The benefit:</strong> You achieve compliance by default. Rotate credentials without touching application code. Audit who has access to which connection.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_hybrid_portability_one_pipeline_many_environments"><a class="anchor" href="#_2_hybrid_portability_one_pipeline_many_environments"></a>2. Hybrid Portability ("One Pipeline, Many Environments")</h3>
+<div class="paragraph">
+<p>Copy-pasting bucket names and keys across Dev, Test, and Prod leads to drift and mistakes.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The win:</strong> The same pipeline code runs everywhere. You swap the <strong>Data Connection</strong> reference (e.g., Dev S3 vs. Prod S3); the code does not change.</p>
+</li>
+<li>
+<p><strong>The benefit:</strong> No environment-specific hardcoding. Promote pipelines with confidence.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_performance_roi_less_moving_more_computing"><a class="anchor" href="#_3_performance_roi_less_moving_more_computing"></a>3. Performance &amp; ROI ("Less Moving, More Computing")</h3>
+<div class="paragraph">
+<p>Constantly re-uploading intermediate data to S3 burns time and egress. Cold-starting models from raw downloads is slow.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The win:</strong> <strong>Pipeline Workspaces</strong> (PVCs) pass data between pipeline steps instantly, avoiding repeated uploads. <strong>Modelcars</strong> (OCI container images) cache models and reduce startup times.</p>
+</li>
+<li>
+<p><strong>The benefit:</strong> Faster pipelines, lower egress cost, better GPU utilization.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_real_time_collaboration_one_golden_dataset"><a class="anchor" href="#_4_real_time_collaboration_one_golden_dataset"></a>4. Real-Time Collaboration ("One Golden Dataset")</h3>
+<div class="paragraph">
+<p>When each researcher has a private copy of a 500GB dataset, storage and sync become a nightmare.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The win:</strong> RHOAI supports <strong>ReadWriteMany (RWX)</strong> storage classes. Multiple workbenches can mount the same "golden dataset" simultaneously—no duplication.</p>
+</li>
+<li>
+<p><strong>The benefit:</strong> Data scientists and MLOps engineers work from the same source of truth.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_your_mission_master_the_glue"><a class="anchor" href="#_your_mission_master_the_glue"></a>Your Mission: Master the Glue</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this course, you will not just read about connections and PVCs; you will <strong>design and apply</strong> a storage strategy. You will take on the role of a platform engineer tasked with breaking the cycle of credential sprawl and inefficient data transfer.</p>
+</div>
+<div class="paragraph">
+<p><strong>You will execute the following technical workflow:</strong></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Architecture:</strong> Understand how Data Connections inject credentials into pods, how pipeline artifacts flow between S3 and PVC workspaces, and the critical distinction between RWO and RWX storage.</p>
+</li>
+<li>
+<p><strong>The Well-Lit Paths:</strong> Choose the right pattern—Explorer (individual workbench), Collaborator (shared dataset), or Engineer (production serving with Modelcars).</p>
+</li>
+<li>
+<p><strong>Taxonomy:</strong> Master the glossary—Data Connection, PVC, Modelcar, Pipeline Workspace—and the RHOAI 3 shift (e.g., PostgreSQL and vector stores for Llama Stack).</p>
+</li>
+<li>
+<p><strong>Lab Setup:</strong> Configure storage classes, create a Data Connection using the RHOAI 3 protocol annotation, and deploy a model with the connection attached.</p>
+</li>
+<li>
+<p><strong>Operations:</strong> Troubleshoot connection failures, storage class issues, and access modes.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title">Prerequisites</div>
+<div class="paragraph">
+<p>To successfully complete the hands-on sections of this course, you need:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Access to a <strong>Red Hat OpenShift AI 3</strong> cluster (3.0+; 3.2 recommended).</p>
+</li>
+<li>
+<p>Permissions to create Secrets, PVCs, and to configure StorageClasses (or <code>cluster-admin</code>).</p>
+</li>
+<li>
+<p>The <code>oc</code> CLI tool installed in your terminal.</p>
+</li>
+<li>
+<p>Approximately <strong>1 TB</strong> of cluster storage recommended for labs; GPU operators installed if you will deploy model serving.</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<hr>
+<div class="paragraph">
+<p><strong>Ready to design your storage strategy? Let&#8217;s start with the architecture.</strong></p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="next"><a href="chapter1/section1.html">Architecture Deep Dive</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <img src="../../_/img/rhl-logo-red.png" height="40px" alt="Red Hat"  href="https://redhat.com" >
+</footer><script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
