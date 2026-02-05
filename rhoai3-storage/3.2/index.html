@@ -92,7 +92,7 @@
 <p>Yet, walk into a typical Data Science team, and you will see the "Anti-Pattern" everywhere: AWS Access Keys hardcoded into Jupyter Notebook cells, massive datasets duplicated across twenty different local drives, and <code>boto3</code> scripts that break the moment you try to move them from a laptop to a production cluster.</p>
 </div>
 <div class="paragraph">
-<p>This is <strong>Credential Sprawl</strong>. [cite_start]It creates security risks, locks you into specific environments, and makes collaboration impossible[cite: 7, 8].</p>
+<p>This is <strong>Credential Sprawl</strong>. It creates security risks, locks you into specific environments, and makes collaboration impossible.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -106,7 +106,7 @@
 <p><strong>"Why can&#8217;t our data scientists just use standard S3 libraries and hardcode their keys? It&#8217;s faster."</strong></p>
 </div>
 <div class="paragraph">
-<p>It is faster for <strong>one</strong> person, once. It is a disaster for an enterprise. Hardcoding keys means you cannot rotate credentials without breaking code. It means you cannot move from Dev to Prod without rewriting scripts. [cite_start]It means you have zero governance over where your data is going[cite: 7, 9].</p>
+<p>It is faster for <strong>one</strong> person, once. It is a disaster for an enterprise. Hardcoding keys means you cannot rotate credentials without breaking code. It means you cannot move from Dev to Prod without rewriting scripts. It means you have zero governance over where your data is going.</p>
 </div>
 </td>
 </tr>
@@ -124,10 +124,10 @@
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><strong class="cite_start">Data Connections:</strong> A secure, Kubernetes-native way to inject credentials and endpoints into Workbenches and Model Servers without the user ever seeing the raw keys[cite: 1, 2].</p>
+<p><strong>Data Connections:</strong> A secure, Kubernetes-native way to inject credentials and endpoints into Workbenches and Model Servers without the user ever seeing the raw keys.</p>
 </li>
 <li>
-<p><strong class="cite_start">Storage Classes (PVCs):</strong> A dynamic system for provisioning high-performance, persistent disk storage that survives workbench shutdowns and enables real-time collaboration[cite: 1, 24].</p>
+<p><strong>Storage Classes (PVCs):</strong> A dynamic system for provisioning high-performance, persistent disk storage that survives workbench shutdowns and enables real-time collaboration.</p>
 </li>
 </ol>
 </div>
@@ -153,7 +153,7 @@
 <p><strong>The Win:</strong> You can rotate the underlying AWS or MinIO keys centrally.</p>
 </li>
 <li>
-<p><strong class="cite_start">The Benefit:</strong> The data scientist&#8217;s code never changes, and the secure credentials never appear in their notebook source control[cite: 5, 8].</p>
+<p><strong>The Benefit:</strong> The data scientist&#8217;s code never changes, and the secure credentials never appear in their notebook source control.</p>
 </li>
 </ul>
 </div>
@@ -166,10 +166,10 @@
 <div class="ulist">
 <ul>
 <li>
-<p><strong class="cite_start">The Win:</strong> RHOAI Data Connections use standard protocols (S3, URI, OCI) to create a consistent interface[cite: 13].</p>
+<p><strong>The Win:</strong> RHOAI Data Connections use standard protocols (S3, URI, OCI) to create a consistent interface.</p>
 </li>
 <li>
-<p><strong>The Benefit:</strong> The same training pipeline code runs in every environment. You simply swap the "Connection" reference from the <strong>Dev Bucket</strong> to the <strong>Prod Bucket</strong>. [cite_start]No code rewrites required[cite: 9, 10].</p>
+<p><strong>The Benefit:</strong> The same training pipeline code runs in every environment. You simply swap the "Connection" reference from the <strong>Dev Bucket</strong> to the <strong>Prod Bucket</strong>. No code rewrites required.</p>
 </li>
 </ul>
 </div>
@@ -182,13 +182,13 @@
 <div class="ulist">
 <ul>
 <li>
-<p><strong class="cite_start">The Win:</strong> RHOAI leverages <strong>ReadWriteMany (RWX)</strong> Storage Classes[cite: 25].</p>
+<p><strong>The Win:</strong> RHOAI leverages <strong>ReadWriteMany (RWX)</strong> Storage Classes.</p>
 </li>
 <li>
 <p><strong>The Mechanism:</strong> A single "Golden Dataset" is mounted to a shared volume.</p>
 </li>
 <li>
-<p><strong>The Benefit:</strong> The entire research team can mount that same volume to their independent workbenches simultaneously. [cite_start]They can explore, clean, and experiment on the data in real-time without duplication or network latency[cite: 26, 72].</p>
+<p><strong>The Benefit:</strong> The entire research team can mount that same volume to their independent workbenches simultaneously. They can explore, clean, and experiment on the data in real-time without duplication or network latency.</p>
 </li>
 </ul>
 </div>
@@ -207,13 +207,13 @@
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><strong class="cite_start">The Foundation:</strong> Configure <strong>Storage Classes</strong> to support high-performance RWO (Personal) and collaborative RWX (Shared) workspaces[cite: 21, 22].</p>
+<p><strong>The Foundation:</strong> Configure <strong>Storage Classes</strong> to support high-performance RWO (Personal) and collaborative RWX (Shared) workspaces.</p>
 </li>
 <li>
-<p><strong class="cite_start">The Gateway:</strong> Create and manage <strong>Data Connections</strong> for S3 Object Storage and OCI Model Registries, abstracting the credentials from the users[cite: 76, 77].</p>
+<p><strong>The Gateway:</strong> Create and manage <strong>Data Connections</strong> for S3 Object Storage and OCI Model Registries, abstracting the credentials from the users.</p>
 </li>
 <li>
-<p><strong class="cite_start">The Acceleration:</strong> Implement <strong>Pipeline Workspaces</strong> and <strong>Modelcars</strong> (OCI) to speed up training handoffs and reduce model deployment times[cite: 39, 19].</p>
+<p><strong>The Acceleration:</strong> Implement <strong>Pipeline Workspaces</strong> and <strong>Modelcars</strong> (OCI) to speed up training handoffs and reduce model deployment times.</p>
 </li>
 </ol>
 </div>
@@ -234,10 +234,10 @@
 <p>Access to a <strong>Red Hat OpenShift AI 3</strong> cluster.</p>
 </li>
 <li>
-<p><code class="cite_start">cluster-admin</code> privileges (to configure Storage Classes and global connection types)[cite: 22].</p>
+<p><code>cluster-admin</code> privileges (to configure Storage Classes and global connection types).</p>
 </li>
 <li>
-<p>[cite_start]An external Object Store (AWS S3 or MinIO) to verify connectivity[cite: 13].</p>
+<p>An external Object Store (AWS S3 or MinIO) to verify connectivity.</p>
 </li>
 </ul>
 </div>
