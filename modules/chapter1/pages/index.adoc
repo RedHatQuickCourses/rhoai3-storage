@@ -35,19 +35,19 @@ image::images/rhoai-data-connectivity-architecture.png
 
 By implementing the RHOAI Storage Architecture, you deliver three capabilities that "manual scripting" cannot match:
 
-=== 1. Security & Compliance ("The Abstraction")
+=== 1. Security & Compliance
 When a data scientist uses a **Data Connection**, they are not typing an Access Key. They are referencing a secure Kubernetes Secret managed by you, the Platform Engineer.
 
 * **The Win:** You can rotate the underlying AWS or MinIO keys centrally.
 * **The Benefit:** The data scientist's code never changes, and the secure credentials never appear in their notebook source control.
 
-=== 2. Hybrid Portability ("The Universal Adapter")
+=== 2. Hybrid Portability
 In a real-world AI factory, models are developed in a "Sandbox" (Dev), trained on a "Cluster" (Test), and deployed to "Edge" (Prod).
 
 * **The Win:** RHOAI Data Connections use standard protocols (S3, URI, OCI) to create a consistent interface.
 * **The Benefit:** The same training pipeline code runs in every environment. You simply swap the "Connection" reference from the *Dev Bucket* to the *Prod Bucket*. No code rewrites required.
 
-=== 3. Velocity & Collaboration ("The Shared Workspace")
+=== 3. Velocity & Collaboration
 Downloading a 500GB dataset to twenty different laptops is a waste of time and bandwidth.
 
 * **The Win:** RHOAI leverages **ReadWriteMany (RWX)** Storage Classes.
