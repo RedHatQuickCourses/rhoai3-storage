@@ -10,14 +10,14 @@ In a mature DevOps environment, no platform engineer would allow a developer to 
 
 Yet, walk into a typical Data Science team, and you will see the "Anti-Pattern" everywhere: AWS Access Keys hardcoded into Jupyter Notebook cells, massive datasets duplicated across twenty different local drives, and `boto3` scripts that break the moment you try to move them from a laptop to a production cluster.
 
-This is **Credential Sprawl**. [cite_start]It creates security risks, locks you into specific environments, and makes collaboration impossible[cite: 7, 8].
+This is **Credential Sprawl**. It creates security risks, locks you into specific environments, and makes collaboration impossible.
 
 [NOTE]
 .The Core Sales Objection
 ====
 *"Why can't our data scientists just use standard S3 libraries and hardcode their keys? It's faster."*
 
-It is faster for *one* person, once. It is a disaster for an enterprise. Hardcoding keys means you cannot rotate credentials without breaking code. It means you cannot move from Dev to Prod without rewriting scripts. [cite_start]It means you have zero governance over where your data is going[cite: 7, 9].
+It is faster for *one* person, once. It is a disaster for an enterprise. Hardcoding keys means you cannot rotate credentials without breaking code. It means you cannot move from Dev to Prod without rewriting scripts. It means you have zero governance over where your data is going.
 ====
 
 == The Solution: The RHOAI Connectivity Layer
@@ -26,8 +26,8 @@ It is faster for *one* person, once. It is a disaster for an enterprise. Hardcod
 
 Instead of embedding storage details into the workload, RHOAI uses two architectural primitives to abstract the infrastructure:
 
-1.  [cite_start]**Data Connections:** A secure, Kubernetes-native way to inject credentials and endpoints into Workbenches and Model Servers without the user ever seeing the raw keys[cite: 1, 2].
-2.  [cite_start]**Storage Classes (PVCs):** A dynamic system for provisioning high-performance, persistent disk storage that survives workbench shutdowns and enables real-time collaboration[cite: 1, 24].
+1.  **Data Connections:** A secure, Kubernetes-native way to inject credentials and endpoints into Workbenches and Model Servers without the user ever seeing the raw keys.
+2.  **Storage Classes (PVCs):** A dynamic system for provisioning high-performance, persistent disk storage that survives workbench shutdowns and enables real-time collaboration.
 
 image::images/rhoai-data-connectivity-architecture.png
 
@@ -39,20 +39,20 @@ By implementing the RHOAI Storage Architecture, you deliver three capabilities t
 When a data scientist uses a **Data Connection**, they are not typing an Access Key. They are referencing a secure Kubernetes Secret managed by you, the Platform Engineer.
 
 * **The Win:** You can rotate the underlying AWS or MinIO keys centrally.
-* [cite_start]**The Benefit:** The data scientist's code never changes, and the secure credentials never appear in their notebook source control[cite: 5, 8].
+* **The Benefit:** The data scientist's code never changes, and the secure credentials never appear in their notebook source control.
 
 === 2. Hybrid Portability ("The Universal Adapter")
 In a real-world AI factory, models are developed in a "Sandbox" (Dev), trained on a "Cluster" (Test), and deployed to "Edge" (Prod).
 
-* [cite_start]**The Win:** RHOAI Data Connections use standard protocols (S3, URI, OCI) to create a consistent interface[cite: 13].
-* **The Benefit:** The same training pipeline code runs in every environment. You simply swap the "Connection" reference from the *Dev Bucket* to the *Prod Bucket*. [cite_start]No code rewrites required[cite: 9, 10].
+* **The Win:** RHOAI Data Connections use standard protocols (S3, URI, OCI) to create a consistent interface.
+* **The Benefit:** The same training pipeline code runs in every environment. You simply swap the "Connection" reference from the *Dev Bucket* to the *Prod Bucket*. No code rewrites required.
 
 === 3. Velocity & Collaboration ("The Shared Workspace")
 Downloading a 500GB dataset to twenty different laptops is a waste of time and bandwidth.
 
-* [cite_start]**The Win:** RHOAI leverages **ReadWriteMany (RWX)** Storage Classes[cite: 25].
+* **The Win:** RHOAI leverages **ReadWriteMany (RWX)** Storage Classes.
 * **The Mechanism:** A single "Golden Dataset" is mounted to a shared volume.
-* **The Benefit:** The entire research team can mount that same volume to their independent workbenches simultaneously. [cite_start]They can explore, clean, and experiment on the data in real-time without duplication or network latency[cite: 26, 72].
+* **The Benefit:** The entire research team can mount that same volume to their independent workbenches simultaneously. They can explore, clean, and experiment on the data in real-time without duplication or network latency.
 
 == Your Mission: Architect the Backbone
 
@@ -60,9 +60,9 @@ In this course, you will move beyond simple storage provisioning. You will archi
 
 You will take on the role of a **Lead Platform Engineer** ensuring your data scientists can work securely and efficiently. You will execute the following technical workflow:
 
-1.  [cite_start]**The Foundation:** Configure **Storage Classes** to support high-performance RWO (Personal) and collaborative RWX (Shared) workspaces[cite: 21, 22].
-2.  [cite_start]**The Gateway:** Create and manage **Data Connections** for S3 Object Storage and OCI Model Registries, abstracting the credentials from the users[cite: 76, 77].
-3.  [cite_start]**The Acceleration:** Implement **Pipeline Workspaces** and **Modelcars** (OCI) to speed up training handoffs and reduce model deployment times[cite: 39, 19].
+1.  **The Foundation:** Configure **Storage Classes** to support high-performance RWO (Personal) and collaborative RWX (Shared) workspaces.
+2.  **The Gateway:** Create and manage **Data Connections** for S3 Object Storage and OCI Model Registries, abstracting the credentials from the users.
+3.  **The Acceleration:** Implement **Pipeline Workspaces** and **Modelcars** (OCI) to speed up training handoffs and reduce model deployment times.
 
 [IMPORTANT]
 .Prerequisites
@@ -70,8 +70,8 @@ You will take on the role of a **Lead Platform Engineer** ensuring your data sci
 To successfully complete the hands-on sections of this course, you need:
 
 * Access to a **Red Hat OpenShift AI 3** cluster.
-* [cite_start]`cluster-admin` privileges (to configure Storage Classes and global connection types)[cite: 22].
-* [cite_start]An external Object Store (AWS S3 or MinIO) to verify connectivity[cite: 13].
+* `cluster-admin` privileges (to configure Storage Classes and global connection types).
+* An external Object Store (AWS S3 or MinIO) to verify connectivity.
 ====
 
 *Ready to secure the flow? Let's start by defining the storage foundation.*
