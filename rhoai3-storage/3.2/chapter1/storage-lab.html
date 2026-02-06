@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Lab: Automating the AI Data Foundation :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
+    <link rel="prev" href="section1.html">
+    <link rel="next" href="section3.html">
+    <meta name="description" content="Automate the deployment of scalable storage architecture (S3, OCI, PVC) using CLI tools and standard templates.">
+    <meta name="generator" content="Antora 3.1.3">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://www.redhat.com" target="_blank"><img src="../../../_/img/redhat-logo.png" height="40px" alt="Red Hat"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://github.com/RedHatQuickCourses/REPLACEREPONAME/issues" target="_blank">Report Issues</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="rhoai3-storage" data-version="3.2">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction &amp; Value</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section1.html">Architecture Deep Dive</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="storage-lab.html">Create Data Conenctions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section3.html">Taxonomy &amp; Glossary</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section4.html">Lab Environment Setup</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section5.html">Troubleshooting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="quiz.html">Quiz</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</span>
+    <span class="version">3.2</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">3.2</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></li>
+    <li><a href="storage-lab.html">Create Data Conenctions</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Lab: Automating the AI Data Foundation</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>Stop clicking. Start engineering.</strong></p>
+</div>
+<div class="paragraph">
+<p>In a mature AI Factory, you do not manually type AWS keys into a web form for every new project. You build automation that governs how data is accessed and stored.</p>
+</div>
+<div class="paragraph">
+<p>In this lab, you will act as the Lead Platform Engineer. You will replace manual configuration with a set of standardized deployment scripts that instantly provision the three pillars of RHOAI storage: <strong>Connectivity</strong> (S3/URI), <strong>Acceleration</strong> (OCI Modelcars), and <strong>Persistence</strong> (Cluster Storage).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To complete this automation lab, you need:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Access to an OpenShift cluster with <strong>RHOAI 3</strong> installed.</p>
+</li>
+<li>
+<p><code>cluster-admin</code> privileges (to create storage classes and global connection types).</p>
+</li>
+<li>
+<p>The <code>oc</code> CLI tool installed.</p>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_1_set_up_your_workspace"><a class="anchor" href="#_1_set_up_your_workspace"></a>1. Set Up Your Workspace</h3>
+<div class="paragraph">
+<p>We have packaged the automation scripts into a repository. Clone it to your bastion host or local terminal.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Clone the repository
+git clone https://github.com/RedHatQuickCourses/rhoai3-storage.git
+
+# Enter the deployment directory
+cd rhoai3-storage/deploy
+
+# Make the scripts executable
+chmod +x *.sh</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_part_1_the_foundation_cluster_storage"><a class="anchor" href="#_part_1_the_foundation_cluster_storage"></a>Part 1: The Foundation (Cluster Storage)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>[cite_start]AI workloads have two distinct storage needs: fast, exclusive scratchpads for development (<strong>RWO</strong>) and massive, shared datasets for team collaboration (<strong>RWX</strong>)[cite: 110, 111].</p>
+</div>
+<div class="paragraph">
+<p>Manual provisioning leads to configuration drift. We will use the <code>cluster-storage.sh</code> script to standardize this.</p>
+</div>
+<div class="sect2">
+<h3 id="_action_provision_storage_types"><a class="anchor" href="#_action_provision_storage_types"></a>Action: Provision Storage Types</h3>
+<div class="paragraph">
+<p>You need to create a project and provision both storage types to verify your cluster&#8217;s capabilities.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># 1. Create a project for our factory
+oc new-project ai-factory-lab
+
+# 2. Provision Personal Storage (ReadWriteOnce) - 20GB
+# Usage: ./cluster-storage.sh &lt;project&gt; &lt;name&gt; &lt;size&gt; &lt;mode&gt;
+./cluster-storage.sh ai-factory-lab personal-scratch-1 20 rwo
+
+# 3. Provision Shared Team Storage (ReadWriteMany) - 100GB
+./cluster-storage.sh ai-factory-lab team-golden-data 100 rwx</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_validation"><a class="anchor" href="#_validation"></a>Validation</h3>
+<div class="paragraph">
+<p>Verify that the underlying storage classes bound correctly. [cite_start]If the <code>RWX</code> volume hangs in <code>Pending</code>, your cluster may lack ODF/NFS support[cite: 111].</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pvc -n ai-factory-lab</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Success:</strong> Status should be <code>Bound</code> for RWO. (RWX may wait for a consumer depending on the driver).</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_part_2_the_gateway_automating_data_connections"><a class="anchor" href="#_part_2_the_gateway_automating_data_connections"></a>Part 2: The Gateway (Automating Data Connections)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Credential sprawl occurs when users hardcode keys. [cite_start]We solve this by injecting <strong>Data Connections</strong>—Kubernetes Secrets that map to RHOAI 3.0 Connection Types[cite: 126].</p>
+</div>
+<div class="paragraph">
+<p>We will use <code>dataconnect.sh</code> to inject a standard "Corporate S3" connection that includes the critical <code>opendatahub.io/connection-type: "s3"</code> annotation required for UI visibility.</p>
+</div>
+<div class="sect2">
+<h3 id="_action_inject_s3_credentials"><a class="anchor" href="#_action_inject_s3_credentials"></a>Action: Inject S3 Credentials</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Usage: ./dataconnect.sh &lt;project&gt; &lt;connection-name&gt;
+# Note: The script defaults to MinIO. Edit variables inside if using AWS.
+./dataconnect.sh ai-factory-lab corp-data-lake</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_cli_validation"><a class="anchor" href="#_cli_validation"></a>CLI Validation</h3>
+<div class="paragraph">
+<p>Confirm the secret was created and has the specific labels required for RHOAI 3.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Check for the RHOAI dashboard label
+oc get secret corp-data-lake -n ai-factory-lab --show-labels
+
+# Check for the specific Connection Type annotation
+oc describe secret corp-data-lake -n ai-factory-lab | grep "connection-type"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Expected Output:</strong> <code>opendatahub.io/connection-type=s3</code></p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_part_3_the_accelerator_oci_modelcars"><a class="anchor" href="#_part_3_the_accelerator_oci_modelcars"></a>Part 3: The Accelerator (OCI Modelcars)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Downloading a 20GB model for every deployment is inefficient. By using <strong>Modelcars</strong> (OCI artifacts), we treat models like container images, enabling faster startup and deduplication.</p>
+</div>
+<div class="paragraph">
+<p>We will use <code>modelcar.sh</code> to register a public Granite model from Quay.io.</p>
+</div>
+<div class="sect2">
+<h3 id="_action_register_the_modelcar"><a class="anchor" href="#_action_register_the_modelcar"></a>Action: Register the Modelcar</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Usage: ./modelcar.sh &lt;project&gt;
+./modelcar.sh ai-factory-lab</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This script creates a connection with the <code>oci</code> protocol, pointing to <code>quay.io/redhat-ai-services/modelcar-catalog:granite-3.2-8b-instruct</code>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_part_4_the_precision_link_uri_connections"><a class="anchor" href="#_part_4_the_precision_link_uri_connections"></a>Part 4: The Precision Link (URI Connections)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Sometimes you need to link to a specific folder or file version in a private bucket, rather than exposing the whole bucket. The <strong>URI</strong> connection type handles this precision.</p>
+</div>
+<div class="sect2">
+<h3 id="_action_register_a_private_uri"><a class="anchor" href="#_action_register_a_private_uri"></a>Action: Register a Private URI</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Usage: ./uri.sh &lt;project&gt;
+./uri.sh ai-factory-lab</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_part_5_the_payoff_ui_verification"><a class="anchor" href="#_part_5_the_payoff_ui_verification"></a>Part 5: The Payoff (UI Verification)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You have just architected a complete storage solution via CLI. Now, verify the experience for the Data Scientist.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Open the <strong>Red Hat OpenShift AI Dashboard</strong>.</p>
+</li>
+<li>
+<p>Navigate to <strong>Data Science Projects</strong> &#8594; <strong>ai-factory-lab</strong>.</p>
+</li>
+<li>
+<p>Click the <strong>Data connections</strong> tab.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Result:</strong> You should see three distinct connections:</p>
+</li>
+<li>
+<p><strong>Corporate S3 Data</strong> (Type: S3)</p>
+</li>
+<li>
+<p><strong>Granite 3.2 8B (Modelcar)</strong> (Type: OCI)</p>
+</li>
+<li>
+<p><strong>Custom URI Link</strong> (Type: URI)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Click the <strong>Cluster storage</strong> tab.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Result:</strong> You should see your <code>personal-scratch-1</code> and <code>team-golden-data</code> PVCs.</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+<div class="sect2">
+<h3 id="_final_test_attach_to_a_workbench"><a class="anchor" href="#_final_test_attach_to_a_workbench"></a>Final Test: Attach to a Workbench</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Create a new <strong>Workbench</strong>.</p>
+</li>
+<li>
+<p>Scroll to <strong>Data connections</strong>.</p>
+</li>
+<li>
+<p>Select <strong>Use existing data connection</strong> &#8594; <strong>Corporate S3 Data</strong>.</p>
+</li>
+<li>
+<p>Scroll to <strong>Cluster storage</strong>.</p>
+</li>
+<li>
+<p>Select <strong>Use existing persistent storage</strong> &#8594; <strong>team-golden-data</strong> (Mount as <code>/data/team</code>).</p>
+</li>
+<li>
+<p>Start the workbench.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>By automating this setup, you have ensured that every environment—Dev, Test, and Prod—can be provisioned with identical configurations in seconds. You have turned a manual ticket queue into a repeatable code artifact.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="section1.html">Architecture Deep Dive</a></span>
+  <span class="next"><a href="section3.html">Taxonomy &amp; Glossary</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <img src="../../../_/img/rhl-logo-red.png" height="40px" alt="Red Hat"  href="https://redhat.com" >
+</footer><script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
