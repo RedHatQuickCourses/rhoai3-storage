@@ -1,0 +1,50 @@
+= Choosing Your Path: Storage Strategies for the AI Lifecycle
+:role: Strategic Guide
+:audience: Platform Engineers & Architects
+:description: A decision framework for selecting the right storage protocols for Experimentation, Collaboration, and Production.
+
+[.lead]
+*One size does not fit all. In AI, using the wrong storage strategy isn't just slow—it breaks the workflow.*
+
+As a Platform Engineer, your users will come to you with different needs. A researcher exploring a new dataset has different requirements than an MLOps engineer deploying a high-availability model.
+
+RHOAI 3 provides three "Well-Lit Paths." Your job is to guide your users to the right one.
+
+== Path 1: The Explorer (Individual Development)
+**Scenario:** A data scientist needs to clone a git repo, install custom Python libraries, and experiment with a small dataset.
+**The Solution:** **ReadWriteOnce (RWO) PVCs.**
+
+* **How it works:** When a user launches a Workbench, RHOAI provisions a dedicated PVC mounted to `/opt/app-root/src`.
+* **Why this path?**
+    ** **Performance:** Block storage (RWO) is typically faster and lower latency than shared file systems.
+    ** **Isolation:** Changes made here do not affect other team members.
+    ** **Cost Control:** Admins can set default limits (e.g., 20GB) to prevent runaway costs.
+
+== Path 2: The Collaborator (Team Research)
+**Scenario:** Five data scientists need to analyze the same 500GB "Golden Dataset."
+**The Anti-Pattern:** Everyone downloads a copy to their RWO drive (2.5TB total usage).
+**The Solution:** **ReadWriteMany (RWX) Shared Volumes.**
+
+* **How it works:** You provision a Shared Volume backed by an RWX-capable storage class (e.g., OpenShift Data Foundation / CephFS).
+* **Why this path?**
+    ** **Efficiency:** The data exists once. Everyone mounts it simultaneously.
+    ** **Velocity:** No download time. Data is immediately available to the whole squad.
+    ** **Checkpointing:** In distributed training, worker nodes save checkpoints to this shared space so the master node can aggregate them.
+
+== Path 3: The Engineer (Production Serving)
+**Scenario:** You need to deploy a trained model to production with minimal latency and fast startup times.
+**The Anti-Pattern:** The model server downloads the 20GB model file from S3 every time a pod scales up.
+**The Solution:** **OCI Containers (Modelcars).**
+
+* **How it works:** Instead of treating the model as a file, you package it as a container image stored in an OCI Registry (like Quay.io).
+* **Why this path?**
+    ** **Startup Speed:** No "download phase." The container runtime pulls layers, often leveraging node-level caching.
+    ** **Deduplication:** If you deploy 50 replicas of the same model, the storage footprint is minimized via layer sharing.
+
+[IMPORTANT]
+.Strategic Rule of Thumb
+====
+* **Persist Code?** Use RWO.
+* **Share Data?** Use RWX.
+* **Serve Models?** Use OCI or S3 Connections.
+====
