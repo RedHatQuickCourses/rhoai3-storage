@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Choosing Your Path: Storage Strategies for the AI Lifecycle :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
+    <title>Extending the Mesh: Database &amp; Custom Connections :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
     <link rel="prev" href="storage-lab.html">
-    <link rel="next" href="section4.html">
-    <meta name="description" content="A decision framework for selecting the right storage protocols for Experimentation, Collaboration, and Production.">
+    <link rel="next" href="section5.html">
+    <meta name="description" content="How to configure RHOAI 3 to manage credentials for Databases (PostgreSQL/MySQL) and Warehouses (Snowflake/Trino).">
     <meta name="generator" content="Antora 3.1.3">
     <link rel="stylesheet" href="../../../_/css/site.css">
     <script>var uiRootPath = '../../../_'</script>
@@ -57,9 +57,6 @@
     <a class="nav-link" href="section3.html">Taxonomy &amp; Glossary</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="section4.html">Lab Environment Setup</a>
-  </li>
-  <li class="nav-item" data-depth="1">
     <a class="nav-link" href="section5.html">Troubleshooting</a>
   </li>
   <li class="nav-item" data-depth="1">
@@ -105,143 +102,210 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Choosing Your Path: Storage Strategies for the AI Lifecycle</h1>
+<h1 class="page">Extending the Mesh: Database &amp; Custom Connections</h1>
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph lead">
-<p><strong>One size does not fit all. In AI, using the wrong storage strategy isn&#8217;t just slow—it breaks the workflow.</strong></p>
+<p><strong>Data doesn&#8217;t just live in buckets. It lives in rows, columns, and transactions.</strong></p>
 </div>
 <div class="paragraph">
-<p>As a Platform Engineer, your users will come to you with different needs. A researcher exploring a new dataset has different requirements than an MLOps engineer deploying a high-availability model.</p>
+<p>In the previous labs, we focused on <strong>unstructured data</strong> (images, models, logs) stored in Object Storage. However, real-world AI often requires <strong>structured data</strong>—customer records in PostgreSQL, sales transactions in Snowflake, or feature vectors in Redis.</p>
 </div>
 <div class="paragraph">
-<p>RHOAI 3 provides three "Well-Lit Paths." Your job is to guide your users to the right one.</p>
+<p>If you stop your automation at S3, your Data Scientists will go back to hardcoding database passwords.</p>
+</div>
+<div class="paragraph">
+<p>In this module, you will learn how to extend the "AI Factory" to support <strong>Custom Connection Types</strong>. You will teach RHOAI how to speak "Database."</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_path_1_the_explorer_individual_development"><a class="anchor" href="#_path_1_the_explorer_individual_development"></a>Path 1: The Explorer (Individual Development)</h2>
+<h2 id="_the_two_step_architecture"><a class="anchor" href="#_the_two_step_architecture"></a>The Two-Step Architecture</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p><strong>Scenario:</strong> A data scientist needs to clone a git repo, install custom Python libraries, and experiment with a small dataset.
-<strong>The Solution:</strong> <strong>ReadWriteOnce (RWO) PVCs.</strong></p>
+<p>Unlike S3 or OCI, which are built-in, RHOAI does not know what a "PostgreSQL" connection looks like by default. You must define it.</p>
+</div>
+<div class="paragraph">
+<p>This requires a two-step workflow:
+1.  <strong>Define the Standard (The Template):</strong> You create a <code>ConnectionType</code> resource that defines the schema (e.g., "I need a Host, a Port, and a Password").
+2.  <strong>Provision the Access (The Instance):</strong> You create the <code>Secret</code> that fills in those blanks.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_1_define_the_connection_type"><a class="anchor" href="#_step_1_define_the_connection_type"></a>Step 1: Define the Connection Type</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>First, we must tell the RHOAI Dashboard how to render the form for a database connection and which environment variables to inject.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">#!/bin/bash
+# define-postgres-type.sh
+# Registers "PostgreSQL" as a valid Connection Type in RHOAI 3
+
+echo "Defining 'Corporate PostgreSQL' connection type..."
+
+cat &lt;&lt;EOF | oc apply -f -
+apiVersion: dashboard.opendatahub.io/v1alpha
+kind: ConnectionType
+metadata:
+  name: postgres-v1
+  labels:
+    opendatahub.io/dashboard: "true"
+spec:
+  displayName: "Corporate PostgreSQL"
+  description: "Standard connection for corporate transactional databases."
+  category: "Database"
+  fields:
+    - name: Host
+      type: text
+      required: true
+      envVar: DB_HOST
+    - name: Port
+      type: text
+      defaultValue: "5432"
+      required: true
+      envVar: DB_PORT
+    - name: Database
+      type: text
+      required: true
+      envVar: DB_NAME
+    - name: Username
+      type: text
+      required: true
+      envVar: DB_USER
+    - name: Password
+      type: password
+      required: true
+      envVar: DB_PASSWORD
+EOF</code></pre>
+</div>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>How it works:</strong> When a user launches a Workbench, RHOAI provisions a dedicated PVC mounted to <code>/opt/app-root/src</code>.</p>
+<p><strong><code>envVar</code>:</strong> This is the magic. It maps the form field "Host" to the environment variable <code>DB_HOST</code> inside the container.</p>
 </li>
 <li>
-<p><strong>Why this path?</strong></p>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Performance:</strong> Block storage (RWO) is typically faster and lower latency than shared file systems.</p>
-</li>
-<li>
-<p><strong>Isolation:</strong> Changes made here do not affect other team members.</p>
-</li>
-<li>
-<p><strong>Cost Control:</strong> Admins can set default limits (e.g., 20GB) to prevent runaway costs.</p>
-</li>
-</ul>
-</div>
+<p><strong><code>category</code>:</strong> Groups this under "Database" in the UI, separating it from Object Storage.</p>
 </li>
 </ul>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_path_2_the_collaborator_team_research"><a class="anchor" href="#_path_2_the_collaborator_team_research"></a>Path 2: The Collaborator (Team Research)</h2>
+<h2 id="_step_2_create_the_data_connection"><a class="anchor" href="#_step_2_create_the_data_connection"></a>Step 2: Create the Data Connection</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p><strong>Scenario:</strong> Five data scientists need to analyze the same 500GB "Golden Dataset."
-<strong>The Anti-Pattern:</strong> Everyone downloads a copy to their RWO drive (2.5TB total usage).
-<strong>The Solution:</strong> <strong>ReadWriteMany (RWX) Shared Volumes.</strong></p>
+<p>Now that the type exists, you can provision credentials for a specific project (e.g., "Sales Read-Only").</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>How it works:</strong> You provision a Shared Volume backed by an RWX-capable storage class (e.g., OpenShift Data Foundation / CephFS).</p>
-</li>
-<li>
-<p><strong>Why this path?</strong></p>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Efficiency:</strong> The data exists once. Everyone mounts it simultaneously.</p>
-</li>
-<li>
-<p><strong>Velocity:</strong> No download time. Data is immediately available to the whole squad.</p>
-</li>
-<li>
-<p><strong>Checkpointing:</strong> In distributed training, worker nodes save checkpoints to this shared space so the master node can aggregate them.</p>
-</li>
-</ul>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">#!/bin/bash
+# connect-sales-db.sh &lt;project&gt;
+
+PROJECT=$1
+CONNECTION_NAME="sales-production-db"
+
+echo "Creating Database Connection in $PROJECT..."
+
+cat &lt;&lt;EOF | oc apply -n "$PROJECT" -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: $CONNECTION_NAME
+  labels:
+    opendatahub.io/dashboard: "true"
+    opendatahub.io/managed: "true"
+  annotations:
+    # Links to the Custom Type we created in Step 1
+    opendatahub.io/connection-type: "postgres-v1"
+
+    # User-friendly metadata
+    openshift.io/display-name: "Sales Production DB (Read-Only)"
+    openshift.io/description: "Access to the sales_transactions table."
+type: Opaque
+stringData:
+  # These keys MUST match the 'fields' defined in the ConnectionType
+  Host: "prod-db.internal.corp"
+  Port: "5432"
+  Database: "sales_data"
+  Username: "readonly_user"
+  Password: "super-secure-password"
+EOF</code></pre>
 </div>
-</li>
-</ul>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_path_3_the_engineer_production_serving"><a class="anchor" href="#_path_3_the_engineer_production_serving"></a>Path 3: The Engineer (Production Serving)</h2>
+<h2 id="_the_payoff_why_do_this"><a class="anchor" href="#_the_payoff_why_do_this"></a>The Payoff: Why do this?</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p><strong>Scenario:</strong> You need to deploy a trained model to production with minimal latency and fast startup times.
-<strong>The Anti-Pattern:</strong> The model server downloads the 20GB model file from S3 every time a pod scales up.
-<strong>The Solution:</strong> <strong>OCI Containers (Modelcars).</strong></p>
+<p>By standardizing database access, you achieve <strong>Code Portability</strong>.</p>
+</div>
+<div class="sect2">
+<h3 id="_the_shadow_it_way_hardcoded"><a class="anchor" href="#_the_shadow_it_way_hardcoded"></a>The "Shadow IT" Way (Hardcoded)</h3>
+<div class="paragraph">
+<p>The data scientist writes code that works <strong>only</strong> on their laptop or <strong>only</strong> in the Dev cluster.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-python hljs" data-lang="python"># Fails when moved to production
+conn = psycopg2.connect("host=192.168.1.5 dbname=sales user=admin ...")</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_factory_way_abstracted"><a class="anchor" href="#_the_factory_way_abstracted"></a>The "Factory" Way (Abstracted)</h3>
+<div class="paragraph">
+<p>The data scientist writes code that works anywhere.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-python hljs" data-lang="python">import os
+import psycopg2
+
+# Works in Dev (Sandbox DB) AND Prod (Warehouse DB)
+# The Platform injects the correct values based on the environment.
+conn = psycopg2.connect(
+    host=os.getenv("DB_HOST"),
+    database=os.getenv("DB_NAME"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD")
+)</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_summary"><a class="anchor" href="#_summary"></a>Summary</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Data Connections are not just for S3. They are your <strong>Universal Credential Broker</strong>.</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>How it works:</strong> Instead of treating the model as a file, you package it as a container image stored in an OCI Registry (like Quay.io).</p>
+<p><strong>Platform Engineer:</strong> Defines the schema (<code>ConnectionType</code>).</p>
 </li>
 <li>
-<p><strong>Why this path?</strong></p>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Startup Speed:</strong> No "download phase." The container runtime pulls layers, often leveraging node-level caching.</p>
+<p><strong>Security Team:</strong> Manages the secrets (<code>Secret</code>).</p>
 </li>
 <li>
-<p><strong>Deduplication:</strong> If you deploy 50 replicas of the same model, the storage footprint is minimized via layer sharing.</p>
+<p><strong>Data Scientist:</strong> Consumes the environment variables (<code>os.getenv</code>).</p>
 </li>
 </ul>
 </div>
-</li>
-</ul>
-</div>
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-important" title="Important"></i>
-</td>
-<td class="content">
-<div class="title">Strategic Rule of Thumb</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Persist Code?</strong> Use RWO.</p>
-</li>
-<li>
-<p><strong>Share Data?</strong> Use RWX.</p>
-</li>
-<li>
-<p><strong>Serve Models?</strong> Use OCI or S3 Connections.</p>
-</li>
-</ul>
-</div>
-</td>
-</tr>
-</table>
+<div class="paragraph">
+<p><strong>Next Step: Now that you have connected all data types, let&#8217;s explore how to monitor storage usage.</strong></p>
 </div>
 </div>
 </div>
 <nav class="pagination">
   <span class="prev"><a href="storage-lab.html">Create Data Conenctions</a></span>
-  <span class="next"><a href="section4.html">Lab Environment Setup</a></span>
+  <span class="next"><a href="section5.html">Troubleshooting</a></span>
 </nav>
 </article>
   </div>
