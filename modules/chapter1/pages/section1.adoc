@@ -6,6 +6,11 @@
 [.lead]
 *To build a factory that scales, you must understand the machinery under the floorboards.*
 
+
+NAME                PROVISIONER       RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+gp2-csi             ebs.csi.aws.com   Delete          WaitForFirstConsumer   true                   5h49m
+gp3-csi (default)   ebs.csi.aws.com   Delete          WaitForFirstConsumer   true                   5h49m
+
 In the previous module, we established *why* RHOAI decouples data from compute. Now, we will examine *how* the platform executes this. As a Platform Engineer, you are not just managing disks; you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory."
 
 This architecture relies on three distinct storage mechanisms working in concert: **Data Connections**, **Cluster Storage (PVCs)**, and **Databases**.
