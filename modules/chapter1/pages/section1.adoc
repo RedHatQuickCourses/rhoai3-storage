@@ -6,49 +6,59 @@
 [.lead]
 *To build a factory that scales, you must understand the machinery under the floorboards.*
 
+In the previous module, we established *why* RHOAI decouples data from compute to achieve velocity and environment parity. Now, we will examine *how* the platform executes this.
 
-NAME                PROVISIONER       RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
-gp2-csi             ebs.csi.aws.com   Delete          WaitForFirstConsumer   true                   5h49m
-gp3-csi (default)   ebs.csi.aws.com   Delete          WaitForFirstConsumer   true                   5h49m
+As a Platform Engineer, you are not just managing disks; you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory".
 
-In the previous module, we established *why* RHOAI decouples data from compute. Now, we will examine *how* the platform executes this. As a Platform Engineer, you are not just managing disks; you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory."
+This architecture relies on three distinct storage mechanisms working in concert: **Data Connections** (The Gateway), **Cluster Storage** (The Workspace), and **Databases** (The Metadata).
 
-This architecture relies on three distinct storage mechanisms working in concert: **Data Connections**, **Cluster Storage (PVCs)**, and **Databases**.
 
-image::images/rhoai-storage-architecture-diagram.png
 
 == 1. The Gateway: Data Connections (External)
 RHOAI does not store your massive datasets inside the cluster. Instead, it uses **Data Connections** as a "Gateway" to external storage.
 
-* **The Mechanism:** A Data Connection is a Kubernetes Secret containing specific annotations (e.g., `opendatahub.io/connection-type-protocol: "s3"`).
-* **The Runtime Injection:** When a user attaches a connection to a Workbench or Model Server, the RHOAI Operator injects the credentials as environment variables (e.g., `AWS_ACCESS_KEY_ID`, `AWS_S3_ENDPOINT`) directly into the Pod.
-* **Supported Protocols:**
-    ** **S3-Compatible:** For Data Lakes, Pipeline Artifacts, and standard Model Registries.
-    ** **URI:** For HTTP/HTTPS based model repositories.
-    ** **OCI (Modelcars):** For pulling models packaged as container images from registries like Quay.io. This leverages the container runtime's caching layer for massive deduplication.
+This is the layer you automated with the `dataconnect.sh`, `modelcar.sh`, and `uri.sh` scripts. It relies on **Kubernetes Secrets** injected into Pods at runtime.
+
+* **S3-Compatible (The Lake):**
+** *Use Case:* Massive datasets, pipeline artifacts, and private model buckets.
+** *Lab Context:* We use MinIO to simulate a corporate data lake. The connection injects `AWS_ACCESS_KEY_ID` and `AWS_S3_ENDPOINT` so code using `boto3` works automatically.
+
+* **OCI Modelcars (The Accelerator):**
+** *Use Case:* High-speed model inference. Instead of downloading weights as files, we pull models as container images from a registry (like Quay.io).
+** *Lab Context:* We use the `oci` protocol to mount the Granite model, leveraging the node's container cache for deduplication.
+
+* **URI (The Surgical Link):**
+** *Use Case:* Direct HTTP/HTTPS links to specific model versions or files.
+** *Lab Context:* We use the `uri` protocol to point to a specific versioned folder in a private bucket, bypassing the need to expose the entire bucket root.
 
 == 2. The Workspace: Cluster Storage (Internal)
-While Data Connections handle "Inflow/Outflow," **Cluster Storage** handles the "Work in Progress." This is governed by OpenShift Storage Classes.
+While Data Connections handle "Inflow/Outflow," **Cluster Storage** handles the "Work in Progress". This is governed by OpenShift Storage Classes, which you configured in the `cluster-storage.sh` script.
 
-* **ReadWriteOnce (RWO):** The default mode. Maps 1:1 with a user's Workbench (e.g., `/opt/app-root/src`). This acts as the user's "Home Directory" and persists across reboots.
-* **ReadWriteMany (RWX):** The collaboration engine. Required for distributed training and shared team workspaces. You *must* enable an RWX-capable Storage Class (like NFS, CephFS, or ODF) to support these workflows.
-* **Pipeline Workspaces:** The "High-Speed Conveyor Belt." Pipelines use ephemeral PVCs to pass intermediate data between steps, avoiding the latency of uploading/downloading to S3 for every single task.
+* **ReadWriteOnce (RWO) - "The Scratchpad":**
+** *Architecture:* Block Storage (e.g., AWS EBS `gp3-csi`, vSphere).
+** *Behavior:* Maps 1:1 with a user's Workbench (e.g., `/opt/app-root/src`).
+** *Constraint:* Can only attach to one node at a time. Ideal for personal home directories and databases.
 
-== 3. The Metadata Layer: The Shift to Databases (RHOAI 3)
+* **ReadWriteMany (RWX) - "The Collaboration Zone":**
+** *Architecture:* File Storage (e.g., ODF `ocs-storagecluster-cephfs`, NFS, AWS EFS).
+** *Behavior:* Mounts to multiple nodes simultaneously.
+** *Constraint:* Required for shared team folders and distributed training. You *must* verify your cluster supports this, or these PVCs will hang in `Pending` state.
+
+== 3. The Metadata Layer: The Shift to Databases
 [IMPORTANT]
 .Critical Architecture Change in RHOAI 3
 ====
 In previous versions, metadata was often stored in SQLite files on PVCs. RHOAI 3 moves production metadata to **Relational and Vector Databases** for scalability.
 ====
 
-* **Model Registry:** Now requires an external **MySQL** database (5.x/8.x) to store model lineage and version history.
-* **Llama Stack (RAG):** Requires **PostgreSQL (pgvector)** or **Milvus** for vector embeddings. The "Inline" (PVC-based) vector store is for testing only; production requires a "Remote" provider.
+* **Model Registry:** Now requires an external **MySQL** database (5.x/8.x) to store model lineage and version history, rather than a local file.
+* **Llama Stack (RAG):** Requires **PostgreSQL (pgvector)** or **Milvus** for vector embeddings. The "Inline" (PVC-based) vector store is strictly for testing; production requires a "Remote" provider.
 
 == System Requirements Checklist
-Before proceeding to the lab, ensure your underlying cluster meets these specs:
+Before proceeding to the lab automation, ensure your underlying cluster meets these specs:
 
-* [ ] **Default Storage Class:** Must support dynamic provisioning.
-* [ ] **Capacity:** Recommended minimum of **1 TB** additional disk storage for AI artifacts.
+* [ ] **Default Storage Class:** Must support dynamic provisioning (e.g., `gp3-csi`).
+* [ ] **Shared Storage Driver:** Must support `ReadWriteMany` (e.g., `ocs-storagecluster-cephfs` or NFS) for team collaboration features.
 * [ ] **Object Storage:** An S3-compatible endpoint (MinIO, AWS, Noobaa) is *mandatory* for Pipelines and Model Serving.
 
-*Now that you understand the blueprint, let's pick up the tools.*
+*Now that you understand the blueprint, let's deploy the factory.*

@@ -1,0 +1,54 @@
+= The Blueprint: Anatomy of RHOAI Storage
+:role: Technical Deep Dive
+:audience: Platform Engineers & Architects
+:description: A detailed breakdown of the storage subsystems, protocol abstractions, and persistence layers in RHOAI 3.
+
+[.lead]
+*To build a factory that scales, you must understand the machinery under the floorboards.*
+
+
+NAME                PROVISIONER       RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+gp2-csi             ebs.csi.aws.com   Delete          WaitForFirstConsumer   true                   5h49m
+gp3-csi (default)   ebs.csi.aws.com   Delete          WaitForFirstConsumer   true                   5h49m
+
+In the previous module, we established *why* RHOAI decouples data from compute. Now, we will examine *how* the platform executes this. As a Platform Engineer, you are not just managing disks; you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory."
+
+This architecture relies on three distinct storage mechanisms working in concert: **Data Connections**, **Cluster Storage (PVCs)**, and **Databases**.
+
+image::images/rhoai-storage-architecture-diagram.png
+
+== 1. The Gateway: Data Connections (External)
+RHOAI does not store your massive datasets inside the cluster. Instead, it uses **Data Connections** as a "Gateway" to external storage.
+
+* **The Mechanism:** A Data Connection is a Kubernetes Secret containing specific annotations (e.g., `opendatahub.io/connection-type-protocol: "s3"`).
+* **The Runtime Injection:** When a user attaches a connection to a Workbench or Model Server, the RHOAI Operator injects the credentials as environment variables (e.g., `AWS_ACCESS_KEY_ID`, `AWS_S3_ENDPOINT`) directly into the Pod.
+* **Supported Protocols:**
+    ** **S3-Compatible:** For Data Lakes, Pipeline Artifacts, and standard Model Registries.
+    ** **URI:** For HTTP/HTTPS based model repositories.
+    ** **OCI (Modelcars):** For pulling models packaged as container images from registries like Quay.io. This leverages the container runtime's caching layer for massive deduplication.
+
+== 2. The Workspace: Cluster Storage (Internal)
+While Data Connections handle "Inflow/Outflow," **Cluster Storage** handles the "Work in Progress." This is governed by OpenShift Storage Classes.
+
+* **ReadWriteOnce (RWO):** The default mode. Maps 1:1 with a user's Workbench (e.g., `/opt/app-root/src`). This acts as the user's "Home Directory" and persists across reboots.
+* **ReadWriteMany (RWX):** The collaboration engine. Required for distributed training and shared team workspaces. You *must* enable an RWX-capable Storage Class (like NFS, CephFS, or ODF) to support these workflows.
+* **Pipeline Workspaces:** The "High-Speed Conveyor Belt." Pipelines use ephemeral PVCs to pass intermediate data between steps, avoiding the latency of uploading/downloading to S3 for every single task.
+
+== 3. The Metadata Layer: The Shift to Databases (RHOAI 3)
+[IMPORTANT]
+.Critical Architecture Change in RHOAI 3
+====
+In previous versions, metadata was often stored in SQLite files on PVCs. RHOAI 3 moves production metadata to **Relational and Vector Databases** for scalability.
+====
+
+* **Model Registry:** Now requires an external **MySQL** database (5.x/8.x) to store model lineage and version history.
+* **Llama Stack (RAG):** Requires **PostgreSQL (pgvector)** or **Milvus** for vector embeddings. The "Inline" (PVC-based) vector store is for testing only; production requires a "Remote" provider.
+
+== System Requirements Checklist
+Before proceeding to the lab, ensure your underlying cluster meets these specs:
+
+* [ ] **Default Storage Class:** Must support dynamic provisioning.
+* [ ] **Capacity:** Recommended minimum of **1 TB** additional disk storage for AI artifacts.
+* [ ] **Object Storage:** An S3-compatible endpoint (MinIO, AWS, Noobaa) is *mandatory* for Pipelines and Model Serving.
+
+*Now that you understand the blueprint, let's pick up the tools.*

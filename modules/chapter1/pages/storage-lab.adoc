@@ -36,7 +36,7 @@ chmod +x *.sh
 
 == Part 1: The Foundation (Cluster Storage)
 
-[cite_start]AI workloads have two distinct storage needs: fast, exclusive scratchpads for development (**RWO**) and massive, shared datasets for team collaboration (**RWX**)[cite: 110, 111].
+AI workloads have two distinct storage needs: fast, exclusive scratchpads for development (**RWO**) and massive, shared datasets for team collaboration (**RWX**).
 
 Manual provisioning leads to configuration drift. We will use the `cluster-storage.sh` script to standardize this.
 
@@ -57,7 +57,7 @@ oc new-project ai-factory-lab
 ----
 
 === Validation
-Verify that the underlying storage classes bound correctly. [cite_start]If the `RWX` volume hangs in `Pending`, your cluster may lack ODF/NFS support[cite: 111].
+Verify that the underlying storage classes bound correctly. If the `RWX` volume hangs in `Pending`, your cluster may lack ODF/NFS support.
 
 [source,bash]
 ----
@@ -67,7 +67,7 @@ oc get pvc -n ai-factory-lab
 
 == Part 2: The Gateway (Automating Data Connections)
 
-Credential sprawl occurs when users hardcode keys. [cite_start]We solve this by injecting **Data Connections**—Kubernetes Secrets that map to RHOAI 3.0 Connection Types[cite: 126].
+Credential sprawl occurs when users hardcode keys. We solve this by injecting **Data Connections**—Kubernetes Secrets that map to RHOAI 3.0 Connection Types.
 
 We will use `dataconnect.sh` to inject a standard "Corporate S3" connection that includes the critical `opendatahub.io/connection-type: "s3"` annotation required for UI visibility.
 
