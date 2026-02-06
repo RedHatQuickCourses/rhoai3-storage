@@ -112,18 +112,13 @@
 <p><strong>To build a factory that scales, you must understand the machinery under the floorboards.</strong></p>
 </div>
 <div class="paragraph">
-<p>NAME                PROVISIONER       RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
-gp2-csi             ebs.csi.aws.com   Delete          WaitForFirstConsumer   true                   5h49m
-gp3-csi (default)   ebs.csi.aws.com   Delete          WaitForFirstConsumer   true                   5h49m</p>
+<p>In the previous module, we established <strong>why</strong> RHOAI decouples data from compute to achieve velocity and environment parity. Now, we will examine <strong>how</strong> the platform executes this.</p>
 </div>
 <div class="paragraph">
-<p>In the previous module, we established <strong>why</strong> RHOAI decouples data from compute. Now, we will examine <strong>how</strong> the platform executes this. As a Platform Engineer, you are not just managing disks; you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory."</p>
+<p>As a Platform Engineer, you are not just managing disks; you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory".</p>
 </div>
 <div class="paragraph">
-<p>This architecture relies on three distinct storage mechanisms working in concert: <strong>Data Connections</strong>, <strong>Cluster Storage (PVCs)</strong>, and <strong>Databases</strong>.</p>
-</div>
-<div class="paragraph">
-<p>image::images/rhoai-storage-architecture-diagram.png</p>
+<p>This architecture relies on three distinct storage mechanisms working in concert: <strong>Data Connections</strong> (The Gateway), <strong>Cluster Storage</strong> (The Workspace), and <strong>Databases</strong> (The Metadata).</p>
 </div>
 </div>
 </div>
@@ -133,26 +128,46 @@ gp3-csi (default)   ebs.csi.aws.com   Delete          WaitForFirstConsumer   tru
 <div class="paragraph">
 <p>RHOAI does not store your massive datasets inside the cluster. Instead, it uses <strong>Data Connections</strong> as a "Gateway" to external storage.</p>
 </div>
+<div class="paragraph">
+<p>This is the layer you automated with the <code>dataconnect.sh</code>, <code>modelcar.sh</code>, and <code>uri.sh</code> scripts. It relies on <strong>Kubernetes Secrets</strong> injected into Pods at runtime.</p>
+</div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>The Mechanism:</strong> A Data Connection is a Kubernetes Secret containing specific annotations (e.g., <code>opendatahub.io/connection-type-protocol: "s3"</code>).</p>
-</li>
-<li>
-<p><strong>The Runtime Injection:</strong> When a user attaches a connection to a Workbench or Model Server, the RHOAI Operator injects the credentials as environment variables (e.g., <code>AWS_ACCESS_KEY_ID</code>, <code>AWS_S3_ENDPOINT</code>) directly into the Pod.</p>
-</li>
-<li>
-<p><strong>Supported Protocols:</strong></p>
+<p><strong>S3-Compatible (The Lake):</strong></p>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>S3-Compatible:</strong> For Data Lakes, Pipeline Artifacts, and standard Model Registries.</p>
+<p><strong>Use Case:</strong> Massive datasets, pipeline artifacts, and private model buckets.</p>
 </li>
 <li>
-<p><strong>URI:</strong> For HTTP/HTTPS based model repositories.</p>
+<p><strong>Lab Context:</strong> We use MinIO to simulate a corporate data lake. The connection injects <code>AWS_ACCESS_KEY_ID</code> and <code>AWS_S3_ENDPOINT</code> so code using <code>boto3</code> works automatically.</p>
+</li>
+</ul>
+</div>
 </li>
 <li>
-<p><strong>OCI (Modelcars):</strong> For pulling models packaged as container images from registries like Quay.io. This leverages the container runtime&#8217;s caching layer for massive deduplication.</p>
+<p><strong>OCI Modelcars (The Accelerator):</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Use Case:</strong> High-speed model inference. Instead of downloading weights as files, we pull models as container images from a registry (like Quay.io).</p>
+</li>
+<li>
+<p><strong>Lab Context:</strong> We use the <code>oci</code> protocol to mount the Granite model, leveraging the node&#8217;s container cache for deduplication.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>URI (The Surgical Link):</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Use Case:</strong> Direct HTTP/HTTPS links to specific model versions or files.</p>
+</li>
+<li>
+<p><strong>Lab Context:</strong> We use the <code>uri</code> protocol to point to a specific versioned folder in a private bucket, bypassing the need to expose the entire bucket root.</p>
 </li>
 </ul>
 </div>
@@ -165,25 +180,48 @@ gp3-csi (default)   ebs.csi.aws.com   Delete          WaitForFirstConsumer   tru
 <h2 id="_2_the_workspace_cluster_storage_internal"><a class="anchor" href="#_2_the_workspace_cluster_storage_internal"></a>2. The Workspace: Cluster Storage (Internal)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>While Data Connections handle "Inflow/Outflow," <strong>Cluster Storage</strong> handles the "Work in Progress." This is governed by OpenShift Storage Classes.</p>
+<p>While Data Connections handle "Inflow/Outflow," <strong>Cluster Storage</strong> handles the "Work in Progress". This is governed by OpenShift Storage Classes, which you configured in the <code>cluster-storage.sh</code> script.</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>ReadWriteOnce (RWO):</strong> The default mode. Maps 1:1 with a user&#8217;s Workbench (e.g., <code>/opt/app-root/src</code>). This acts as the user&#8217;s "Home Directory" and persists across reboots.</p>
+<p><strong>ReadWriteOnce (RWO) - "The Scratchpad":</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Architecture:</strong> Block Storage (e.g., AWS EBS <code>gp3-csi</code>, vSphere).</p>
 </li>
 <li>
-<p><strong>ReadWriteMany (RWX):</strong> The collaboration engine. Required for distributed training and shared team workspaces. You <strong>must</strong> enable an RWX-capable Storage Class (like NFS, CephFS, or ODF) to support these workflows.</p>
+<p><strong>Behavior:</strong> Maps 1:1 with a user&#8217;s Workbench (e.g., <code>/opt/app-root/src</code>).</p>
 </li>
 <li>
-<p><strong>Pipeline Workspaces:</strong> The "High-Speed Conveyor Belt." Pipelines use ephemeral PVCs to pass intermediate data between steps, avoiding the latency of uploading/downloading to S3 for every single task.</p>
+<p><strong>Constraint:</strong> Can only attach to one node at a time. Ideal for personal home directories and databases.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>ReadWriteMany (RWX) - "The Collaboration Zone":</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Architecture:</strong> File Storage (e.g., ODF <code>ocs-storagecluster-cephfs</code>, NFS, AWS EFS).</p>
+</li>
+<li>
+<p><strong>Behavior:</strong> Mounts to multiple nodes simultaneously.</p>
+</li>
+<li>
+<p><strong>Constraint:</strong> Required for shared team folders and distributed training. You <strong>must</strong> verify your cluster supports this, or these PVCs will hang in <code>Pending</code> state.</p>
+</li>
+</ul>
+</div>
 </li>
 </ul>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_3_the_metadata_layer_the_shift_to_databases_rhoai_3"><a class="anchor" href="#_3_the_metadata_layer_the_shift_to_databases_rhoai_3"></a>3. The Metadata Layer: The Shift to Databases (RHOAI 3)</h2>
+<h2 id="_3_the_metadata_layer_the_shift_to_databases"><a class="anchor" href="#_3_the_metadata_layer_the_shift_to_databases"></a>3. The Metadata Layer: The Shift to Databases</h2>
 <div class="sectionbody">
 <div class="admonitionblock important">
 <table>
@@ -203,10 +241,10 @@ gp3-csi (default)   ebs.csi.aws.com   Delete          WaitForFirstConsumer   tru
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Model Registry:</strong> Now requires an external <strong>MySQL</strong> database (5.x/8.x) to store model lineage and version history.</p>
+<p><strong>Model Registry:</strong> Now requires an external <strong>MySQL</strong> database (5.x/8.x) to store model lineage and version history, rather than a local file.</p>
 </li>
 <li>
-<p><strong>Llama Stack (RAG):</strong> Requires <strong>PostgreSQL (pgvector)</strong> or <strong>Milvus</strong> for vector embeddings. The "Inline" (PVC-based) vector store is for testing only; production requires a "Remote" provider.</p>
+<p><strong>Llama Stack (RAG):</strong> Requires <strong>PostgreSQL (pgvector)</strong> or <strong>Milvus</strong> for vector embeddings. The "Inline" (PVC-based) vector store is strictly for testing; production requires a "Remote" provider.</p>
 </li>
 </ul>
 </div>
@@ -216,15 +254,15 @@ gp3-csi (default)   ebs.csi.aws.com   Delete          WaitForFirstConsumer   tru
 <h2 id="_system_requirements_checklist"><a class="anchor" href="#_system_requirements_checklist"></a>System Requirements Checklist</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Before proceeding to the lab, ensure your underlying cluster meets these specs:</p>
+<p>Before proceeding to the lab automation, ensure your underlying cluster meets these specs:</p>
 </div>
 <div class="ulist checklist">
 <ul class="checklist">
 <li>
-<p><i class="fa fa-square-o"></i> <strong>Default Storage Class:</strong> Must support dynamic provisioning.</p>
+<p><i class="fa fa-square-o"></i> <strong>Default Storage Class:</strong> Must support dynamic provisioning (e.g., <code>gp3-csi</code>).</p>
 </li>
 <li>
-<p><i class="fa fa-square-o"></i> <strong>Capacity:</strong> Recommended minimum of <strong>1 TB</strong> additional disk storage for AI artifacts.</p>
+<p><i class="fa fa-square-o"></i> <strong>Shared Storage Driver:</strong> Must support <code>ReadWriteMany</code> (e.g., <code>ocs-storagecluster-cephfs</code> or NFS) for team collaboration features.</p>
 </li>
 <li>
 <p><i class="fa fa-square-o"></i> <strong>Object Storage:</strong> An S3-compatible endpoint (MinIO, AWS, Noobaa) is <strong>mandatory</strong> for Pipelines and Model Serving.</p>
@@ -232,7 +270,7 @@ gp3-csi (default)   ebs.csi.aws.com   Delete          WaitForFirstConsumer   tru
 </ul>
 </div>
 <div class="paragraph">
-<p><strong>Now that you understand the blueprint, let&#8217;s pick up the tools.</strong></p>
+<p><strong>Now that you understand the blueprint, let&#8217;s deploy the factory.</strong></p>
 </div>
 </div>
 </div>

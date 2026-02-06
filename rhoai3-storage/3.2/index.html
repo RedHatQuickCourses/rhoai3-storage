@@ -104,141 +104,125 @@
 </aside>
 <article class="doc">
 <h1 class="page">Making RHOAI Data Connectivity and Storage Work for You</h1>
-<h1 id="_the_ai_backbone_breaking_the_cycle_of_credential_sprawl" class="sect0"><a class="anchor" href="#_the_ai_backbone_breaking_the_cycle_of_credential_sprawl"></a>The AI Backbone: Breaking the Cycle of Credential Sprawl</h1>
+<h1 id="_the_ai_factory_automating_for_velocity_and_scale" class="sect0"><a class="anchor" href="#_the_ai_factory_automating_for_velocity_and_scale"></a>The AI Factory: Automating for Velocity and Scale</h1>
 <div class="paragraph lead">
-<p><strong>Data is the fuel for AI. But without the right plumbing, it&#8217;s just a fire hazard.</strong></p>
+<p><strong>You don&#8217;t build a car by hand. You shouldn&#8217;t build an AI platform by hand either.</strong></p>
 </div>
 <div class="paragraph">
-<p>In a mature DevOps environment, no platform engineer would allow a developer to hardcode database passwords directly into their application source code. You use secrets management. You use environment abstraction. You use distinct storage classes for performance.</p>
+<p>In the early stages of AI adoption, organizations often treat every model as a unique "pet." Data Scientists submit a ticket for storage. Operations manually provisions a PVC. Security manually audits an S3 bucket. A developer hardcodes a connection string.</p>
 </div>
 <div class="paragraph">
-<p>Yet, walk into a typical Data Science team, and you will see the "Anti-Pattern" everywhere: AWS Access Keys hardcoded into Jupyter Notebook cells, massive datasets duplicated across twenty different local drives, and <code>boto3</code> scripts that break the moment you try to move them from a laptop to a production cluster.</p>
+<p>This manual approach works for <strong>one</strong> model. It collapses at <strong>ten</strong>.</p>
 </div>
 <div class="paragraph">
-<p>This is <strong>Credential Sprawl</strong>. It creates security risks, locks you into specific environments, and makes collaboration impossible.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="title">The Core Sales Objection</div>
-<div class="paragraph">
-<p><strong>"Why can&#8217;t our data scientists just use standard S3 libraries and hardcode their keys? It&#8217;s faster."</strong></p>
-</div>
-<div class="paragraph">
-<p>It is faster for <strong>one</strong> person, once. It is a disaster for an enterprise. Hardcoding keys means you cannot rotate credentials without breaking code. It means you cannot move from Dev to Prod without rewriting scripts. It means you have zero governance over where your data is going.</p>
-</div>
-</td>
-</tr>
-</table>
+<p>The business value of automating <strong>Red Hat OpenShift AI (RHOAI)</strong> storage is not just about hiding passwords—it is about <strong>Standardization</strong>. It transforms your platform from a chaotic collection of research environments into a predictable <strong>AI Factory</strong>.</p>
 </div>
 <div class="sect1">
-<h2 id="_the_solution_the_rhoai_connectivity_layer"><a class="anchor" href="#_the_solution_the_rhoai_connectivity_layer"></a>The Solution: The RHOAI Connectivity Layer</h2>
+<h2 id="_the_three_business_outcomes_of_automation"><a class="anchor" href="#_the_three_business_outcomes_of_automation"></a>The Three Business Outcomes of Automation</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p><strong>Red Hat OpenShift AI (RHOAI) 3</strong> solves this by decoupling <strong>Data</strong> from <strong>Compute</strong>.</p>
-</div>
-<div class="paragraph">
-<p>Instead of embedding storage details into the workload, RHOAI uses two architectural primitives to abstract the infrastructure:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p><strong>Data Connections:</strong> A secure, Kubernetes-native way to inject credentials and endpoints into Workbenches and Model Servers without the user ever seeing the raw keys.</p>
-</li>
-<li>
-<p><strong>Storage Classes (PVCs):</strong> A dynamic system for provisioning high-performance, persistent disk storage that survives workbench shutdowns and enables real-time collaboration.</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>image::images/rhoai-data-connectivity-architecture.png</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_three_pillars_of_value"><a class="anchor" href="#_three_pillars_of_value"></a>Three Pillars of Value</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>By implementing the RHOAI Storage Architecture, you deliver three capabilities that "manual scripting" cannot match:</p>
+<p>By automating the "Plumbing" (Data Connections and Storage Classes), you deliver three specific outcomes that leadership cares about:</p>
 </div>
 <div class="sect2">
-<h3 id="_1_security_compliance"><a class="anchor" href="#_1_security_compliance"></a>1. Security &amp; Compliance</h3>
+<h3 id="_1_acceleration_time_to_science"><a class="anchor" href="#_1_acceleration_time_to_science"></a>1. Acceleration (Time-to-Science)</h3>
 <div class="paragraph">
-<p>When a data scientist uses a <strong>Data Connection</strong>, they are not typing an Access Key. They are referencing a secure Kubernetes Secret managed by you, the Platform Engineer.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>The Win:</strong> You can rotate the underlying AWS or MinIO keys centrally.</p>
-</li>
-<li>
-<p><strong>The Benefit:</strong> The data scientist&#8217;s code never changes, and the secure credentials never appear in their notebook source control.</p>
-</li>
-</ul>
+<p><strong>The Problem:</strong> In manual environments, a new Data Scientist spends their first week fighting for access. They wait 2 days for a ticket to open a firewall port to S3. They wait 1 day for a Persistent Volume Claim (PVC) to be approved.
+<strong>The Automated Solution:</strong> You script standard <strong>Data Connections</strong> and <strong>Storage Classes</strong>.
+<strong>The Outcome:</strong> Onboarding takes minutes. A researcher joins a project, selects the pre-approved "Corporate Data Lake" connection, mounts the "Team Shared Storage," and starts training immediately.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_2_hybrid_portability"><a class="anchor" href="#_2_hybrid_portability"></a>2. Hybrid Portability</h3>
+<h3 id="_2_cost_efficiency_finops"><a class="anchor" href="#_2_cost_efficiency_finops"></a>2. Cost Efficiency (FinOps)</h3>
 <div class="paragraph">
-<p>In a real-world AI factory, models are developed in a "Sandbox" (Dev), trained on a "Cluster" (Test), and deployed to "Edge" (Prod).</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>The Win:</strong> RHOAI Data Connections use standard protocols (S3, URI, OCI) to create a consistent interface.</p>
-</li>
-<li>
-<p><strong>The Benefit:</strong> The same training pipeline code runs in every environment. You simply swap the "Connection" reference from the <strong>Dev Bucket</strong> to the <strong>Prod Bucket</strong>. No code rewrites required.</p>
-</li>
-</ul>
+<p><strong>The Problem:</strong> "Shadow IT." Without governed storage options, users download massive datasets to expensive, unmanaged block storage (RWO) and leave them there forever. Or worse, they download terabytes of redundant data to local laptops.
+<strong>The Automated Solution:</strong> You provide a <strong>"Well-Lit Path"</strong>:
+* <strong>Shared Storage (RWX):</strong> One 500GB volume shared by 10 users (saving 4.5TB of duplication).
+* <strong>Modelcars (OCI):</strong> Streaming models from a registry instead of downloading them to disk.
+<strong>The Outcome:</strong> You drastically reduce cloud storage spend and data egress fees by eliminating redundancy.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_3_velocity_collaboration"><a class="anchor" href="#_3_velocity_collaboration"></a>3. Velocity &amp; Collaboration</h3>
+<h3 id="_3_production_stability_environment_parity"><a class="anchor" href="#_3_production_stability_environment_parity"></a>3. Production Stability (Environment Parity)</h3>
 <div class="paragraph">
-<p>Downloading a 500GB dataset to twenty different laptops is a waste of time and bandwidth.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>The Win:</strong> RHOAI leverages <strong>ReadWriteMany (RWX)</strong> Storage Classes.</p>
-</li>
-<li>
-<p><strong>The Mechanism:</strong> A single "Golden Dataset" is mounted to a shared volume.</p>
-</li>
-<li>
-<p><strong>The Benefit:</strong> The entire research team can mount that same volume to their independent workbenches simultaneously. They can explore, clean, and experiment on the data in real-time without duplication or network latency.</p>
-</li>
-</ul>
+<p><strong>The Problem:</strong> "It works on my machine." A model works perfectly in the Dev environment because the data scientist manually tweaked the S3 path. It fails in Production because the path is different, and the manual tweak wasn&#8217;t documented.
+<strong>The Automated Solution:</strong> You abstract the environment using <strong>Data Connections</strong>. The code simply asks for <code>conn-s3</code>.
+* In <strong>Dev</strong>, your automation points <code>conn-s3</code> to a "Sandbox Bucket."
+* In <strong>Prod</strong>, your automation points <code>conn-s3</code> to the "Live Data Lake."
+<strong>The Outcome:</strong> The code never changes. You achieve <strong>100% Environment Parity</strong>, significantly reducing deployment failures.</p>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_your_mission_architect_the_backbone"><a class="anchor" href="#_your_mission_architect_the_backbone"></a>Your Mission: Architect the Backbone</h2>
+<h2 id="_the_architecture_of_the_factory"><a class="anchor" href="#_the_architecture_of_the_factory"></a>The Architecture of the Factory</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>In this course, you will move beyond simple storage provisioning. You will architect the <strong>data foundation</strong> for RHOAI 3.</p>
+<p>In this lab, you will act as the <strong>Factory Architect</strong>. You will stop clicking buttons and start writing the code that defines your factory floor. You will automate three critical layers:</p>
 </div>
 <div class="paragraph">
-<p>You will take on the role of a <strong>Lead Platform Engineer</strong> ensuring your data scientists can work securely and efficiently. You will execute the following technical workflow:</p>
+<p>image::images/rhoai-layered-storage-architecture.png</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
+<div class="sect2">
+<h3 id="_layer_1_the_warehouse_data_connections"><a class="anchor" href="#_layer_1_the_warehouse_data_connections"></a>Layer 1: The Warehouse (Data Connections)</h3>
+<div class="ulist">
+<ul>
 <li>
-<p><strong>The Foundation:</strong> Configure <strong>Storage Classes</strong> to support high-performance RWO (Personal) and collaborative RWX (Shared) workspaces.</p>
+<p><strong>What it is:</strong> The "Loading Dock" for external data.</p>
 </li>
 <li>
-<p><strong>The Gateway:</strong> Create and manage <strong>Data Connections</strong> for S3 Object Storage and OCI Model Registries, abstracting the credentials from the users.</p>
+<p><strong>The Automation:</strong> Instead of asking users to manage keys, you deploy standardized <strong>Connection Types</strong> (S3, OCI, URI).</p>
 </li>
 <li>
-<p><strong>The Acceleration:</strong> Implement <strong>Pipeline Workspaces</strong> and <strong>Modelcars</strong> (OCI) to speed up training handoffs and reduce model deployment times.</p>
+<p><strong>Business Value:</strong> Ensures that if the security team rotates the keys, the business process doesn&#8217;t stop.</p>
 </li>
-</ol>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_layer_2_the_workbench_cluster_storage"><a class="anchor" href="#_layer_2_the_workbench_cluster_storage"></a>Layer 2: The Workbench (Cluster Storage)</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>What it is:</strong> The "Assembly Line" where work happens.</p>
+</li>
+<li>
+<p><strong>The Automation:</strong> You define <strong>Storage Classes</strong> that map to business needs.</p>
+</li>
+<li>
+<p><strong>"Scratchpad" (RWO):</strong> Fast, temporary, personal storage.</p>
+</li>
+<li>
+<p><strong>"Collaboration" (RWX):</strong> Shared project storage for team-based iteration.</p>
+</li>
+<li>
+<p><strong>Business Value:</strong> Prevents data silos. If a team member leaves, their work remains in the shared project volume, not locked on a personal drive.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_layer_3_the_supply_chain_modelcars_uri"><a class="anchor" href="#_layer_3_the_supply_chain_modelcars_uri"></a>Layer 3: The Supply Chain (Modelcars &amp; URI)</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>What it is:</strong> The delivery mechanism for model assets.</p>
+</li>
+<li>
+<p><strong>The Automation:</strong> You treat models like software artifacts using <strong>OCI Registries</strong>.</p>
+</li>
+<li>
+<p><strong>Business Value:</strong> Faster rollouts. A new model version is just a new container tag, instantly available to all production services.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_your_mission_script_the_setup"><a class="anchor" href="#_your_mission_script_the_setup"></a>Your Mission: Script the Setup</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this lab, you will use the <strong>OpenShift CLI (oc)</strong> to build this factory. You will verify that your scripts can take a blank project and turn it into a fully connected, storage-ready Data Science environment in under 60 seconds.</p>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -247,29 +231,16 @@
 <i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
-<div class="title">Prerequisites</div>
+<div class="title">The Shift in Mindset</div>
 <div class="paragraph">
-<p>To successfully complete the hands-on sections of this course, you need:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Access to a <strong>Red Hat OpenShift AI 3</strong> cluster.</p>
-</li>
-<li>
-<p><code>cluster-admin</code> privileges (to configure Storage Classes and global connection types).</p>
-</li>
-<li>
-<p>An external Object Store (AWS S3 or MinIO) to verify connectivity.</p>
-</li>
-</ul>
+<p>We are not just "installing storage." We are defining the <strong>Standard Operating Environment (SOE)</strong> for your organization&#8217;s AI initiatives.</p>
 </div>
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p><strong>Ready to secure the flow? Let&#8217;s start by defining the storage foundation.</strong></p>
+<p><strong>Ready to build the factory? Let&#8217;s clone the repo.</strong></p>
 </div>
 </div>
 </div>

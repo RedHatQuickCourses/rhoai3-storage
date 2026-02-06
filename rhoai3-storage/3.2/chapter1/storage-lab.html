@@ -162,7 +162,7 @@ chmod +x *.sh</code></pre>
 <h2 id="_part_1_the_foundation_cluster_storage"><a class="anchor" href="#_part_1_the_foundation_cluster_storage"></a>Part 1: The Foundation (Cluster Storage)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>[cite_start]AI workloads have two distinct storage needs: fast, exclusive scratchpads for development (<strong>RWO</strong>) and massive, shared datasets for team collaboration (<strong>RWX</strong>)[cite: 110, 111].</p>
+<p>AI workloads have two distinct storage needs: fast, exclusive scratchpads for development (<strong>RWO</strong>) and massive, shared datasets for team collaboration (<strong>RWX</strong>).</p>
 </div>
 <div class="paragraph">
 <p>Manual provisioning leads to configuration drift. We will use the <code>cluster-storage.sh</code> script to standardize this.</p>
@@ -189,7 +189,7 @@ oc new-project ai-factory-lab
 <div class="sect2">
 <h3 id="_validation"><a class="anchor" href="#_validation"></a>Validation</h3>
 <div class="paragraph">
-<p>Verify that the underlying storage classes bound correctly. [cite_start]If the <code>RWX</code> volume hangs in <code>Pending</code>, your cluster may lack ODF/NFS support[cite: 111].</p>
+<p>Verify that the underlying storage classes bound correctly. If the <code>RWX</code> volume hangs in <code>Pending</code>, your cluster may lack ODF/NFS support.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -206,7 +206,7 @@ oc new-project ai-factory-lab
 <h2 id="_part_2_the_gateway_automating_data_connections"><a class="anchor" href="#_part_2_the_gateway_automating_data_connections"></a>Part 2: The Gateway (Automating Data Connections)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Credential sprawl occurs when users hardcode keys. [cite_start]We solve this by injecting <strong>Data Connections</strong>—Kubernetes Secrets that map to RHOAI 3.0 Connection Types[cite: 126].</p>
+<p>Credential sprawl occurs when users hardcode keys. We solve this by injecting <strong>Data Connections</strong>—Kubernetes Secrets that map to RHOAI 3.0 Connection Types.</p>
 </div>
 <div class="paragraph">
 <p>We will use <code>dataconnect.sh</code> to inject a standard "Corporate S3" connection that includes the critical <code>opendatahub.io/connection-type: "s3"</code> annotation required for UI visibility.</p>
