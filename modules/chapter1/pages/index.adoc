@@ -19,23 +19,28 @@ The business value of automating **Red Hat OpenShift AI (RHOAI)** storage is not
 By automating the "Plumbing" (Data Connections and Storage Classes), you deliver three specific outcomes that leadership cares about:
 
 === 1. Acceleration (Time-to-Science)
+
 **The Problem:** In manual environments, a new Data Scientist spends their first week fighting for access. They wait 2 days for a ticket to open a firewall port to S3. They wait 1 day for a Persistent Volume Claim (PVC) to be approved.
-**The Automated Solution:** You script standard **Data Connections** and **Storage Classes**.
-**The Outcome:** Onboarding takes minutes. A researcher joins a project, selects the pre-approved "Corporate Data Lake" connection, mounts the "Team Shared Storage," and starts training immediately.
+
+ * **The Automated Solution:** You script standard **Data Connections** and **Storage Classes**.
+
+ * **The Outcome:** Onboarding takes minutes. A researcher joins a project, selects the pre-approved "Corporate Data Lake" connection, mounts the "Team Shared Storage," and starts training immediately.
 
 === 2. Cost Efficiency (FinOps)
-**The Problem:** "Shadow IT." Without governed storage options, users download massive datasets to expensive, unmanaged block storage (RWO) and leave them there forever. Or worse, they download terabytes of redundant data to local laptops.
-**The Automated Solution:** You provide a **"Well-Lit Path"**:
-* **Shared Storage (RWX):** One 500GB volume shared by 10 users (saving 4.5TB of duplication).
-* **Modelcars (OCI):** Streaming models from a registry instead of downloading them to disk.
-**The Outcome:** You drastically reduce cloud storage spend and data egress fees by eliminating redundancy.
+
+ * **The Problem:** "Shadow IT." Without governed storage options, users download massive datasets to expensive, unmanaged block storage (RWO) and leave them there forever. Or worse, they download terabytes of redundant data to local laptops.
+* **The Automated Solution:** You provide a **"Well-Lit Path"**:
+** **Shared Storage (RWX):** One 500GB volume shared by 10 users (saving 4.5TB of duplication).
+** **Modelcars (OCI):** Streaming models from a registry instead of downloading them to disk.
+* **The Outcome:** You drastically reduce cloud storage spend and data egress fees by eliminating redundancy.
 
 === 3. Production Stability (Environment Parity)
-**The Problem:** "It works on my machine." A model works perfectly in the Dev environment because the data scientist manually tweaked the S3 path. It fails in Production because the path is different, and the manual tweak wasn't documented.
-**The Automated Solution:** You abstract the environment using **Data Connections**. The code simply asks for `conn-s3`.
-* In **Dev**, your automation points `conn-s3` to a "Sandbox Bucket."
-* In **Prod**, your automation points `conn-s3` to the "Live Data Lake."
-**The Outcome:** The code never changes. You achieve **100% Environment Parity**, significantly reducing deployment failures.
+
+ * **The Problem:** "It works on my machine." A model works perfectly in the Dev environment because the data scientist manually tweaked the S3 path. It fails in Production because the path is different, and the manual tweak wasn't documented.
+ * **The Automated Solution:** You abstract the environment using **Data Connections**. The code simply asks for `conn-s3`.
+ ** In **Dev**, your automation points `conn-s3` to a "Sandbox Bucket."
+ ** In **Prod**, your automation points `conn-s3` to the "Live Data Lake."
+ * **The Outcome:** The code never changes. You achieve **100% Environment Parity**, significantly reducing deployment failures.
 
 == The Architecture of the Factory
 
@@ -44,21 +49,24 @@ In this lab, you will act as the **Factory Architect**. You will stop clicking b
 image::images/rhoai-layered-storage-architecture.png
 
 === Layer 1: The Warehouse (Data Connections)
-* **What it is:** The "Loading Dock" for external data.
-* **The Automation:** Instead of asking users to manage keys, you deploy standardized **Connection Types** (S3, OCI, URI).
-* **Business Value:** Ensures that if the security team rotates the keys, the business process doesn't stop.
+
+ * **What it is:** The "Loading Dock" for external data.
+ * **The Automation:** Instead of asking users to manage keys, you deploy standardized **Connection Types** (S3, OCI, URI).
+ * **Business Value:** Ensures that if the security team rotates the keys, the business process doesn't stop.
 
 === Layer 2: The Workbench (Cluster Storage)
-* **What it is:** The "Assembly Line" where work happens.
-* **The Automation:** You define **Storage Classes** that map to business needs.
-    * **"Scratchpad" (RWO):** Fast, temporary, personal storage.
-    * **"Collaboration" (RWX):** Shared project storage for team-based iteration.
-* **Business Value:** Prevents data silos. If a team member leaves, their work remains in the shared project volume, not locked on a personal drive.
+
+ * **What it is:** The "Assembly Line" where work happens.
+ * **The Automation:** You define **Storage Classes** that map to business needs.
+ ** **"Scratchpad" (RWO):** Fast, temporary, personal storage.
+ ** **"Collaboration" (RWX):** Shared project storage for team-based iteration.
+ * **Business Value:** Prevents data silos. If a team member leaves, their work remains in the shared project volume, not locked on a personal drive.
 
 === Layer 3: The Supply Chain (Modelcars & URI)
-* **What it is:** The delivery mechanism for model assets.
-* **The Automation:** You treat models like software artifacts using **OCI Registries**.
-* **Business Value:** Faster rollouts. A new model version is just a new container tag, instantly available to all production services.
+
+ * **What it is:** The delivery mechanism for model assets.
+ * **The Automation:** You treat models like software artifacts using **OCI Registries**.
+ * **Business Value:** Faster rollouts. A new model version is just a new container tag, instantly available to all production services.
 
 == Your Mission: Script the Setup
 
