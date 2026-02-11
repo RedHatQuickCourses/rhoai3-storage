@@ -126,29 +126,69 @@
 <div class="sect2">
 <h3 id="_1_acceleration_time_to_science"><a class="anchor" href="#_1_acceleration_time_to_science"></a>1. Acceleration (Time-to-Science)</h3>
 <div class="paragraph">
-<p><strong>The Problem:</strong> In manual environments, a new Data Scientist spends their first week fighting for access. They wait 2 days for a ticket to open a firewall port to S3. They wait 1 day for a Persistent Volume Claim (PVC) to be approved.
-<strong>The Automated Solution:</strong> You script standard <strong>Data Connections</strong> and <strong>Storage Classes</strong>.
-<strong>The Outcome:</strong> Onboarding takes minutes. A researcher joins a project, selects the pre-approved "Corporate Data Lake" connection, mounts the "Team Shared Storage," and starts training immediately.</p>
+<p><strong>The Problem:</strong> In manual environments, a new Data Scientist spends their first week fighting for access. They wait 2 days for a ticket to open a firewall port to S3. They wait 1 day for a Persistent Volume Claim (PVC) to be approved.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Automated Solution:</strong> You script standard <strong>Data Connections</strong> and <strong>Storage Classes</strong>.</p>
+</li>
+<li>
+<p><strong>The Outcome:</strong> Onboarding takes minutes. A researcher joins a project, selects the pre-approved "Corporate Data Lake" connection, mounts the "Team Shared Storage," and starts training immediately.</p>
+</li>
+</ul>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_2_cost_efficiency_finops"><a class="anchor" href="#_2_cost_efficiency_finops"></a>2. Cost Efficiency (FinOps)</h3>
-<div class="paragraph">
-<p><strong>The Problem:</strong> "Shadow IT." Without governed storage options, users download massive datasets to expensive, unmanaged block storage (RWO) and leave them there forever. Or worse, they download terabytes of redundant data to local laptops.
-<strong>The Automated Solution:</strong> You provide a <strong>"Well-Lit Path"</strong>:
-* <strong>Shared Storage (RWX):</strong> One 500GB volume shared by 10 users (saving 4.5TB of duplication).
-* <strong>Modelcars (OCI):</strong> Streaming models from a registry instead of downloading them to disk.
-<strong>The Outcome:</strong> You drastically reduce cloud storage spend and data egress fees by eliminating redundancy.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Problem:</strong> "Shadow IT." Without governed storage options, users download massive datasets to expensive, unmanaged block storage (RWO) and leave them there forever. Or worse, they download terabytes of redundant data to local laptops.</p>
+</li>
+<li>
+<p><strong>The Automated Solution:</strong> You provide a <strong>"Well-Lit Path"</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Shared Storage (RWX):</strong> One 500GB volume shared by 10 users (saving 4.5TB of duplication).</p>
+</li>
+<li>
+<p><strong>Modelcars (OCI):</strong> Streaming models from a registry instead of downloading them to disk.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>The Outcome:</strong> You drastically reduce cloud storage spend and data egress fees by eliminating redundancy.</p>
+</li>
+</ul>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_3_production_stability_environment_parity"><a class="anchor" href="#_3_production_stability_environment_parity"></a>3. Production Stability (Environment Parity)</h3>
-<div class="paragraph">
-<p><strong>The Problem:</strong> "It works on my machine." A model works perfectly in the Dev environment because the data scientist manually tweaked the S3 path. It fails in Production because the path is different, and the manual tweak wasn&#8217;t documented.
-<strong>The Automated Solution:</strong> You abstract the environment using <strong>Data Connections</strong>. The code simply asks for <code>conn-s3</code>.
-* In <strong>Dev</strong>, your automation points <code>conn-s3</code> to a "Sandbox Bucket."
-* In <strong>Prod</strong>, your automation points <code>conn-s3</code> to the "Live Data Lake."
-<strong>The Outcome:</strong> The code never changes. You achieve <strong>100% Environment Parity</strong>, significantly reducing deployment failures.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Problem:</strong> "It works on my machine." A model works perfectly in the Dev environment because the data scientist manually tweaked the S3 path. It fails in Production because the path is different, and the manual tweak wasn&#8217;t documented.</p>
+</li>
+<li>
+<p><strong>The Automated Solution:</strong> You abstract the environment using <strong>Data Connections</strong>. The code simply asks for <code>conn-s3</code>.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>In <strong>Dev</strong>, your automation points <code>conn-s3</code> to a "Sandbox Bucket."</p>
+</li>
+<li>
+<p>In <strong>Prod</strong>, your automation points <code>conn-s3</code> to the "Live Data Lake."</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>The Outcome:</strong> The code never changes. You achieve <strong>100% Environment Parity</strong>, significantly reducing deployment failures.</p>
+</li>
+</ul>
 </div>
 </div>
 </div>
@@ -187,12 +227,16 @@
 </li>
 <li>
 <p><strong>The Automation:</strong> You define <strong>Storage Classes</strong> that map to business needs.</p>
-</li>
+<div class="ulist">
+<ul>
 <li>
 <p><strong>"Scratchpad" (RWO):</strong> Fast, temporary, personal storage.</p>
 </li>
 <li>
 <p><strong>"Collaboration" (RWX):</strong> Shared project storage for team-based iteration.</p>
+</li>
+</ul>
+</div>
 </li>
 <li>
 <p><strong>Business Value:</strong> Prevents data silos. If a team member leaves, their work remains in the shared project volume, not locked on a personal drive.</p>
