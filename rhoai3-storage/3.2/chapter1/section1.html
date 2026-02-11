@@ -125,18 +125,28 @@
 <div class="sect2">
 <h3 id="_data_connection_the_instance"><a class="anchor" href="#_data_connection_the_instance"></a>Data Connection (The Instance)</h3>
 <div class="paragraph">
-<p>A Kubernetes resource containing configuration parameters (key-value pairs) to access external data.
-* <strong>Storage Location:</strong> Stored securely as a Kubernetes Secret.
-* <strong>Injection:</strong> Injected into Pods as Environment Variables at runtime.
-* <strong>Scope:</strong> Namespace-isolated; it cannot be shared across projects.</p>
+<p>A Kubernetes resource containing configuration parameters (key-value pairs) to access external data.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Storage Location:</strong> Stored securely as a Kubernetes Secret.</p>
+</li>
+<li>
+<p><strong>Injection:</strong> Injected into Pods as Environment Variables at runtime.</p>
+</li>
+<li>
+<p><strong>Scope:</strong> Namespace-isolated; it cannot be shared across projects.</p>
+</li>
+</ul>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_connection_types_the_template"><a class="anchor" href="#_connection_types_the_template"></a>Connection Types (The Template)</h3>
 <div class="paragraph">
 <p>An administrator-defined template that dictates what fields a user must provide.
-* <strong>Example:</strong> An admin creates a "Corporate S3" type requiring <code>Bucket</code>, <code>Endpoint</code>, and <code>Region</code>.
-* <strong>Value:</strong> Ensures standardization across the enterprise.</p>
+ * <strong>Example:</strong> An admin creates a "Corporate S3" type requiring <code>Bucket</code>, <code>Endpoint</code>, and <code>Region</code>.
+ * <strong>Value:</strong> Ensures standardization across the enterprise.</p>
 </div>
 <div class="admonitionblock warning">
 <table>
@@ -167,27 +177,27 @@ You must now use <code>opendatahub.io/connection-type-protocol</code> for all ne
 <h3 id="_a_s3_compatible_object_storage_s3"><a class="anchor" href="#_a_s3_compatible_object_storage_s3"></a>A. S3-Compatible Object Storage (<code>s3</code>)</h3>
 <div class="paragraph">
 <p>The default protocol for Data Lakes, Pipeline Artifacts, and standard Model Serving.
-* <strong>Required Fields:</strong> Access Key, Secret Key, Endpoint, Bucket.
-* <strong>Lab Context:</strong> We use MinIO to simulate a corporate data lake. The connection injects <code>AWS_ACCESS_KEY_ID</code> and <code>AWS_S3_ENDPOINT</code> so code using <code>boto3</code> works automatically.
-* <strong>Note:</strong> For self-signed certificates (MinIO), you must inject the Bundle CA.</p>
+ * <strong>Required Fields:</strong> Access Key, Secret Key, Endpoint, Bucket.
+ * <strong>Lab Context:</strong> We use MinIO to simulate a corporate data lake. The connection injects <code>AWS_ACCESS_KEY_ID</code> and <code>AWS_S3_ENDPOINT</code> so code using <code>boto3</code> works automatically.
+ * <strong>Note:</strong> For self-signed certificates (MinIO), you must inject the Bundle CA.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_b_oci_model_registry_oci"><a class="anchor" href="#_b_oci_model_registry_oci"></a>B. OCI Model Registry (<code>oci</code>)</h3>
 <div class="paragraph">
 <p>The "Accelerator" protocol for high-speed model inference.
-* <strong>Use Case:</strong> "Modelcars"—pulling models from container registries instead of downloading weights as files.
-* <strong>Performance:</strong> Leverages the node&#8217;s container cache for massive deduplication, making it optimal for large-scale inference deployments.
-* <strong>Lab Context:</strong> We use the <code>oci</code> protocol to mount the Granite model directly from Quay.io.</p>
+ * <strong>Use Case:</strong> "Modelcars"—pulling models from container registries instead of downloading weights as files.
+ * <strong>Performance:</strong> Leverages the node&#8217;s container cache for massive deduplication, making it optimal for large-scale inference deployments.
+ * <strong>Lab Context:</strong> We use the <code>oci</code> protocol to mount the Granite model directly from Quay.io.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_c_uri_uri"><a class="anchor" href="#_c_uri_uri"></a>C. URI (<code>uri</code>)</h3>
 <div class="paragraph">
 <p>The "Surgical Link" for direct HTTP/HTTPS access.
-* <strong>Use Case:</strong> Direct links to specific model versions or files (e.g., <code><a href="https://&#8230;&#8203;/model-v1.onnx" class="bare">https://&#8230;&#8203;/model-v1.onnx</a></code>).
-* <strong>Limitation:</strong> Generally read-only and less secure than S3/OCI connections.
-* <strong>Lab Context:</strong> We use the <code>uri</code> protocol to point to a specific versioned folder in a private bucket, bypassing the need to expose the entire bucket root.</p>
+ * <strong>Use Case:</strong> Direct links to specific model versions or files (e.g., <code><a href="https://&#8230;&#8203;/model-v1.onnx" class="bare">https://&#8230;&#8203;/model-v1.onnx</a></code>).
+ * <strong>Limitation:</strong> Generally read-only and less secure than S3/OCI connections.
+ * <strong>Lab Context:</strong> We use the <code>uri</code> protocol to point to a specific versioned folder in a private bucket, bypassing the need to expose the entire bucket root.</p>
 </div>
 </div>
 </div>
