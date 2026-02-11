@@ -19,8 +19,8 @@ In this module, you will learn how to extend the "AI Factory" to support **Custo
 Unlike S3 or OCI, which are built-in, RHOAI does not know what a "PostgreSQL" connection looks like by default. You must define it.
 
 This requires a two-step workflow:
- 1.  **Define the Standard (The Template):** You create a `ConnectionType` resource that defines the schema (e.g., "I need a Host, a Port, and a Password").
- 2.  **Provision the Access (The Instance):** You create the `Secret` that fills in those blanks.
+ .  **Define the Standard (The Template):** You create a `ConnectionType` resource that defines the schema (e.g., "I need a Host, a Port, and a Password").
+ .  **Provision the Access (The Instance):** You create the `Secret` that fills in those blanks.
 
 == Step 1: Define the Connection Type
 First, we must tell the RHOAI Dashboard how to render the form for a database connection and which environment variables to inject.
