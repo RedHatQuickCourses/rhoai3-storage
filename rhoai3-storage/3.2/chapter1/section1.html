@@ -3,10 +3,9 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>The Architecture of Data Connectivity :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
+    <title>The Blueprint: Architecting Data Logistics :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
     <link rel="prev" href="../index.html">
     <link rel="next" href="storage-lab.html">
-    <meta name="description" content="A comprehensive guide to RHOAI 3 storage primitives (Connections/Types), protocols (S3/OCI/URI), and persistence layers (RWO/RWX).">
     <meta name="generator" content="Antora 3.1.3">
     <link rel="stylesheet" href="../../../_/css/site.css">
     <script>var uiRootPath = '../../../_'</script>
@@ -102,152 +101,152 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">The Architecture of Data Connectivity</h1>
+<h1 class="page">The Blueprint: Architecting Data Logistics</h1>
 <div id="preamble">
 <div class="sectionbody">
-<div class="paragraph lead">
-<p><strong>To build a factory that scales, you must master the vocabulary of the floor.</strong></p>
+<div class="paragraph">
+<p><strong>Theory is over. It is time to look at the machinery under the floorboards.</strong></p>
 </div>
 <div class="paragraph">
-<p>In the previous module, we established <strong>why</strong> RHOAI decouples data from compute. Now, we will examine <strong>how</strong> the platform executes this. This architecture relies on a specific set of API primitives that act as the "machinery under the floorboards".</p>
+<p>In the previous module, we established that a Data Supply Chain produces <strong>Velocity</strong>, <strong>Security</strong>, and <strong>Collaboration</strong>. Now, we must examine the specific OpenShift AI (RHOAI) primitives that execute this vision.</p>
 </div>
 <div class="paragraph">
-<p>As a Platform Engineer, you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory". To do this, you must master three distinct layers: <strong>The Primitives</strong> (API Objects), <strong>The Gateway</strong> (External Data), and <strong>The Workspace</strong> (Internal Storage).</p>
+<p>As a Platform Engineer, you are not just managing hard drives; you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory."</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_1_the_core_primitives_the_api_layer"><a class="anchor" href="#_1_the_core_primitives_the_api_layer"></a>1. The Core Primitives (The API Layer)</h2>
+<h2 id="_1_the_universal_adapter_connection_types_vs_data_connections"><a class="anchor" href="#_1_the_universal_adapter_connection_types_vs_data_connections"></a>1. The Universal Adapter: Connection Types vs. Data Connections</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Before defining <strong>where</strong> data lives, you must understand the Kubernetes resources that represent it. RHOAI 3 introduces specific terminology to standardize configuration.</p>
+<p>To achieve <strong>Zero-Touch Security</strong>, RHOAI separates the <strong>definition</strong> of a credential from the <strong>usage</strong> of a credential. This is handled by two distinct API objects.</p>
 </div>
 <div class="sect2">
-<h3 id="_data_connection_the_instance"><a class="anchor" href="#_data_connection_the_instance"></a>Data Connection (The Instance)</h3>
+<h3 id="_the_contract_connection_types_the_template"><a class="anchor" href="#_the_contract_connection_types_the_template"></a>The Contract: Connection Types (The Template)</h3>
 <div class="paragraph">
-<p>A Kubernetes resource containing configuration parameters (key-value pairs) to access external data.</p>
+<p>Think of the <strong>Connection Type</strong> as the "Electrical Socket" on the wall. The Administrator defines the shape of the socket to ensure safety and standardization.</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Storage Location:</strong> Stored securely as a Kubernetes Secret.</p>
+<p><strong>What it does:</strong> It creates a form in the RHOAI Dashboard requiring specific fields (e.g., "Endpoint", "Bucket", "Access Key").</p>
 </li>
 <li>
-<p><strong>Injection:</strong> Injected into Pods as Environment Variables at runtime.</p>
-</li>
-<li>
-<p><strong>Scope:</strong> Namespace-isolated; it cannot be shared across projects.</p>
+<p><strong>The Business Value:</strong> <strong>Standardization.</strong> You ensure that every team connects to the Corporate Data Lake using the exact same protocol and parameters, preventing "snowflake" configurations.</p>
 </li>
 </ul>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_connection_types_the_template"><a class="anchor" href="#_connection_types_the_template"></a>Connection Types (The Template)</h3>
+<h3 id="_the_key_data_connections_the_instance"><a class="anchor" href="#_the_key_data_connections_the_instance"></a>The Key: Data Connections (The Instance)</h3>
 <div class="paragraph">
-<p>An administrator-defined template that dictates what fields a user must provide.
- * <strong>Example:</strong> An admin creates a "Corporate S3" type requiring <code>Bucket</code>, <code>Endpoint</code>, and <code>Region</code>.
- * <strong>Value:</strong> Ensures standardization across the enterprise.</p>
+<p>Think of the <strong>Data Connection</strong> as the "Plug." It is the specific instance where a user provides their credentials to fit the socket.</p>
 </div>
-<div class="admonitionblock warning">
-<table>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>What it does:</strong> It stores the sensitive values as a Kubernetes Secret and injects them into the Workbench as environment variables at runtime.</p>
+</li>
+<li>
+<p><strong>The Business Value:</strong> <strong>Abstraction.</strong> The Data Scientist&#8217;s code acts against generic variables (like <code>AWS_S3_ENDPOINT</code>), meaning the same code works in Dev, Test, and Prod without modification.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_2_the_logistics_channels_supported_protocols"><a class="anchor" href="#_2_the_logistics_channels_supported_protocols"></a>2. The Logistics Channels: Supported Protocols</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Not all data moves the same way. RHOAI provides three "Logistics Channels" (Protocols) to optimize for capacity, speed, or precision.</p>
+</div>
+<div class="sect2">
+<h3 id="_a_s3_object_storage_the_warehouse_capacity"><a class="anchor" href="#_a_s3_object_storage_the_warehouse_capacity"></a>A. S3 Object Storage: The Warehouse (Capacity)</h3>
+<div class="paragraph">
+<p>This is the default protocol for massive unstructured data (images, logs, documents).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Usage:</strong> Used for Data Lakes, Pipeline Artifacts, and standard Model Serving.</p>
+</li>
+<li>
+<p><strong>The "Sharp Edge":</strong> When using on-premise object stores (like MinIO), you must often inject a <strong>Bundle CA</strong> to ensure the platform trusts your self-signed certificates.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_b_oci_registry_the_teleporter_velocity"><a class="anchor" href="#_b_oci_registry_the_teleporter_velocity"></a>B. OCI Registry: The Teleporter (Velocity)</h3>
+<div class="paragraph">
+<p>This is the protocol for <strong>Modelcars</strong>. instead of downloading models as files, we package them as container images.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Usage:</strong> High-speed model inference and distribution.</p>
+</li>
+<li>
+<p><strong>The Advantage:</strong> It leverages the node&#8217;s container image cache. If 10 users need the same "Granite 7B" model, the node downloads the layers <strong>once</strong>, and all 10 users start instantly. This produces massive <strong>deduplication</strong> and <strong>startup velocity</strong>.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_c_uri_the_precision_link"><a class="anchor" href="#_c_uri_the_precision_link"></a>C. URI: The Precision Link</h3>
+<div class="paragraph">
+<p>Sometimes you do not want to expose an entire bucket; you only want to share a single file version.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Usage:</strong> Direct HTTP/HTTPS links to specific assets (e.g., <code><a href="https://&#8230;&#8203;/model-v1.onnx" class="bare">https://&#8230;&#8203;/model-v1.onnx</a></code>).</p>
+</li>
+<li>
+<p><strong>The Limit:</strong> These are generally read-only and best used for fetching public or version-locked assets.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_3_the_workspace_designing_persistence"><a class="anchor" href="#_3_the_workspace_designing_persistence"></a>3. The Workspace: Designing Persistence</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Once data arrives from the "Warehouse" (S3), it needs a place to live while it is being processed. This is your <strong>Cluster Storage</strong>.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
 <tr>
-<td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
-</td>
-<td class="content">
-<div class="title">Deprecation Alert</div>
-<div class="paragraph">
-<p>The annotation <code>opendatahub.io/connection-type-ref</code> is <strong>deprecated</strong>.
-You must now use <code>opendatahub.io/connection-type-protocol</code> for all new connection secrets.</p>
-</div>
-</td>
+<th class="tableblock halign-left valign-top">Storage Type</th>
+<th class="tableblock halign-left valign-top">The Analogy</th>
+<th class="tableblock halign-left valign-top">The Technical Term</th>
+<th class="tableblock halign-left valign-top">The Business Outcome</th>
 </tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>ReadWriteOnce (RWO)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Private Notebook</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Block Storage (EBS, vSphere)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Isolation.</strong> Fast, exclusive storage for a single user. Ideal for databases or personal scratchpads.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>ReadWriteMany (RWX)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Conference Room</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">File Storage (CephFS, NFS, EFS)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Collaboration.</strong> Allows multiple pods to mount the same volume simultaneously. Required for shared team folders and distributed training.</p></td>
+</tr>
+</tbody>
 </table>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_2_the_gateway_supported_protocols_external_storage"><a class="anchor" href="#_2_the_gateway_supported_protocols_external_storage"></a>2. The Gateway: Supported Protocols (External Storage)</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>RHOAI does not store massive datasets inside the cluster. Instead, it uses Data Connections as a "Gateway" to external storage. This layer supports three primary protocols.</p>
-</div>
-<div class="sect2">
-<h3 id="_a_s3_compatible_object_storage_s3"><a class="anchor" href="#_a_s3_compatible_object_storage_s3"></a>A. S3-Compatible Object Storage (<code>s3</code>)</h3>
-<div class="paragraph">
-<p>The default protocol for Data Lakes, Pipeline Artifacts, and standard Model Serving.
- * <strong>Required Fields:</strong> Access Key, Secret Key, Endpoint, Bucket.
- * <strong>Lab Context:</strong> We use MinIO to simulate a corporate data lake. The connection injects <code>AWS_ACCESS_KEY_ID</code> and <code>AWS_S3_ENDPOINT</code> so code using <code>boto3</code> works automatically.
- * <strong>Note:</strong> For self-signed certificates (MinIO), you must inject the Bundle CA.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_b_oci_model_registry_oci"><a class="anchor" href="#_b_oci_model_registry_oci"></a>B. OCI Model Registry (<code>oci</code>)</h3>
-<div class="paragraph">
-<p>The "Accelerator" protocol for high-speed model inference.
- * <strong>Use Case:</strong> "Modelcars"—pulling models from container registries instead of downloading weights as files.
- * <strong>Performance:</strong> Leverages the node&#8217;s container cache for massive deduplication, making it optimal for large-scale inference deployments.
- * <strong>Lab Context:</strong> We use the <code>oci</code> protocol to mount the Granite model directly from Quay.io.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_c_uri_uri"><a class="anchor" href="#_c_uri_uri"></a>C. URI (<code>uri</code>)</h3>
-<div class="paragraph">
-<p>The "Surgical Link" for direct HTTP/HTTPS access.
- * <strong>Use Case:</strong> Direct links to specific model versions or files (e.g., <code><a href="https://&#8230;&#8203;/model-v1.onnx" class="bare">https://&#8230;&#8203;/model-v1.onnx</a></code>).
- * <strong>Limitation:</strong> Generally read-only and less secure than S3/OCI connections.
- * <strong>Lab Context:</strong> We use the <code>uri</code> protocol to point to a specific versioned folder in a private bucket, bypassing the need to expose the entire bucket root.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_3_the_workspace_cluster_storage_internal_storage"><a class="anchor" href="#_3_the_workspace_cluster_storage_internal_storage"></a>3. The Workspace: Cluster Storage (Internal Storage)</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>While Data Connections handle "Inflow/Outflow," <strong>Cluster Storage</strong> handles the "Work in Progress". This is governed by OpenShift Storage Classes and determines your collaboration capabilities.</p>
-</div>
-<div class="sect2">
-<h3 id="_readwriteonce_rwo_the_scratchpad"><a class="anchor" href="#_readwriteonce_rwo_the_scratchpad"></a>ReadWriteOnce (RWO) - "The Scratchpad"</h3>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Architecture:</strong> Block Storage (e.g., AWS EBS <code>gp3-csi</code>, vSphere).</p>
-</li>
-<li>
-<p><strong>Behavior:</strong> Maps 1:1 with a user&#8217;s Workbench (e.g., <code>/opt/app-root/src</code>).</p>
-</li>
-<li>
-<p><strong>Constraint:</strong> Can only attach to one node at a time. Ideal for personal home directories and databases.</p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_readwritemany_rwx_the_collaboration_zone"><a class="anchor" href="#_readwritemany_rwx_the_collaboration_zone"></a>ReadWriteMany (RWX) - "The Collaboration Zone"</h3>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Architecture:</strong> File Storage (e.g., ODF <code>ocs-storagecluster-cephfs</code>, NFS, AWS EFS).</p>
-</li>
-<li>
-<p><strong>Behavior:</strong> Mounts to multiple nodes simultaneously.</p>
-</li>
-<li>
-<p><strong>Constraint:</strong> Required for shared team folders and distributed training.</p>
-</li>
-<li>
-<p><strong>Critical Check:</strong> You <strong>must</strong> verify your cluster supports this, or these PVCs will hang in a <code>Pending</code> state.</p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_4_the_metadata_layer_the_shift_to_databases"><a class="anchor" href="#_4_the_metadata_layer_the_shift_to_databases"></a>4. The Metadata Layer: The Shift to Databases</h2>
-<div class="sectionbody">
 <div class="admonitionblock important">
 <table>
 <tr>
@@ -255,57 +254,37 @@ You must now use <code>opendatahub.io/connection-type-protocol</code> for all ne
 <i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
-<div class="title">Critical Architecture Change in RHOAI 3</div>
+<div class="title">Critical Architecture Check</div>
 <div class="paragraph">
-<p>In previous versions, metadata was often stored in SQLite files on PVCs. RHOAI 3 moves production metadata to <strong>Relational and Vector Databases</strong> for scalability.</p>
+<p>You must verify that your underlying storage provider supports <strong>RWX</strong>. If you attempt to create a shared workspace on infrastructure that only supports Block Storage (RWO), the claims will hang in a <code>Pending</code> state forever.</p>
 </div>
 </td>
 </tr>
 </table>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Model Registry:</strong> Now requires an external <strong>MySQL</strong> database (5.x/8.x) to store model lineage and version history, rather than a local file.</p>
-</li>
-<li>
-<p><strong>Llama Stack (RAG):</strong></p>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Vector Store:</strong> Requires <strong>Milvus</strong> or <strong>PostgreSQL (pgvector)</strong>.</p>
-</li>
-<li>
-<p><strong>Metadata:</strong> SQLite is removed for production; PostgreSQL is mandated.</p>
-</li>
-</ul>
-</div>
-</li>
-</ul>
-</div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_system_requirements_checklist"><a class="anchor" href="#_system_requirements_checklist"></a>System Requirements Checklist</h2>
+<h2 id="_4_the_foundation_the_metadata_layer"><a class="anchor" href="#_4_the_foundation_the_metadata_layer"></a>4. The Foundation: The Metadata Layer</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Before proceeding to the lab automation, ensure your underlying cluster meets these specs:</p>
+<p>In RHOAI 3, we have made a critical architectural shift to support the "Industrialized" scale.</p>
 </div>
-<div class="ulist checklist">
-<ul class="checklist">
+<div class="ulist">
+<ul>
 <li>
-<p><i class="fa fa-square-o"></i> <strong>Default Storage Class:</strong> Must support dynamic provisioning (e.g., <code>gp3-csi</code>).</p>
+<p><strong>The Old Way:</strong> Metadata (Model Lineage, Registry Data) was stored in local SQLite files. This was fragile and could not scale.</p>
 </li>
 <li>
-<p><i class="fa fa-square-o"></i> <strong>Shared Storage Driver:</strong> Must support <code>ReadWriteMany</code> (e.g., <code>ocs-storagecluster-cephfs</code> or NFS) for team collaboration features.</p>
+<p><strong>The New Way:</strong> Production components (Model Registry, Llama Stack) now <strong>require external databases</strong> (MySQL or PostgreSQL).</p>
 </li>
 <li>
-<p><i class="fa fa-square-o"></i> <strong>Object Storage:</strong> An S3-compatible endpoint (MinIO, AWS, Noobaa) is <strong>mandatory</strong> for Pipelines and Model Serving.</p>
+<p><strong>The Outcome:</strong> This allows your "Factory" to track thousands of model versions and artifacts without performance degradation, utilizing a proper database engine rather than a flat file.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p><strong>Now that you understand the blueprint, let&#8217;s deploy the factory.</strong></p>
+<p><strong>Now that you understand the blueprint, let&#8217;s pick up the tools. In the next module, we will deploy this entire architecture using GitOps.</strong></p>
 </div>
 </div>
 </div>

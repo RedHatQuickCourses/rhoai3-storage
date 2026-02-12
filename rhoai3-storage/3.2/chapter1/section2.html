@@ -3,8 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Build It: Configuring the Data Foundation :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
-    <meta name="description" content="Step-by-step guide to configuring Storage Classes and creating your first managed Data Connection.">
+    <title>Lab: Automating the Data Supply Chain :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
     <meta name="generator" content="Antora 3.1.3">
     <link rel="stylesheet" href="../../../_/css/site.css">
     <script>var uiRootPath = '../../../_'</script>
@@ -91,7 +90,7 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></li>
-    <li><a href="section2.html">Build It: Configuring the Data Foundation</a></li>
+    <li><a href="section2.html">Lab: Automating the Data Supply Chain</a></li>
   </ul>
 </nav>
 </div>
@@ -100,23 +99,23 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Build It: Configuring the Data Foundation</h1>
+<h1 class="page">Lab: Automating the Data Supply Chain</h1>
 <div id="preamble">
 <div class="sectionbody">
-<div class="paragraph lead">
-<p><strong>Theory is over. It is time to pour the concrete.</strong></p>
+<div class="paragraph">
+<p><strong>Stop clicking. Start engineering.</strong></p>
 </div>
 <div class="paragraph">
-<p>In this lab, you will configure the two foundational pillars of the RHOAI platform: the <strong>Storage Classes</strong> for persistence and the <strong>Connection Types</strong> for secure access. By the end of this session, you will have a cluster ready to host high-performance AI workloads.</p>
+<p>To build a Data Supply Chain, you first need a "Warehouse" (Object Storage) and a "Brain" (Metadata Storage). In a real corporate environment, these already exist. In this lab, we will simulate that environment by deploying a real instance of <strong>MinIO</strong> and <strong>MySQL</strong> to your cluster in seconds.</p>
 </div>
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-important" title="Important"></i>
-</td>
-<td class="content">
-<div class="title">Prerequisites</div>
+<div class="paragraph">
+<p>Once the infrastructure is live, you will act as the <strong>Platform Architect</strong>. You will define the "Universal Adapters" (Data Connections) that allow your Data Scientists to consume these resources securely, without ever knowing the root passwords.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
 <div class="ulist">
 <ul>
 <li>
@@ -126,164 +125,294 @@
 <p><code>cluster-admin</code> privileges.</p>
 </li>
 <li>
-<p>An available S3 Bucket (AWS or MinIO) with Access Key/Secret Key.</p>
+<p>The <code>oc</code> CLI tool installed.</p>
 </li>
 </ul>
-</div>
-</td>
-</tr>
-</table>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_step_1_configure_storage_classes"><a class="anchor" href="#_step_1_configure_storage_classes"></a>Step 1: Configure Storage Classes</h2>
+<h2 id="_phase_1_the_infrastructure_deploy_the_factory"><a class="anchor" href="#_phase_1_the_infrastructure_deploy_the_factory"></a>Phase 1: The Infrastructure (Deploy the Factory)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>First, we must define how the cluster handles persistence. We need to ensure users can select the right storage for the right job.</p>
+<p>We have packaged the "Plumbing" into a Fast Track script. This script will:
+1.  Create the <code>rhoai-model-registry-lab</code> namespace.
+2.  Deploy <strong>MinIO</strong> (S3-compatible storage).
+3.  Deploy <strong>MySQL</strong> (Relational Database).
+4.  Expose them internally to the cluster.</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Navigate to the RHOAI Dashboard: <strong>Settings</strong> &#8594; <strong>Cluster settings</strong> &#8594; <strong>Storage classes</strong>.</p>
-</li>
-<li>
-<p><strong>Set the Default:</strong> Ensure your fastest RWO block storage is enabled and selected as "Default".</p>
-</li>
-<li>
-<p><strong>Enable Shared Storage:</strong> Locate your <strong>RWX-capable</strong> storage class (e.g., <code>ocs-storagecluster-cephfs</code>). Toggle it to <strong>Enabled</strong>.</p>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Why?</strong> Without this, your users cannot create shared team workspaces or run distributed training jobs.</p>
-</li>
-</ul>
+<div class="sect2">
+<h3 id="_1_acquire_the_infrastructure_code"><a class="anchor" href="#_1_acquire_the_infrastructure_code"></a>1. Acquire the Infrastructure Code</h3>
+<div class="paragraph">
+<p>Create a file named <code>setup.sh</code> and paste the following content. This simulates checking out the "Ops Team" repository.</p>
 </div>
-</li>
-</ol>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">#!/bin/bash
+# setup.sh: Automates the "Plumbing" phase.
+set -e
+NAMESPACE="rhoai-model-registry-lab"
+
+echo "🚀 Starting AI Supply Chain Infrastructure Setup..."
+
+# 1. Create Namespace
+if oc get project "$NAMESPACE" &gt; /dev/null 2&gt;&amp;1; then
+    echo "✔ Namespace $NAMESPACE exists."
+else
+    oc new-project "$NAMESPACE"
+fi
+
+# 2. Deploy MinIO (The Vault)
+echo "➤ Deploying MinIO..."
+# (In a real lab, these would be git checkout files. Here we apply directly.)
+oc apply -f https://raw.githubusercontent.com/RedHatQuickCourses/rhoai3-storage/main/manifests/minio-backend.yaml -n $NAMESPACE
+
+# 3. Deploy MySQL (The Brain)
+echo "➤ Deploying MySQL..."
+oc apply -f https://raw.githubusercontent.com/RedHatQuickCourses/rhoai3-storage/main/manifests/mysql-backend.yaml -n $NAMESPACE
+
+echo "✅ Infrastructure Setup Complete!"
+echo "MinIO URL: http://minio-service.$NAMESPACE.svc.cluster.local:9000"
+echo "MySQL Host: mysql.$NAMESPACE.svc.cluster.local"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>(Note: For this lab, assume the YAML files referenced in the script are available locally or apply the provided sample files.)</strong></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_execute_the_provisioning"><a class="anchor" href="#_2_execute_the_provisioning"></a>2. Execute the Provisioning</h3>
+<div class="paragraph">
+<p>Run the script to stand up the factory floor.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">chmod +x setup.sh
+./setup.sh</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Validation:</strong>
+Check that your "Warehouse" is running.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pods -n rhoai-model-registry-lab</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Expected Output:</strong> You should see <code>minio</code> and <code>mysql</code> pods in <code>Running</code> state.</p>
+</div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_step_2_create_a_connection_type"><a class="anchor" href="#_step_2_create_a_connection_type"></a>Step 2: Create a Connection Type</h2>
+<h2 id="_phase_2_the_universal_adapter_gitops_connections"><a class="anchor" href="#_phase_2_the_universal_adapter_gitops_connections"></a>Phase 2: The Universal Adapter (GitOps Connections)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>RHOAI 3 allows you to define templates ("Connection Types") that standardize how users connect to data.</p>
+<p>Now that the servers are running, we need to create the "Plugs" that allow RHOAI to connect to them. We will use a <strong>GitOps approach</strong> to ensure these connections are standardized and reproducible.</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Navigate to <strong>Settings</strong> &#8594; <strong>Environment setup</strong> &#8594; <strong>Connection types</strong>.</p>
-</li>
-<li>
-<p>Click <strong>Create connection type</strong>.</p>
-</li>
-<li>
-<p><strong>Define the Schema:</strong></p>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Name:</strong> <code>Corporate S3 Standard</code></p>
-</li>
-<li>
-<p><strong>Category:</strong> <code>Object Storage</code></p>
-</li>
-<li>
-<p><strong>Fields:</strong> Add fields for <code>Bucket</code>, <code>Endpoint</code>, <code>Access Key</code>, and <code>Secret Key</code>.</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p><strong>Preview:</strong> Check the form to ensure it looks user-friendly for your data scientists.</p>
-</li>
-<li>
-<p><strong>Save.</strong></p>
-</li>
-</ol>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_step_3_create_the_data_connection"><a class="anchor" href="#_step_3_create_the_data_connection"></a>Step 3: Create the Data Connection</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_step_1_define_the_s3_standard_connection_type"><a class="anchor" href="#_step_1_define_the_s3_standard_connection_type"></a>Step 1: Define the S3 Standard (Connection Type)</h3>
 <div class="paragraph">
-<p>Now, act as the Platform Engineer creating a secure connection for a project.</p>
+<p>First, we define the "Socket" for our Corporate Data Lake. This tells the RHOAI Dashboard what fields to expect.</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Navigate to <strong>Projects</strong> and select a project (or create <code>my-ai-project</code>).</p>
-</li>
-<li>
-<p>Click <strong>Data connections</strong> &#8594; <strong>Add data connection</strong>.</p>
-</li>
-<li>
-<p>Select the <strong>Connection Type</strong> you created (<code>Corporate S3 Standard</code>).</p>
-</li>
-<li>
-<p><strong>Fill in the details:</strong></p>
-<div class="ulist">
-<ul>
-<li>
-<p>Enter your real AWS/MinIO credentials.</p>
-</li>
-<li>
-<p><strong>Note:</strong> The user will see this connection name, but they will <strong>not</strong> need to copy-paste these credentials later.</p>
-</li>
-</ul>
-</div>
-</li>
-</ol>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_step_4_verification_the_payoff"><a class="anchor" href="#_step_4_verification_the_payoff"></a>Step 4: Verification (The "Payoff")</h2>
-<div class="sectionbody">
 <div class="paragraph">
-<p>Let&#8217;s verify that the abstraction works.</p>
+<p><strong>File:</strong> <code>01-s3-type.yaml</code></p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Create a <strong>Workbench</strong> in the same project.</p>
-</li>
-<li>
-<p>In the <strong>Data connections</strong> section of the workbench creation form, select your new connection: <code>Use existing data connection</code>.</p>
-</li>
-<li>
-<p>Launch the Workbench and open a Terminal.</p>
-</li>
-<li>
-<p>Run <code>env | grep AWS</code>.</p>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Success:</strong> You should see <code>AWS_ACCESS_KEY_ID</code> and <code>AWS_S3_ENDPOINT</code> populated automatically.</p>
-</li>
-</ul>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: dashboard.opendatahub.io/v1alpha
+kind: ConnectionType
+metadata:
+  name: corporate-minio-standard
+  labels:
+    opendatahub.io/dashboard: "true"
+spec:
+  displayName: "Corporate MinIO Standard"
+  category: "Object Storage"
+  description: "Standard connection to the internal MinIO Data Lake."
+  fields:
+    - name: Endpoint
+      type: text
+      required: true
+      envVar: AWS_S3_ENDPOINT
+    - name: Bucket
+      type: text
+      required: true
+      envVar: AWS_S3_BUCKET
+    - name: Access Key
+      type: text
+      required: true
+      envVar: AWS_ACCESS_KEY_ID
+    - name: Secret Key
+      type: password
+      required: true
+      envVar: AWS_SECRET_ACCESS_KEY</code></pre>
 </div>
-</li>
-</ol>
 </div>
-<div class="admonitionblock note">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 01-s3-type.yaml</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_step_2_create_the_data_connection_the_instance"><a class="anchor" href="#_step_2_create_the_data_connection_the_instance"></a>Step 2: Create the Data Connection (The Instance)</h3>
+<div class="paragraph">
+<p>Now, we create the actual connection for the "Finance Team" that points to the MinIO instance we just deployed. Notice we use the internal ClusterIP service URL.</p>
+</div>
+<div class="paragraph">
+<p><strong>File:</strong> <code>02-finance-connection.yaml</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: v1
+kind: Secret
+metadata:
+  name: finance-data-lake
+  namespace: rhoai-model-registry-lab
+  labels:
+    opendatahub.io/dashboard: "true" # &lt;1&gt; Visible in UI
+    opendatahub.io/managed: "true"
+  annotations:
+    opendatahub.io/connection-type: "corporate-minio-standard" # &lt;2&gt; Links to our Type
+    openshift.io/display-name: "Finance Data Lake"
+type: Opaque
+stringData:
+  Endpoint: "http://minio-service.rhoai-model-registry-lab.svc.cluster.local:9000"
+  Bucket: "finance-records"
+  Access Key: "minio"
+  Secret Key: "minio123"</code></pre>
+</div>
+</div>
+<div class="colist arabic">
 <table>
 <tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="title">The Result</div>
-<div class="paragraph">
-<p>You have successfully decoupled the data from the user. The data scientist can now use <code>boto3</code> to access the bucket without ever knowing the password. You have stopped credential sprawl before it started.</p>
-</div>
-</td>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td><strong>Required Label:</strong> Without this, the secret is invisible to RHOAI.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td><strong>Binding:</strong> This links the secret to the schema we defined in Step 1.</td>
 </tr>
 </table>
 </div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 02-finance-connection.yaml</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_phase_3_the_brain_database_connection"><a class="anchor" href="#_phase_3_the_brain_database_connection"></a>Phase 3: The Brain (Database Connection)</h2>
+<div class="sectionbody">
 <div class="paragraph">
-<p><strong>Next Step: Now that your data foundation is secure, proceed to the "Pipeline Automation" module.</strong></p>
+<p>RHOAI 3 requires databases for Model Registries. Let&#8217;s wire up the MySQL instance.</p>
+</div>
+<div class="sect2">
+<h3 id="_step_1_define_the_database_standard"><a class="anchor" href="#_step_1_define_the_database_standard"></a>Step 1: Define the Database Standard</h3>
+<div class="paragraph">
+<p><strong>File:</strong> <code>03-db-type.yaml</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: dashboard.opendatahub.io/v1alpha
+kind: ConnectionType
+metadata:
+  name: corporate-mysql
+  labels:
+    opendatahub.io/dashboard: "true"
+spec:
+  displayName: "Corporate MySQL"
+  category: "Database"
+  fields:
+    - name: Host
+      type: text
+      envVar: DB_HOST
+    - name: Port
+      type: text
+      defaultValue: "3306"
+      envVar: DB_PORT
+    - name: Username
+      type: text
+      envVar: DB_USER
+    - name: Password
+      type: password
+      envVar: DB_PASSWORD</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 03-db-type.yaml</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_step_2_create_the_db_connection"><a class="anchor" href="#_step_2_create_the_db_connection"></a>Step 2: Create the DB Connection</h3>
+<div class="paragraph">
+<p><strong>File:</strong> <code>04-registry-db.yaml</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: v1
+kind: Secret
+metadata:
+  name: registry-db-connection
+  namespace: rhoai-model-registry-lab
+  labels:
+    opendatahub.io/dashboard: "true"
+  annotations:
+    opendatahub.io/connection-type: "corporate-mysql"
+    openshift.io/display-name: "Model Registry Database"
+type: Opaque
+stringData:
+  Host: "mysql.rhoai-model-registry-lab.svc.cluster.local"
+  Port: "3306"
+  Username: "admin"
+  Password: "mysql-admin"</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 04-registry-db.yaml</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_phase_4_verification_the_payoff"><a class="anchor" href="#_phase_4_verification_the_payoff"></a>Phase 4: Verification (The Payoff)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You have successfully used GitOps to wire up a complete Data Supply Chain. Let&#8217;s verify it in the interface.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Open the <strong>Red Hat OpenShift AI Dashboard</strong>.</p>
+</li>
+<li>
+<p>Navigate to <strong>Data Science Projects</strong>.</p>
+</li>
+<li>
+<p>Select the project <strong>rhoai-model-registry-lab</strong> (created by the script).</p>
+</li>
+<li>
+<p>Click the <strong>Data connections</strong> tab.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><strong>Success Criteria:</strong>
+* [ ] You see <strong>"Finance Data Lake"</strong> listed under <strong>Object Storage</strong>.
+* [ ] You see <strong>"Model Registry Database"</strong> listed under <strong>Database</strong>.
+* [ ] The connection details are hidden from view, ensuring security.</p>
+</div>
+<div class="paragraph">
+<p><strong>You have now built a standardized, automated data layer that can be replicated across any environment.</strong></p>
 </div>
 </div>
 </div>
