@@ -1,0 +1,49 @@
+= Knowledge Check: Verify Your Architecture Skills
+:role: Assessment
+:audience: Platform Engineers
+:description: A short quiz to validate understanding of RHOAI 3 Storage and Connectivity concepts.
+
+[.lead]
+*Did you master the factory floor? Let's find out.*
+
+== Question 1: The Strategy
+**Scenario:** A team of 5 researchers needs to access a read-only 2TB dataset of satellite imagery simultaneously. They do not need to modify the images.
+**Which storage class strategy is most appropriate?**
+
+* [ ] A. Provision 5 separate RWO volumes and copy the data to each one.
+* [ ] B. Provision one RWO volume and have them take turns.
+* [x] C. Provision one RWX (ReadWriteMany) volume and mount it to all 5 workbenches as Read-Only.
+* [ ] D. Store the images in a Git repository.
+
+_Answer: C. RWX is designed for collaborative access to shared data without duplication._
+
+== Question 2: The Security
+**Scenario:** You need to rotate the AWS Access Keys used by the "Fraud Detection" team.
+**How do you update the credentials without breaking their code?**
+
+* [ ] A. Email the new keys to the team and ask them to update their notebooks.
+* [ ] B. Update the hardcoded values in the `deployment.yaml` file.
+* [x] C. Update the Kubernetes Secret associated with the Data Connection.
+* [ ] D. Delete the workbench and recreate it.
+
+_Answer: C. Data Connections abstract credentials into Secrets. Updating the Secret automatically propagates the new values to the environment variables upon the next pod start._
+
+== Question 3: The Architecture (RHOAI 3)
+**Scenario:** You are deploying a production Model Registry in RHOAI 3.
+**Where should the metadata be stored?**
+
+* [ ] A. In a text file on a PVC.
+* [ ] B. In an SQLite database on the local node.
+* [x] C. In an external MySQL or PostgreSQL database.
+* [ ] D. In the OpenShift etcd key-value store.
+
+_Answer: C. RHOAI 3 requires external databases (MySQL/Postgres) for production components like Model Registry and Llama Stack to ensure scalability._
+
+== Question 4: The Configuration
+**Scenario:** A user reports their workbench is restarting unexpectedly. You recently changed the global "Default PVC Size" in the Cluster Settings.
+**Is this related?**
+
+* [x] A. Yes, changing the default PVC size triggers a rollout restart of workbench pods.
+* [ ] B. No, PVC settings only affect new workbenches.
+
+_Answer: A. Modifying the PVC size setting in the dashboard restarts workbench pods and makes them unavailable for up to 30 seconds._

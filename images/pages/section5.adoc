@@ -1,0 +1,42 @@
+= The Sharp Edges: Field Notes for Platform Engineers
+:role: Operational Guide
+:audience: Platform Engineers & SREs
+:description: Critical "gotchas," configuration warnings, and troubleshooting tips derived from real-world RHOAI deployments.
+
+[.lead]
+*Configuration is easy. Day-2 Operations are where the battle is won.*
+
+Now that your storage architecture is built, you need to maintain it. Based on RHOAI 3 best practices, here are the five most common "sharp edges" that trip up Platform Engineers.
+
+== 1. The "Protocol" Pitfall (Connectivity)
+When configuring Data Connections for S3-compatible stores (like MinIO or NooBaa), the most frequent error is **Endpoint Formatting**.
+
+* **The Error:** Providing an endpoint like `minio-api.cluster.local`.
+* **The Fix:** You *must* prefix the protocol.
+    ** Correct: `http://minio-api.cluster.local:9000` or `https://s3.us-east-1.amazonaws.com`.
+    ** Why? The Boto3 client injected into the workbench requires the full URI scheme to resolve correctly.
+
+== 2. The "Restart" Risk (PVC Management)
+You might receive a ticket from a user asking for more disk space: *"My 20GB Workbench is full."*
+
+* **The Action:** You go to **Settings -> Cluster settings** and increase the default PVC size to 50GB.
+* **The Warning:** Changing the default PVC size triggers a **restart** of the Workbench Pod.
+* **Best Practice:** Perform global storage resizing during maintenance windows. For individual users, expand the PVC manually via the OpenShift Console (`Storage -> PersistentVolumeClaims`) to avoid disrupting the entire cluster configuration.
+
+== 3. The "Corruption" Danger (RWX Volumes)
+Shared storage (ReadWriteMany) is powerful, but it is not magic. It is a shared file system.
+
+* **The Risk:** If two users run a script that writes to the *exact same file* (e.g., `model_weights.h5`) simultaneously, you will experience **data corruption** or data loss.
+* **The Rule:** Use RWX for **reading** shared datasets. If users need to **write**, they should write to their personal (RWO) folder or use unique filenames (e.g., `experiment_userA_v1.log`).
+
+== 4. The "Trust" Gap (Certificates)
+If you are using an on-premise Object Store (MinIO) secured with **Self-Signed Certificates**, your Data Connections will fail silently.
+
+* **The Symptom:** Workbenches hang or Pipeline steps fail with `SSL: CERTIFICATE_VERIFY_FAILED`.
+* **The Fix:** You must inject the **Cluster CA Bundle** into the component. RHOAI components (Pipelines, Model Serving) need to "trust" your storage backend. Ensure your custom CA bundles are configured in the `DSCI` (Data Science Cluster Initialization) resource.
+
+== 5. The Database Mandate (RHOAI 3 Specific)
+Do not attempt to use SQLite for production Model Registries.
+
+* **The Change:** RHOAI 3 deprecates file-based databases for the Model Registry.
+* **The Requirement:** You must provision an external **MySQL (8.x)** or **PostgreSQL** database. Using local PVCs for metadata will result in performance bottlenecks and is not supported for production SLAs.

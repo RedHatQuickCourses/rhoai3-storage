@@ -1,0 +1,150 @@
+= Extending the Mesh: Database & Custom Connections
+:role: Advanced Configuration
+:audience: Platform Engineers
+:description: How to configure RHOAI 3 to manage credentials for Databases (PostgreSQL/MySQL) and Warehouses (Snowflake/Trino).
+
+[.lead]
+*Data doesn't just live in buckets. It lives in rows, columns, and transactions.*
+
+In the previous labs, we focused on **unstructured data** (images, models, logs) stored in Object Storage. However, real-world AI often requires **structured data**—customer records in PostgreSQL, sales transactions in Snowflake, or feature vectors in Redis.
+
+If you stop your automation at S3, your Data Scientists will go back to hardcoding database passwords.
+
+In this module, you will learn how to extend the "AI Factory" to support **Custom Connection Types**. You will teach RHOAI how to speak "Database."
+
+
+
+== The Two-Step Architecture
+
+Unlike S3 or OCI, which are built-in, RHOAI does not know what a "PostgreSQL" connection looks like by default. You must define it.
+
+This requires a two-step workflow:
+ .  **Define the Standard (The Template):** You create a `ConnectionType` resource that defines the schema (e.g., "I need a Host, a Port, and a Password").
+ .  **Provision the Access (The Instance):** You create the `Secret` that fills in those blanks.
+
+== Step 1: Define the Connection Type
+First, we must tell the RHOAI Dashboard how to render the form for a database connection and which environment variables to inject.
+
+[source,bash]
+----
+#!/bin/bash
+# define-postgres-type.sh
+# Registers "PostgreSQL" as a valid Connection Type in RHOAI 3
+
+echo "Defining 'Corporate PostgreSQL' connection type..."
+
+cat <<EOF | oc apply -f -
+apiVersion: dashboard.opendatahub.io/v1alpha
+kind: ConnectionType
+metadata:
+  name: postgres-v1
+  labels:
+    opendatahub.io/dashboard: "true"
+spec:
+  displayName: "Corporate PostgreSQL"
+  description: "Standard connection for corporate transactional databases."
+  category: "Database"
+  fields:
+    - name: Host
+      type: text
+      required: true
+      envVar: DB_HOST
+    - name: Port
+      type: text
+      defaultValue: "5432"
+      required: true
+      envVar: DB_PORT
+    - name: Database
+      type: text
+      required: true
+      envVar: DB_NAME
+    - name: Username
+      type: text
+      required: true
+      envVar: DB_USER
+    - name: Password
+      type: password
+      required: true
+      envVar: DB_PASSWORD
+EOF
+----
+
+ * **`envVar`:** This is the magic. It maps the form field "Host" to the environment variable `DB_HOST` inside the container.
+ * **`category`:** Groups this under "Database" in the UI, separating it from Object Storage.
+
+== Step 2: Create the Data Connection
+Now that the type exists, you can provision credentials for a specific project (e.g., "Sales Read-Only").
+
+[source,bash]
+----
+#!/bin/bash
+# connect-sales-db.sh <project>
+
+PROJECT=$1
+CONNECTION_NAME="sales-production-db"
+
+echo "Creating Database Connection in $PROJECT..."
+
+cat <<EOF | oc apply -n "$PROJECT" -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: $CONNECTION_NAME
+  labels:
+    opendatahub.io/dashboard: "true"
+    opendatahub.io/managed: "true"
+  annotations:
+    # Links to the Custom Type we created in Step 1
+    opendatahub.io/connection-type: "postgres-v1"
+    
+    # User-friendly metadata
+    openshift.io/display-name: "Sales Production DB (Read-Only)"
+    openshift.io/description: "Access to the sales_transactions table."
+type: Opaque
+stringData:
+  # These keys MUST match the 'fields' defined in the ConnectionType
+  Host: "prod-db.internal.corp"
+  Port: "5432"
+  Database: "sales_data"
+  Username: "readonly_user"
+  Password: "super-secure-password"
+EOF
+----
+
+== The Payoff: Why do this?
+
+By standardizing database access, you achieve **Code Portability**.
+
+=== The "Shadow IT" Way (Hardcoded)
+The data scientist writes code that works *only* on their laptop or *only* in the Dev cluster.
+[source,python]
+----
+# Fails when moved to production
+conn = psycopg2.connect("host=192.168.1.5 dbname=sales user=admin ...")
+----
+
+=== The "Factory" Way (Abstracted)
+The data scientist writes code that works anywhere.
+[source,python]
+----
+import os
+import psycopg2
+
+# Works in Dev (Sandbox DB) AND Prod (Warehouse DB)
+# The Platform injects the correct values based on the environment.
+conn = psycopg2.connect(
+    host=os.getenv("DB_HOST"),
+    database=os.getenv("DB_NAME"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD")
+)
+----
+
+== Summary
+Data Connections are not just for S3. They are your **Universal Credential Broker**.
+
+ * **Platform Engineer:** Defines the schema (`ConnectionType`).
+ * **Security Team:** Manages the secrets (`Secret`).
+ * **Data Scientist:** Consumes the environment variables (`os.getenv`).
+
+*Next Step: Now that you have connected all data types, let's explore how to monitor storage usage.*

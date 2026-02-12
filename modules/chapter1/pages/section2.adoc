@@ -1,64 +1,229 @@
-= Build It: Configuring the Data Foundation
-:role: Hands-On Lab
-:audience: Platform Engineers
-:description: Step-by-step guide to configuring Storage Classes and creating your first managed Data Connection.
+= Lab: Automating the Data Supply Chain
+:navtitle: Fast Track Lab
+:imagesdir: ../images
 
-[.lead]
-*Theory is over. It is time to pour the concrete.*
+*Stop clicking. Start engineering.*
 
-In this lab, you will configure the two foundational pillars of the RHOAI platform: the **Storage Classes** for persistence and the **Connection Types** for secure access. By the end of this session, you will have a cluster ready to host high-performance AI workloads.
+To build a Data Supply Chain, you first need a "Warehouse" (Object Storage) and a "Brain" (Metadata Storage). In a real corporate environment, these already exist. In this lab, we will simulate that environment by deploying a real instance of **MinIO** and **MySQL** to your cluster in seconds.
 
-[IMPORTANT]
-.Prerequisites
-====
+Once the infrastructure is live, you will act as the **Platform Architect**. You will define the "Universal Adapters" (Data Connections) that allow your Data Scientists to consume these resources securely, without ever knowing the root passwords.
+
+== Prerequisites
 * Access to an OpenShift cluster with **RHOAI 3** installed.
 * `cluster-admin` privileges.
-* An available S3 Bucket (AWS or MinIO) with Access Key/Secret Key.
-====
+* The `oc` CLI tool installed.
 
-== Step 1: Configure Storage Classes
-First, we must define how the cluster handles persistence. We need to ensure users can select the right storage for the right job.
 
-1.  Navigate to the RHOAI Dashboard: **Settings** -> **Cluster settings** -> **Storage classes**.
-2.  **Set the Default:** Ensure your fastest RWO block storage is enabled and selected as "Default".
-3.  **Enable Shared Storage:** Locate your **RWX-capable** storage class (e.g., `ocs-storagecluster-cephfs`). Toggle it to **Enabled**.
-    * *Why?* Without this, your users cannot create shared team workspaces or run distributed training jobs.
+== Phase 1: The Infrastructure (Deploy the Factory)
 
-== Step 2: Create a Connection Type
-RHOAI 3 allows you to define templates ("Connection Types") that standardize how users connect to data.
+We have packaged the "Plumbing" into a Fast Track script. This script will:
+1.  Create the `rhoai-model-registry-lab` namespace.
+2.  Deploy **MinIO** (S3-compatible storage).
+3.  Deploy **MySQL** (Relational Database).
+4.  Expose them internally to the cluster.
 
-1.  Navigate to **Settings** -> **Environment setup** -> **Connection types**.
-2.  Click **Create connection type**.
-3.  **Define the Schema:**
-    * **Name:** `Corporate S3 Standard`
-    * **Category:** `Object Storage`
-    * **Fields:** Add fields for `Bucket`, `Endpoint`, `Access Key`, and `Secret Key`.
-4.  **Preview:** Check the form to ensure it looks user-friendly for your data scientists.
-5.  **Save.**
+=== 1. Acquire the Infrastructure Code
+Create a file named `setup.sh` and paste the following content. This simulates checking out the "Ops Team" repository.
 
-== Step 3: Create the Data Connection
-Now, act as the Platform Engineer creating a secure connection for a project.
+[source,bash]
+----
+#!/bin/bash
+# setup.sh: Automates the "Plumbing" phase.
+set -e
+NAMESPACE="rhoai-model-registry-lab"
 
-1.  Navigate to **Projects** and select a project (or create `my-ai-project`).
-2.  Click **Data connections** -> **Add data connection**.
-3.  Select the **Connection Type** you created (`Corporate S3 Standard`).
-4.  **Fill in the details:**
-    * Enter your real AWS/MinIO credentials.
-    * *Note:* The user will see this connection name, but they will *not* need to copy-paste these credentials later.
+echo "🚀 Starting AI Supply Chain Infrastructure Setup..."
 
-== Step 4: Verification (The "Payoff")
-Let's verify that the abstraction works.
+# 1. Create Namespace
+if oc get project "$NAMESPACE" > /dev/null 2>&1; then
+    echo "✔ Namespace $NAMESPACE exists."
+else
+    oc new-project "$NAMESPACE"
+fi
 
-1.  Create a **Workbench** in the same project.
-2.  In the **Data connections** section of the workbench creation form, select your new connection: `Use existing data connection`.
-3.  Launch the Workbench and open a Terminal.
-4.  Run `env | grep AWS`.
-    * **Success:** You should see `AWS_ACCESS_KEY_ID` and `AWS_S3_ENDPOINT` populated automatically.
+# 2. Deploy MinIO (The Vault)
+echo "➤ Deploying MinIO..."
+# (In a real lab, these would be git checkout files. Here we apply directly.)
+oc apply -f https://raw.githubusercontent.com/RedHatQuickCourses/rhoai3-storage/main/manifests/minio-backend.yaml -n $NAMESPACE
 
-[NOTE]
-.The Result
-====
-You have successfully decoupled the data from the user. The data scientist can now use `boto3` to access the bucket without ever knowing the password. You have stopped credential sprawl before it started.
-====
+# 3. Deploy MySQL (The Brain)
+echo "➤ Deploying MySQL..."
+oc apply -f https://raw.githubusercontent.com/RedHatQuickCourses/rhoai3-storage/main/manifests/mysql-backend.yaml -n $NAMESPACE
 
-*Next Step: Now that your data foundation is secure, proceed to the "Pipeline Automation" module.*
+echo "✅ Infrastructure Setup Complete!"
+echo "MinIO URL: http://minio-service.$NAMESPACE.svc.cluster.local:9000"
+echo "MySQL Host: mysql.$NAMESPACE.svc.cluster.local"
+----
+*(Note: For this lab, assume the YAML files referenced in the script are available locally or apply the provided sample files.)*
+
+=== 2. Execute the Provisioning
+Run the script to stand up the factory floor.
+
+[source,bash]
+----
+chmod +x setup.sh
+./setup.sh
+----
+
+**Validation:**
+Check that your "Warehouse" is running.
+[source,bash]
+----
+oc get pods -n rhoai-model-registry-lab
+----
+*Expected Output:* You should see `minio` and `mysql` pods in `Running` state.
+
+== Phase 2: The Universal Adapter (GitOps Connections)
+
+Now that the servers are running, we need to create the "Plugs" that allow RHOAI to connect to them. We will use a **GitOps approach** to ensure these connections are standardized and reproducible.
+
+=== Step 1: Define the S3 Standard (Connection Type)
+First, we define the "Socket" for our Corporate Data Lake. This tells the RHOAI Dashboard what fields to expect.
+
+**File:** `01-s3-type.yaml`
+[source,yaml]
+----
+apiVersion: dashboard.opendatahub.io/v1alpha
+kind: ConnectionType
+metadata:
+  name: corporate-minio-standard
+  labels:
+    opendatahub.io/dashboard: "true"
+spec:
+  displayName: "Corporate MinIO Standard"
+  category: "Object Storage"
+  description: "Standard connection to the internal MinIO Data Lake."
+  fields:
+    - name: Endpoint
+      type: text
+      required: true
+      envVar: AWS_S3_ENDPOINT
+    - name: Bucket
+      type: text
+      required: true
+      envVar: AWS_S3_BUCKET
+    - name: Access Key
+      type: text
+      required: true
+      envVar: AWS_ACCESS_KEY_ID
+    - name: Secret Key
+      type: password
+      required: true
+      envVar: AWS_SECRET_ACCESS_KEY
+----
+[source,bash]
+----
+oc apply -f 01-s3-type.yaml
+----
+
+=== Step 2: Create the Data Connection (The Instance)
+Now, we create the actual connection for the "Finance Team" that points to the MinIO instance we just deployed. Notice we use the internal ClusterIP service URL.
+
+**File:** `02-finance-connection.yaml`
+[source,yaml]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: finance-data-lake
+  namespace: rhoai-model-registry-lab
+  labels:
+    opendatahub.io/dashboard: "true" # <1> Visible in UI
+    opendatahub.io/managed: "true"
+  annotations:
+    opendatahub.io/connection-type: "corporate-minio-standard" # <2> Links to our Type
+    openshift.io/display-name: "Finance Data Lake"
+type: Opaque
+stringData:
+  Endpoint: "http://minio-service.rhoai-model-registry-lab.svc.cluster.local:9000"
+  Bucket: "finance-records"
+  Access Key: "minio"
+  Secret Key: "minio123"
+----
+<1> **Required Label:** Without this, the secret is invisible to RHOAI.
+<2> **Binding:** This links the secret to the schema we defined in Step 1.
+
+[source,bash]
+----
+oc apply -f 02-finance-connection.yaml
+----
+
+== Phase 3: The Brain (Database Connection)
+
+RHOAI 3 requires databases for Model Registries. Let's wire up the MySQL instance.
+
+=== Step 1: Define the Database Standard
+**File:** `03-db-type.yaml`
+[source,yaml]
+----
+apiVersion: dashboard.opendatahub.io/v1alpha
+kind: ConnectionType
+metadata:
+  name: corporate-mysql
+  labels:
+    opendatahub.io/dashboard: "true"
+spec:
+  displayName: "Corporate MySQL"
+  category: "Database"
+  fields:
+    - name: Host
+      type: text
+      envVar: DB_HOST
+    - name: Port
+      type: text
+      defaultValue: "3306"
+      envVar: DB_PORT
+    - name: Username
+      type: text
+      envVar: DB_USER
+    - name: Password
+      type: password
+      envVar: DB_PASSWORD
+----
+[source,bash]
+----
+oc apply -f 03-db-type.yaml
+----
+
+=== Step 2: Create the DB Connection
+**File:** `04-registry-db.yaml`
+[source,yaml]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: registry-db-connection
+  namespace: rhoai-model-registry-lab
+  labels:
+    opendatahub.io/dashboard: "true"
+  annotations:
+    opendatahub.io/connection-type: "corporate-mysql"
+    openshift.io/display-name: "Model Registry Database"
+type: Opaque
+stringData:
+  Host: "mysql.rhoai-model-registry-lab.svc.cluster.local"
+  Port: "3306"
+  Username: "admin"
+  Password: "mysql-admin"
+----
+[source,bash]
+----
+oc apply -f 04-registry-db.yaml
+----
+
+== Phase 4: Verification (The Payoff)
+
+You have successfully used GitOps to wire up a complete Data Supply Chain. Let's verify it in the interface.
+
+1.  Open the **Red Hat OpenShift AI Dashboard**.
+2.  Navigate to **Data Science Projects**.
+3.  Select the project **rhoai-model-registry-lab** (created by the script).
+4.  Click the **Data connections** tab.
+
+**Success Criteria:**
+* [ ] You see **"Finance Data Lake"** listed under *Object Storage*.
+* [ ] You see **"Model Registry Database"** listed under *Database*.
+* [ ] The connection details are hidden from view, ensuring security.
+
+
+**You have now built a standardized, automated data layer that can be replicated across any environment.**

@@ -1,0 +1,146 @@
+= Lab: Automating the AI Data Foundation
+:role: Hands-On Lab
+:audience: Platform Engineers
+:description: Automate the deployment of scalable storage architecture (S3, OCI, PVC) using CLI tools and standard templates.
+
+[.lead]
+*Stop clicking. Start engineering.*
+
+In a mature AI Factory, you do not manually type AWS keys into a web form for every new project. You build automation that governs how data is accessed and stored.
+
+In this lab, you will act as the Lead Platform Engineer. You will replace manual configuration with a set of standardized deployment scripts that instantly provision the three pillars of RHOAI storage: **Connectivity** (S3/URI), **Acceleration** (OCI Modelcars), and **Persistence** (Cluster Storage).
+
+
+== Prerequisites
+
+To complete this automation lab, you need:
+
+* Access to an OpenShift cluster with **RHOAI 3** installed.
+* `cluster-admin` privileges (to create storage classes and global connection types).
+* The `oc` CLI tool installed.
+
+=== 1. Set Up Your Workspace
+We have packaged the automation scripts into a repository. Clone it to your bastion host or local terminal.
+
+[source,bash]
+----
+# Clone the repository
+git clone https://github.com/RedHatQuickCourses/rhoai3-storage.git
+
+# Enter the deployment directory
+cd rhoai3-storage/deploy
+
+# Make the scripts executable
+chmod +x *.sh
+----
+
+== Part 1: The Foundation (Cluster Storage)
+
+AI workloads have two distinct storage needs: fast, exclusive scratchpads for development (**RWO**) and massive, shared datasets for team collaboration (**RWX**).
+
+Manual provisioning leads to configuration drift. We will use the `cluster-storage.sh` script to standardize this.
+
+=== Action: Provision Storage Types
+You need to create a project and provision both storage types to verify your cluster's capabilities.
+
+[source,bash]
+----
+# 1. Create a project for our factory
+oc new-project ai-factory-lab
+
+# 2. Provision Personal Storage (ReadWriteOnce) - 20GB
+# Usage: ./cluster-storage.sh <project> <name> <size> <mode>
+./cluster-storage.sh ai-factory-lab personal-scratch-1 20 rwo
+
+# 3. Provision Shared Team Storage (ReadWriteMany) - 100GB
+./cluster-storage.sh ai-factory-lab team-golden-data 100 rwx
+----
+
+=== Validation
+Verify that the underlying storage classes bound correctly. If the `RWX` volume hangs in `Pending`, your cluster may lack ODF/NFS support.
+
+[source,bash]
+----
+oc get pvc -n ai-factory-lab
+----
+*Success:* Status should be `Bound` for RWO. (RWX may wait for a consumer depending on the driver).
+
+== Part 2: The Gateway (Automating Data Connections)
+
+Credential sprawl occurs when users hardcode keys. We solve this by injecting **Data Connections**—Kubernetes Secrets that map to RHOAI 3.0 Connection Types.
+
+We will use `dataconnect.sh` to inject a standard "Corporate S3" connection that includes the critical `opendatahub.io/connection-type: "s3"` annotation required for UI visibility.
+
+=== Action: Inject S3 Credentials
+[source,bash]
+----
+# Usage: ./dataconnect.sh <project> <connection-name>
+# Note: The script defaults to MinIO. Edit variables inside if using AWS.
+./dataconnect.sh ai-factory-lab corp-data-lake
+----
+
+=== CLI Validation
+Confirm the secret was created and has the specific labels required for RHOAI 3.
+
+[source,bash]
+----
+# Check for the RHOAI dashboard label
+oc get secret corp-data-lake -n ai-factory-lab --show-labels
+
+# Check for the specific Connection Type annotation
+oc describe secret corp-data-lake -n ai-factory-lab | grep "connection-type"
+----
+*Expected Output:* `opendatahub.io/connection-type=s3`
+
+== Part 3: The Accelerator (OCI Modelcars)
+
+Downloading a 20GB model for every deployment is inefficient. By using **Modelcars** (OCI artifacts), we treat models like container images, enabling faster startup and deduplication.
+
+We will use `modelcar.sh` to register a public Granite model from Quay.io.
+
+=== Action: Register the Modelcar
+[source,bash]
+----
+# Usage: ./modelcar.sh <project>
+./modelcar.sh ai-factory-lab
+----
+
+This script creates a connection with the `oci` protocol, pointing to `quay.io/redhat-ai-services/modelcar-catalog:granite-3.2-8b-instruct`.
+
+== Part 4: The Precision Link (URI Connections)
+
+Sometimes you need to link to a specific folder or file version in a private bucket, rather than exposing the whole bucket. The **URI** connection type handles this precision.
+
+=== Action: Register a Private URI
+[source,bash]
+----
+# Usage: ./uri.sh <project>
+./uri.sh ai-factory-lab
+----
+
+== Part 5: The Payoff (UI Verification)
+
+You have just architected a complete storage solution via CLI. Now, verify the experience for the Data Scientist.
+
+1.  Open the **Red Hat OpenShift AI Dashboard**.
+2.  Navigate to **Data Science Projects** -> **ai-factory-lab**.
+3.  Click the **Data connections** tab.
+    * *Result:* You should see three distinct connections:
+        * **Corporate S3 Data** (Type: S3)
+        * **Granite 3.2 8B (Modelcar)** (Type: OCI)
+        * **Custom URI Link** (Type: URI)
+4.  Click the **Cluster storage** tab.
+    * *Result:* You should see your `personal-scratch-1` and `team-golden-data` PVCs.
+
+=== Final Test: Attach to a Workbench
+1.  Create a new **Workbench**.
+2.  Scroll to **Data connections**.
+3.  Select **Use existing data connection** -> **Corporate S3 Data**.
+4.  Scroll to **Cluster storage**.
+5.  Select **Use existing persistent storage** -> **team-golden-data** (Mount as `/data/team`).
+6.  Start the workbench.
+
+[NOTE]
+====
+By automating this setup, you have ensured that every environment—Dev, Test, and Prod—can be provisioned with identical configurations in seconds. You have turned a manual ticket queue into a repeatable code artifact.
+====

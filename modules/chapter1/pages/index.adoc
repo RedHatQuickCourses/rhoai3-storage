@@ -1,81 +1,52 @@
-= The AI Factory: Automating for Velocity and Scale
-:role: Product Concept
-:audience: Platform Engineers & Architects
-:description: Moving beyond manual tickets to automated, scalable AI infrastructure.
+= The Data Supply Chain: Architecting the AI Factory
+:navtitle: The Data Supply Chain
+:imagesdir: ../images
 
-[.lead]
-*You don't build a car by hand. You shouldn't build an AI platform by hand either.*
+In the modern AI enterprise, **GPUs are the engine, but data is the fuel.**
 
-In the early stages of AI adoption, organizations often treat every model as a unique "pet." Data Scientists submit a ticket for storage. Operations manually provisions a PVC. Security manually audits an S3 bucket. A developer hardcodes a connection string.
+Most organizations burn millions on high-performance compute, only to let it sit idle because their data logistics are broken. Data Scientists waste days waiting for IT to open firewall ports. They hardcode AWS credentials into Jupyter notebooks, creating security nightmares. They download terabytes of redundant data to unmanaged block storage because the shared cluster options are "too hard to use."
 
-This manual approach works for *one* model. It collapses at *ten*.
+This is **Shadow AI**.
 
-The business value of automating **Red Hat OpenShift AI (RHOAI)** storage is not just about hiding passwords—it is about **Standardization**. It transforms your platform from a chaotic collection of research environments into a predictable **AI Factory**.
+It is an unmanaged, ungoverned landscape where every model is treated like a unique "pet." It works for one model, but it collapses at scale.
 
 
 
-== The Three Business Outcomes of Automation
+**In this course, you will industrialize your data logistics.**
 
-By automating the "Plumbing" (Data Connections and Storage Classes), you deliver three specific outcomes that leadership cares about:
+You will learn to make OpenShift AI storage **work for you**, transforming it from a passive hard drive into an active business asset. You will move beyond the "Wild West" of manual tickets to build a governed **Data Supply Chain** where data flows securely and instantly from your "Cold" Data Lakes to your "Hot" GPU memory.
 
-=== 1. Acceleration (Time-to-Science)
+== The Architecture of Value
 
-**The Problem:** In manual environments, a new Data Scientist spends their first week fighting for access. They wait 2 days for a ticket to open a firewall port to S3. They wait 1 day for a Persistent Volume Claim (PVC) to be approved.
+When you build an AI platform, you are not just provisioning storage; you are designing the workflow of your organization. Every storage mechanism you choose produces a specific business outcome.
 
- * **The Automated Solution:** You script standard **Data Connections** and **Storage Classes**.
+In this course, we will architect three specific layers of value:
 
- * **The Outcome:** Onboarding takes minutes. A researcher joins a project, selects the pre-approved "Corporate Data Lake" connection, mounts the "Team Shared Storage," and starts training immediately.
+=== 1. The Universal Adapter (Data Connections)
+* **The Struggle:** Coding for "Direct Access." It is faster today to hardcode an S3 key, but it creates "Vendor Lock-in" and security risks tomorrow.
+* **The Solution:** **Data Connections.** You will configure secure, injected secrets that act as universal adapters.
+* **The Business Value:** **Portability.** Your code simply asks for `conn-s3`. In Development, the platform points it to a sandbox; in Production, it points to the live warehouse. The code *never changes*, and the data scientist *never sees the password*.
 
-=== 2. Cost Efficiency (FinOps)
+=== 2. The Collaborative Workspace (Cluster Storage)
+* **The Struggle:** "It works on my machine." Models live on personal laptops or isolated "ReadWriteOnce" (RWO) volumes. If an employee leaves, their work vanishes with them.
+* **The Solution:** **Shared Team Storage (RWX).** You will build the "Assembly Line" where multiple researchers mount the same high-speed volume to collaborate on datasets and share weights simultaneously.
+* **The Business Value:** **Institutional Memory.** Data and code become team assets, not personal artifacts.
 
- * **The Problem:** "Shadow IT." Without governed storage options, users download massive datasets to expensive, unmanaged block storage (RWO) and leave them there forever. Or worse, they download terabytes of redundant data to local laptops.
-* **The Automated Solution:** You provide a **"Well-Lit Path"**:
-** **Shared Storage (RWX):** One 500GB volume shared by 10 users (saving 4.5TB of duplication).
-** **Modelcars (OCI):** Streaming models from a registry instead of downloading them to disk.
-* **The Outcome:** You drastically reduce cloud storage spend and data egress fees by eliminating redundancy.
+=== 3. Just-In-Time Delivery (Modelcars & OCI)
+* **The Struggle:** Every deployment starts by downloading a 20GB model file to disk, wasting minutes of startup time and racking up egress fees.
+* **The Solution:** **OCI Modelcars.** You will treat models like software artifacts, streaming weights directly from the container registry to the node's memory.
+* **The Business Value:** **Velocity.** Deployments that took minutes now take seconds.
 
-=== 3. Production Stability (Environment Parity)
+== Your Learning Path
 
- * **The Problem:** "It works on my machine." A model works perfectly in the Dev environment because the data scientist manually tweaked the S3 path. It fails in Production because the path is different, and the manual tweak wasn't documented.
- * **The Automated Solution:** You abstract the environment using **Data Connections**. The code simply asks for `conn-s3`.
- ** In **Dev**, your automation points `conn-s3` to a "Sandbox Bucket."
- ** In **Prod**, your automation points `conn-s3` to the "Live Data Lake."
- * **The Outcome:** The code never changes. You achieve **100% Environment Parity**, significantly reducing deployment failures.
+We have structured this course to take you from concept to code:
 
-== The Architecture of the Factory
+1.  **The Blueprint (Next Module):** We will dive deep into the technical architecture. You will learn how `ConnectionTypes` create the standards, how `RWX` backing stores differ from `RWO`, and how the Metadata Layer (External Databases) powers the entire system.
+2.  **The Implementation (Hands-On Lab):** You will act as the Factory Architect. Using a GitOps approach, you will deploy three standardized configuration files to instantly provision:
+    * A secure **S3 Data Connection** to a Data Lake.
+    * A high-performance **Shared Storage** volume for team collaboration.
+    * A public **OCI Modelcar** connection for instant model streaming.
 
-In this lab, you will act as the **Factory Architect**. You will stop clicking buttons and start writing the code that defines your factory floor. You will automate three critical layers:
 
-image::images/rhoai-layered-storage-architecture.png
 
-=== Layer 1: The Warehouse (Data Connections)
-
- * **What it is:** The "Loading Dock" for external data.
- * **The Automation:** Instead of asking users to manage keys, you deploy standardized **Connection Types** (S3, OCI, URI).
- * **Business Value:** Ensures that if the security team rotates the keys, the business process doesn't stop.
-
-=== Layer 2: The Workbench (Cluster Storage)
-
- * **What it is:** The "Assembly Line" where work happens.
- * **The Automation:** You define **Storage Classes** that map to business needs.
- ** **"Scratchpad" (RWO):** Fast, temporary, personal storage.
- ** **"Collaboration" (RWX):** Shared project storage for team-based iteration.
- * **Business Value:** Prevents data silos. If a team member leaves, their work remains in the shared project volume, not locked on a personal drive.
-
-=== Layer 3: The Supply Chain (Modelcars & URI)
-
- * **What it is:** The delivery mechanism for model assets.
- * **The Automation:** You treat models like software artifacts using **OCI Registries**.
- * **Business Value:** Faster rollouts. A new model version is just a new container tag, instantly available to all production services.
-
-== Your Mission: Script the Setup
-
-In this lab, you will use the **OpenShift CLI (oc)** to build this factory. You will verify that your scripts can take a blank project and turn it into a fully connected, storage-ready Data Science environment in under 60 seconds.
-
-[IMPORTANT]
-.The Shift in Mindset
-====
-We are not just "installing storage." We are defining the **Standard Operating Environment (SOE)** for your organization's AI initiatives.
-====
-
-*Ready to build the factory? Let's clone the repo.*
+*Ready to build the supply chain? Let's explore the blueprint.*

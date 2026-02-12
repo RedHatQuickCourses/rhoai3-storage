@@ -1,93 +1,85 @@
-= The Architecture of Data Connectivity
-:role: Technical Deep Dive
-:audience: Platform Engineers & Architects
-:description: A comprehensive guide to RHOAI 3 storage primitives (Connections/Types), protocols (S3/OCI/URI), and persistence layers (RWO/RWX).
+= The Blueprint: Architecting Data Logistics
+:navtitle: Architecture Overview
+:imagesdir: ../images
 
-[.lead]
-*To build a factory that scales, you must master the vocabulary of the floor.*
+*Theory is over. It is time to look at the machinery under the floorboards.*
 
-In the previous module, we established *why* RHOAI decouples data from compute. Now, we will examine *how* the platform executes this. This architecture relies on a specific set of API primitives that act as the "machinery under the floorboards".
+In the previous module, we established that a Data Supply Chain produces **Velocity**, **Security**, and **Collaboration**. Now, we must examine the specific OpenShift AI (RHOAI) primitives that execute this vision.
 
-As a Platform Engineer, you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory". To do this, you must master three distinct layers: **The Primitives** (API Objects), **The Gateway** (External Data), and **The Workspace** (Internal Storage).
+As a Platform Engineer, you are not just managing hard drives; you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory."
 
+== 1. The Universal Adapter: Connection Types vs. Data Connections
 
+To achieve **Zero-Touch Security**, RHOAI separates the *definition* of a credential from the *usage* of a credential. This is handled by two distinct API objects.
 
-== 1. The Core Primitives (The API Layer)
-Before defining *where* data lives, you must understand the Kubernetes resources that represent it. RHOAI 3 introduces specific terminology to standardize configuration.
+=== The Contract: Connection Types (The Template)
+Think of the **Connection Type** as the "Electrical Socket" on the wall. The Administrator defines the shape of the socket to ensure safety and standardization.
 
-=== Data Connection (The Instance)
-A Kubernetes resource containing configuration parameters (key-value pairs) to access external data.
+ * **What it does:** It creates a form in the RHOAI Dashboard requiring specific fields (e.g., "Endpoint", "Bucket", "Access Key").
+ * **The Business Value:** **Standardization.** You ensure that every team connects to the Corporate Data Lake using the exact same protocol and parameters, preventing "snowflake" configurations.
 
- * **Storage Location:** Stored securely as a Kubernetes Secret.
- * **Injection:** Injected into Pods as Environment Variables at runtime.
- * **Scope:** Namespace-isolated; it cannot be shared across projects.
+=== The Key: Data Connections (The Instance)
+Think of the **Data Connection** as the "Plug." It is the specific instance where a user provides their credentials to fit the socket.
 
-=== Connection Types (The Template)
-An administrator-defined template that dictates what fields a user must provide.
- * **Example:** An admin creates a "Corporate S3" type requiring `Bucket`, `Endpoint`, and `Region`.
- * **Value:** Ensures standardization across the enterprise.
-
-[WARNING]
-.Deprecation Alert
-====
-The annotation `opendatahub.io/connection-type-ref` is **deprecated**.
-You must now use `opendatahub.io/connection-type-protocol` for all new connection secrets.
-====
-
-== 2. The Gateway: Supported Protocols (External Storage)
-RHOAI does not store massive datasets inside the cluster. Instead, it uses Data Connections as a "Gateway" to external storage. This layer supports three primary protocols.
-
-=== A. S3-Compatible Object Storage (`s3`)
-The default protocol for Data Lakes, Pipeline Artifacts, and standard Model Serving.
- * **Required Fields:** Access Key, Secret Key, Endpoint, Bucket.
- * **Lab Context:** We use MinIO to simulate a corporate data lake. The connection injects `AWS_ACCESS_KEY_ID` and `AWS_S3_ENDPOINT` so code using `boto3` works automatically.
- * **Note:** For self-signed certificates (MinIO), you must inject the Bundle CA.
-
-=== B. OCI Model Registry (`oci`)
-The "Accelerator" protocol for high-speed model inference.
- * **Use Case:** "Modelcars"—pulling models from container registries instead of downloading weights as files.
- * **Performance:** Leverages the node's container cache for massive deduplication, making it optimal for large-scale inference deployments.
- * **Lab Context:** We use the `oci` protocol to mount the Granite model directly from Quay.io.
-
-=== C. URI (`uri`)
-The "Surgical Link" for direct HTTP/HTTPS access.
- * **Use Case:** Direct links to specific model versions or files (e.g., `https://.../model-v1.onnx`).
- * **Limitation:** Generally read-only and less secure than S3/OCI connections.
- * **Lab Context:** We use the `uri` protocol to point to a specific versioned folder in a private bucket, bypassing the need to expose the entire bucket root.
-
-== 3. The Workspace: Cluster Storage (Internal Storage)
-While Data Connections handle "Inflow/Outflow," **Cluster Storage** handles the "Work in Progress". This is governed by OpenShift Storage Classes and determines your collaboration capabilities.
+ * **What it does:** It stores the sensitive values as a Kubernetes Secret and injects them into the Workbench as environment variables at runtime.
+ * **The Business Value:** **Abstraction.** The Data Scientist's code acts against generic variables (like `AWS_S3_ENDPOINT`), meaning the same code works in Dev, Test, and Prod without modification.
 
 
 
-=== ReadWriteOnce (RWO) - "The Scratchpad"
- * **Architecture:** Block Storage (e.g., AWS EBS `gp3-csi`, vSphere).
- * **Behavior:** Maps 1:1 with a user's Workbench (e.g., `/opt/app-root/src`).
- * **Constraint:** Can only attach to one node at a time. Ideal for personal home directories and databases.
+== 2. The Logistics Channels: Supported Protocols
 
-=== ReadWriteMany (RWX) - "The Collaboration Zone"
- * **Architecture:** File Storage (e.g., ODF `ocs-storagecluster-cephfs`, NFS, AWS EFS).
- * **Behavior:** Mounts to multiple nodes simultaneously.
- * **Constraint:** Required for shared team folders and distributed training.
- * **Critical Check:** You *must* verify your cluster supports this, or these PVCs will hang in a `Pending` state.
+Not all data moves the same way. RHOAI provides three "Logistics Channels" (Protocols) to optimize for capacity, speed, or precision.
 
-== 4. The Metadata Layer: The Shift to Databases
+=== A. S3 Object Storage: The Warehouse (Capacity)
+This is the default protocol for massive unstructured data (images, logs, documents).
+
+ * **Usage:** Used for Data Lakes, Pipeline Artifacts, and standard Model Serving. 
+ * **The "Sharp Edge":** When using on-premise object stores (like MinIO), you must often inject a **Bundle CA** to ensure the platform trusts your self-signed certificates.
+
+=== B. OCI Registry: The Teleporter (Velocity)
+This is the protocol for **Modelcars**. instead of downloading models as files, we package them as container images.
+
+ * **Usage:** High-speed model inference and distribution.
+ * **The Advantage:** It leverages the node's container image cache. If 10 users need the same "Granite 7B" model, the node downloads the layers *once*, and all 10 users start instantly. This produces massive **deduplication** and **startup velocity**.
+
+=== C. URI: The Precision Link
+Sometimes you do not want to expose an entire bucket; you only want to share a single file version.
+
+ * **Usage:** Direct HTTP/HTTPS links to specific assets (e.g., `https://.../model-v1.onnx`).
+ * **The Limit:** These are generally read-only and best used for fetching public or version-locked assets.
+
+== 3. The Workspace: Designing Persistence
+
+Once data arrives from the "Warehouse" (S3), it needs a place to live while it is being processed. This is your **Cluster Storage**.
+
+
+
+|===
+| Storage Type | The Analogy | The Technical Term | The Business Outcome
+
+| **ReadWriteOnce (RWO)**
+| The Private Notebook
+| Block Storage (EBS, vSphere)
+| **Isolation.** Fast, exclusive storage for a single user. Ideal for databases or personal scratchpads.
+
+| **ReadWriteMany (RWX)**
+| The Conference Room
+| File Storage (CephFS, NFS, EFS)
+| **Collaboration.** Allows multiple pods to mount the same volume simultaneously. Required for shared team folders and distributed training.
+|===
+
 [IMPORTANT]
-.Critical Architecture Change in RHOAI 3
+.Critical Architecture Check
 ====
-In previous versions, metadata was often stored in SQLite files on PVCs. RHOAI 3 moves production metadata to **Relational and Vector Databases** for scalability.
+You must verify that your underlying storage provider supports **RWX**. If you attempt to create a shared workspace on infrastructure that only supports Block Storage (RWO), the claims will hang in a `Pending` state forever.
 ====
 
- * **Model Registry:** Now requires an external **MySQL** database (5.x/8.x) to store model lineage and version history, rather than a local file.
- * **Llama Stack (RAG):**
- ** **Vector Store:** Requires **Milvus** or **PostgreSQL (pgvector)**.
- ** **Metadata:** SQLite is removed for production; PostgreSQL is mandated.
+== 4. The Foundation: The Metadata Layer
 
-== System Requirements Checklist
-Before proceeding to the lab automation, ensure your underlying cluster meets these specs:
+In RHOAI 3, we have made a critical architectural shift to support the "Industrialized" scale.
 
- * [ ] **Default Storage Class:** Must support dynamic provisioning (e.g., `gp3-csi`).
- * [ ] **Shared Storage Driver:** Must support `ReadWriteMany` (e.g., `ocs-storagecluster-cephfs` or NFS) for team collaboration features.
- * [ ] **Object Storage:** An S3-compatible endpoint (MinIO, AWS, Noobaa) is *mandatory* for Pipelines and Model Serving.
+ * **The Old Way:** Metadata (Model Lineage, Registry Data) was stored in local SQLite files. This was fragile and could not scale.
+ * **The New Way:** Production components (Model Registry, Llama Stack) now **require external databases** (MySQL or PostgreSQL).
+ * **The Outcome:** This allows your "Factory" to track thousands of model versions and artifacts without performance degradation, utilizing a proper database engine rather than a flat file.
 
-*Now that you understand the blueprint, let's deploy the factory.*
+*Now that you understand the blueprint, let's pick up the tools. In the next module, we will deploy this entire architecture using GitOps.*
