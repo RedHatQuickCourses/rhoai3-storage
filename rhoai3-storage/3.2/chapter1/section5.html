@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Field Notes for Platform Engineers :: The Storage Strategy, Architecting for AI Scale</title>
-    <link rel="prev" href="section2.html">
+    <title>Field Notes: The Sharp Edges of AI Storage :: The Storage Strategy, Architecting for AI Scale</title>
+    <link rel="prev" href="storage-lab.html">
     <link rel="next" href="quiz.html">
-    <meta name="description" content="Critical "gotchas," configuration warnings, and troubleshooting tips derived from real-world RHOAI deployments.">
+    <meta name="description" content="Critical configuration warnings, timeout adjustments, and data safety protocols for production AI.">
     <meta name="generator" content="Antora 3.1.3">
     <link rel="stylesheet" href="../../../_/css/site.css">
     <script>var uiRootPath = '../../../_'</script>
@@ -56,9 +56,6 @@
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="storage-lab.html">Data and Cluster Connections</a>
   </li>
-  <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="section2.html">Lab: Review for Inclusion</a>
-  </li>
   <li class="nav-item is-current-page" data-depth="1">
     <a class="nav-link" href="section5.html">Field Notes for Platform Engineers</a>
   </li>
@@ -105,123 +102,8 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Field Notes for Platform Engineers</h1>
+<h1 class="page">Field Notes: The Sharp Edges of AI Storage</h1>
 <div id="preamble">
-<div class="sectionbody">
-<div class="paragraph lead">
-<p><strong>Configuration is easy. Day-2 Operations are where the battle is won.</strong></p>
-</div>
-<div class="paragraph">
-<p>Now that your storage architecture is built, you need to maintain it. Based on RHOAI 3 best practices, here are the five most common "sharp edges" that trip up Platform Engineers.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_1_the_protocol_pitfall_connectivity"><a class="anchor" href="#_1_the_protocol_pitfall_connectivity"></a>1. The "Protocol" Pitfall (Connectivity)</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>When configuring Data Connections for S3-compatible stores (like MinIO or NooBaa), the most frequent error is <strong>Endpoint Formatting</strong>.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>The Error:</strong> Providing an endpoint like <code>minio-api.cluster.local</code>.</p>
-</li>
-<li>
-<p><strong>The Fix:</strong> You <strong>must</strong> prefix the protocol.</p>
-<div class="ulist">
-<ul>
-<li>
-<p>Correct: <code><a href="http://minio-api.cluster.local:9000" class="bare">http://minio-api.cluster.local:9000</a></code> or <code><a href="https://s3.us-east-1.amazonaws.com" class="bare">https://s3.us-east-1.amazonaws.com</a></code>.</p>
-</li>
-<li>
-<p>Why? The Boto3 client injected into the workbench requires the full URI scheme to resolve correctly.</p>
-</li>
-</ul>
-</div>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_2_the_restart_risk_pvc_management"><a class="anchor" href="#_2_the_restart_risk_pvc_management"></a>2. The "Restart" Risk (PVC Management)</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>You might receive a ticket from a user asking for more disk space: <strong>"My 20GB Workbench is full."</strong></p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>The Action:</strong> You go to <strong>Settings &#8594; Cluster settings</strong> and increase the default PVC size to 50GB.</p>
-</li>
-<li>
-<p><strong>The Warning:</strong> Changing the default PVC size triggers a <strong>restart</strong> of the Workbench Pod.</p>
-</li>
-<li>
-<p><strong>Best Practice:</strong> Perform global storage resizing during maintenance windows. For individual users, expand the PVC manually via the OpenShift Console (<code>Storage &#8594; PersistentVolumeClaims</code>) to avoid disrupting the entire cluster configuration.</p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_3_the_corruption_danger_rwx_volumes"><a class="anchor" href="#_3_the_corruption_danger_rwx_volumes"></a>3. The "Corruption" Danger (RWX Volumes)</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Shared storage (ReadWriteMany) is powerful, but it is not magic. It is a shared file system.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>The Risk:</strong> If two users run a script that writes to the <strong>exact same file</strong> (e.g., <code>model_weights.h5</code>) simultaneously, you will experience <strong>data corruption</strong> or data loss.</p>
-</li>
-<li>
-<p><strong>The Rule:</strong> Use RWX for <strong>reading</strong> shared datasets. If users need to <strong>write</strong>, they should write to their personal (RWO) folder or use unique filenames (e.g., <code>experiment_userA_v1.log</code>).</p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_4_the_trust_gap_certificates"><a class="anchor" href="#_4_the_trust_gap_certificates"></a>4. The "Trust" Gap (Certificates)</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>If you are using an on-premise Object Store (MinIO) secured with <strong>Self-Signed Certificates</strong>, your Data Connections will fail silently.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>The Symptom:</strong> Workbenches hang or Pipeline steps fail with <code>SSL: CERTIFICATE_VERIFY_FAILED</code>.</p>
-</li>
-<li>
-<p><strong>The Fix:</strong> You must inject the <strong>Cluster CA Bundle</strong> into the component. RHOAI components (Pipelines, Model Serving) need to "trust" your storage backend. Ensure your custom CA bundles are configured in the <code>DSCI</code> (Data Science Cluster Initialization) resource.</p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_5_the_database_mandate_rhoai_3_specific"><a class="anchor" href="#_5_the_database_mandate_rhoai_3_specific"></a>5. The Database Mandate (RHOAI 3 Specific)</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Do not attempt to use SQLite for production Model Registries.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>The Change:</strong> RHOAI 3 deprecates file-based databases for the Model Registry.</p>
-</li>
-<li>
-<p><strong>The Requirement:</strong> You must provision an external <strong>MySQL (8.x)</strong> or <strong>PostgreSQL</strong> database. Using local PVCs for metadata will result in performance bottlenecks and is not supported for production SLAs.</p>
-</li>
-</ul>
-</div>
-<hr>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_field_notes_the_sharp_edges_of_ai_storage"><a class="anchor" href="#_field_notes_the_sharp_edges_of_ai_storage"></a>Field Notes: The Sharp Edges of AI Storage</h2>
 <div class="sectionbody">
 <div class="paragraph lead">
 <p><strong>Configuration is easy. Day-2 Operations are where the battle is won.</strong></p>
@@ -348,7 +230,25 @@ oc patch pv &lt;pv-name&gt; -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain
 </div>
 </div>
 <div class="sect1">
-<h2 id="_5_the_database_mandate_rhoai_3_specific_2"><a class="anchor" href="#_5_the_database_mandate_rhoai_3_specific_2"></a>5. The Database Mandate (RHOAI 3 Specific)</h2>
+<h2 id="_5_the_trust_gap_certificates"><a class="anchor" href="#_5_the_trust_gap_certificates"></a>5. The "Trust" Gap (Certificates)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If you are using an on-premise Object Store (MinIO) secured with <strong>Self-Signed Certificates</strong>, your Data Connections will fail silently.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Symptom:</strong> Workbenches hang or Pipeline steps fail with <code>SSL: CERTIFICATE_VERIFY_FAILED</code>.</p>
+</li>
+<li>
+<p><strong>The Fix:</strong> You must inject the <strong>Cluster CA Bundle</strong> into the component. RHOAI components (Pipelines, Model Serving) need to "trust" your storage backend. Ensure your custom CA bundles are configured in the <code>DSCI</code> (Data Science Cluster Initialization) resource.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_6_the_database_mandate_rhoai_3_specific"><a class="anchor" href="#_6_the_database_mandate_rhoai_3_specific"></a>6. The Database Mandate (RHOAI 3 Specific)</h2>
 <div class="sectionbody">
 <div class="admonitionblock important">
 <table>
@@ -384,7 +284,7 @@ oc patch pv &lt;pv-name&gt; -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain
 </div>
 </div>
 <nav class="pagination">
-  <span class="prev"><a href="section2.html">Lab: Review for Inclusion</a></span>
+  <span class="prev"><a href="storage-lab.html">Data and Cluster Connections</a></span>
   <span class="next"><a href="quiz.html">Quiz</a></span>
 </nav>
 </article>
