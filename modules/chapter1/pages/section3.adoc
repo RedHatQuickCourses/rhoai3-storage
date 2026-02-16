@@ -1,4 +1,4 @@
-= The Physics of AI Storage: Primitives & Protocols
+= The Physics of AI Storage
 :navtitle: Storage Architecture
 :imagesdir: ../images
 :role: Technical Deep Dive

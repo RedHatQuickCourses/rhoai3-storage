@@ -1,7 +1,7 @@
 // * xref:index.adoc[Introduction & Value]
 * xref:section1.adoc[Architecture Deep Dive]
-* xref:storage-lab.adoc[Create Data Conenctions]
-* xref:section3.adoc[Database & Custom Connections]
-* xref:section5.adoc[Troubleshooting]
-
+* xref:section3.adoc[Data Connection Types]
+* xref:storage-lab.adoc[Data and Cluster Connections]
+* xref:section2.adoc[Lab: Review for Inclusion]
+* xref:section5.adoc[Field Notes for Platform Engineers]
 * xref:quiz.adoc[Quiz]

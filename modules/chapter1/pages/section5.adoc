@@ -1,4 +1,4 @@
-= The Sharp Edges: Field Notes for Platform Engineers
+= Field Notes for Platform Engineers
 :role: Operational Guide
 :audience: Platform Engineers & SREs
 :description: Critical "gotchas," configuration warnings, and troubleshooting tips derived from real-world RHOAI deployments.
