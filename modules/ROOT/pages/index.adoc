@@ -1,4 +1,4 @@
-= Making RHOAI Data Connectivity and Storage Work for You
+= Making RHOAI Data Connections and Storage Work for You
 :navtitle: Home
 :toc: macro
 

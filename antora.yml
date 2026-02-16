@@ -1,5 +1,5 @@
 name: rhoai3-storage
-title: The Storage Strategy: Architecting for AI Scale
+title: The Storage Strategy, Architecting for AI Scale
 version: 3.2
 nav:
 - modules/ROOT/nav.adoc

@@ -1,5 +1,5 @@
 site:
-  title: The Storage Strategy: Architecting for AI Scale
+  title: The Storage Strategy, Architecting for AI Scale
   start_page: rhoai3-storage::index.adoc
 
 content:
