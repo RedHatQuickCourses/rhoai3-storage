@@ -40,7 +40,7 @@ We will replace the "One-Size-Fits-All" approach with a tiered strategy designed
 
 === 3. The Abstraction Tier (Data Connections)
 * **The Challenge:** Governance. Preventing hardcoded credentials and ensuring environment parity between Dev and Prod.
-* **The Solution:** **Universal Data Connections.** We will use Kubernetes Secrets to inject connection details for S3 and Databases (MySQL/PostgreSQL) at runtime.
+* **The Solution:** **Universal Data Connections.** We will use Kubernetes Secrets to inject connection details for S3 / OCI / URI storage types.
 * **The Outcome:** **Portability.** The same code runs in the Sandbox and in Production without a single line change.
 
 == Your Mission: The "AI Factory" Blueprint
