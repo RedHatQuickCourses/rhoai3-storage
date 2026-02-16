@@ -3,7 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>The Data Supply Chain: Architecting the AI Factory :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
+    <title>The Storage Strategy: Architecting for AI Scale :: The Storage Strategy, Architecting for AI Scale</title>
+    <meta name="description" content="Moving beyond connectivity to designing a high-performance, resilient AI storage layer.">
     <meta name="generator" content="Antora 3.1.3">
     <link rel="stylesheet" href="../../../_/css/site.css">
     <script>var uiRootPath = '../../../_'</script>
@@ -13,7 +14,7 @@
   <nav class="navbar">
     <div class="navbar-brand">
       <a class="navbar-item" href="https://www.redhat.com" target="_blank"><img src="../../../_/img/redhat-logo.png" height="40px" alt="Red Hat"></a>
-      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">The Storage Strategy, Architecting for AI Scale</a>
       <button class="navbar-burger" data-target="topbar-nav">
         <span></span>
         <span></span>
@@ -33,7 +34,7 @@
     <div class="panels">
 <div class="nav-panel-menu is-active" data-panel="menu">
   <nav class="nav-menu">
-    <h3 class="title"><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></h3>
+    <h3 class="title"><a href="../index.html">The Storage Strategy, Architecting for AI Scale</a></h3>
 <ul class="nav-list">
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
@@ -48,10 +49,16 @@
     <a class="nav-link" href="section1.html">Architecture Deep Dive</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="storage-lab.html">Create Data Conenctions</a>
+    <a class="nav-link" href="section3.html">Data Connection Types</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="section5.html">Troubleshooting</a>
+    <a class="nav-link" href="storage-lab.html">Data and Cluster Connections</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section2.html">Lab: Review for Inclusion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section5.html">Field Notes for Platform Engineers</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="quiz.html">Quiz</a>
@@ -63,12 +70,12 @@
 </div>
 <div class="nav-panel-explore" data-panel="explore">
   <div class="context">
-    <span class="title">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</span>
+    <span class="title">The Storage Strategy, Architecting for AI Scale</span>
     <span class="version">3.2</span>
   </div>
   <ul class="components">
     <li class="component is-current">
-      <a class="title" href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <a class="title" href="../index.html">The Storage Strategy, Architecting for AI Scale</a>
       <ul class="versions">
         <li class="version is-current is-latest">
           <a href="../index.html">3.2</a>
@@ -86,8 +93,8 @@
   <a href="../index.html" class="home-link"></a>
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
-    <li><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></li>
-    <li><a href="index.html">The Data Supply Chain: Architecting the AI Factory</a></li>
+    <li><a href="../index.html">The Storage Strategy, Architecting for AI Scale</a></li>
+    <li><a href="index.html">The Storage Strategy: Architecting for AI Scale</a></li>
   </ul>
 </nav>
 </div>
@@ -96,82 +103,95 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">The Data Supply Chain: Architecting the AI Factory</h1>
+<h1 class="page">The Storage Strategy: Architecting for AI Scale</h1>
 <div id="preamble">
 <div class="sectionbody">
-<div class="paragraph">
-<p>In the modern AI enterprise, <strong>GPUs are the engine, but data is the fuel.</strong></p>
+<div class="paragraph lead">
+<p><strong>Connectivity is easy. Performance is engineering.</strong></p>
 </div>
 <div class="paragraph">
-<p>Most organizations burn millions on high-performance compute, only to let it sit idle because their data logistics are broken. Data Scientists waste days waiting for IT to open firewall ports. They hardcode AWS credentials into Jupyter notebooks, creating security nightmares. They download terabytes of redundant data to unmanaged block storage because the shared cluster options are "too hard to use."</p>
+<p>In the early stages of AI adoption, the primary challenge is simply <strong>access</strong>: <strong>"How do I connect my Jupyter Notebook to an S3 bucket?"</strong></p>
 </div>
 <div class="paragraph">
-<p>This is <strong>Shadow AI</strong>.</p>
+<p>But as you move from "Science Project" to "Production Service," the challenges shift dramatically. You are no longer moving 1GB CSV files; you are serving <strong>70GB Large Language Models (LLMs)</strong> to thousands of concurrent users.</p>
 </div>
 <div class="paragraph">
-<p>It is an unmanaged, ungoverned landscape where every model is treated like a unique "pet." It works for one model, but it collapses at scale.</p>
+<p>At this scale, storage is no longer just a place to keep files—it becomes the <strong>primary bottleneck</strong> of your entire platform.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Risk:</strong> If every pod downloads a 50GB model on startup, you flood the network and stall your rollout.</p>
+</li>
+<li>
+<p><strong>The Cost:</strong> If every team duplicates datasets to block storage, your cloud bill explodes.</p>
+</li>
+<li>
+<p><strong>The Failure:</strong> If you rely on ephemeral storage for production serving, a single node reboot can take down your service for 20 minutes while it re-downloads assets.</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
-<p><strong>In this course, you will industrialize your data logistics.</strong></p>
-</div>
-<div class="paragraph">
-<p>You will learn to make OpenShift AI storage <strong>work for you</strong>, transforming it from a passive hard drive into an active business asset. You will move beyond the "Wild West" of manual tickets to build a governed <strong>Data Supply Chain</strong> where data flows securely and instantly from your "Cold" Data Lakes to your "Hot" GPU memory.</p>
+<p><strong>In this course, you will evolve from managing "Disks" to architecting "Strategies."</strong></p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_the_architecture_of_value"><a class="anchor" href="#_the_architecture_of_value"></a>The Architecture of Value</h2>
+<h2 id="_the_three_pillars_of_ai_storage"><a class="anchor" href="#_the_three_pillars_of_ai_storage"></a>The Three Pillars of AI Storage</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>When you build an AI platform, you are not just provisioning storage; you are designing the workflow of your organization. Every storage mechanism you choose produces a specific business outcome.</p>
+<div class="imageblock text-center">
+<div class="content">
+<img src="_images/storage-conn.png" alt="storage conn">
+</div>
+<div class="title">Figure 1. Architecting the AI Supply Chain: Velocity, Security, and Scale</div>
 </div>
 <div class="paragraph">
-<p>In this course, we will architect three specific layers of value:</p>
+<p>We will replace the "One-Size-Fits-All" approach with a tiered strategy designed for specific AI workloads.</p>
 </div>
 <div class="sect2">
-<h3 id="_1_the_universal_adapter_data_connections"><a class="anchor" href="#_1_the_universal_adapter_data_connections"></a>1. The Universal Adapter (Data Connections)</h3>
+<h3 id="_1_the_velocity_tier_oci_modelcars"><a class="anchor" href="#_1_the_velocity_tier_oci_modelcars"></a>1. The Velocity Tier (OCI Modelcars)</h3>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>The Struggle:</strong> Coding for "Direct Access." It is faster today to hardcode an S3 key, but it creates "Vendor Lock-in" and security risks tomorrow.</p>
+<p><strong>The Challenge:</strong> Initialization Latency. Waiting 15 minutes for a model to download before a pod becomes "Ready."</p>
 </li>
 <li>
-<p><strong>The Solution:</strong> <strong>Data Connections.</strong> You will configure secure, injected secrets that act as universal adapters.</p>
+<p><strong>The Solution:</strong> <strong>Boot-from-Registry.</strong> By packaging models as OCI images (Modelcars), you leverage the cluster&#8217;s native image puller.</p>
 </li>
 <li>
-<p><strong>The Business Value:</strong> <strong>Portability.</strong> Your code simply asks for <code>conn-s3</code>. In Development, the platform points it to a sandbox; in Production, it points to the live warehouse. The code <strong>never changes</strong>, and the data scientist <strong>never sees the password</strong>.</p>
+<p><strong>The Outcome:</strong> <strong>Instant Scaling.</strong> The underlying layers are cached on the node. Scaling from 1 replica to 50 takes seconds, not hours, because the data is already there.</p>
 </li>
 </ul>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_2_the_collaborative_workspace_cluster_storage"><a class="anchor" href="#_2_the_collaborative_workspace_cluster_storage"></a>2. The Collaborative Workspace (Cluster Storage)</h3>
+<h3 id="_2_the_persistence_tier_cluster_storage"><a class="anchor" href="#_2_the_persistence_tier_cluster_storage"></a>2. The Persistence Tier (Cluster Storage)</h3>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>The Struggle:</strong> "It works on my machine." Models live on personal laptops or isolated "ReadWriteOnce" (RWO) volumes. If an employee leaves, their work vanishes with them.</p>
+<p><strong>The Challenge:</strong> The "Air-Gap" &amp; Collaboration. How do you serve proprietary models in disconnected environments, or share a "Golden Dataset" with 50 researchers without making 50 copies?</p>
 </li>
 <li>
-<p><strong>The Solution:</strong> <strong>Shared Team Storage (RWX).</strong> You will build the "Assembly Line" where multiple researchers mount the same high-speed volume to collaborate on datasets and share weights simultaneously.</p>
+<p><strong>The Solution:</strong> <strong>ReadWriteMany (RWX) &amp; Retain Policies.</strong> We will configure shared volumes that act as a central library for your teams.</p>
 </li>
 <li>
-<p><strong>The Business Value:</strong> <strong>Institutional Memory.</strong> Data and code become team assets, not personal artifacts.</p>
+<p><strong>The Outcome:</strong> <strong>Efficiency.</strong> A single 1TB volume serves the entire organization, slashing storage costs and ensuring everyone is training on the exact same data version.</p>
 </li>
 </ul>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_3_just_in_time_delivery_modelcars_oci"><a class="anchor" href="#_3_just_in_time_delivery_modelcars_oci"></a>3. Just-In-Time Delivery (Modelcars &amp; OCI)</h3>
+<h3 id="_3_the_abstraction_tier_data_connections"><a class="anchor" href="#_3_the_abstraction_tier_data_connections"></a>3. The Abstraction Tier (Data Connections)</h3>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>The Struggle:</strong> Every deployment starts by downloading a 20GB model file to disk, wasting minutes of startup time and racking up egress fees.</p>
+<p><strong>The Challenge:</strong> Governance. Preventing hardcoded credentials and ensuring environment parity between Dev and Prod.</p>
 </li>
 <li>
-<p><strong>The Solution:</strong> <strong>OCI Modelcars.</strong> You will treat models like software artifacts, streaming weights directly from the container registry to the node&#8217;s memory.</p>
+<p><strong>The Solution:</strong> <strong>Universal Data Connections.</strong> We will use Kubernetes Secrets to inject connection details for S3 / OCI / URI storage types.</p>
 </li>
 <li>
-<p><strong>The Business Value:</strong> <strong>Velocity.</strong> Deployments that took minutes now take seconds.</p>
+<p><strong>The Outcome:</strong> <strong>Portability.</strong> The same code runs in the Sandbox and in Production without a single line change.</p>
 </li>
 </ul>
 </div>
@@ -179,36 +199,47 @@
 </div>
 </div>
 <div class="sect1">
-<h2 id="_your_learning_path"><a class="anchor" href="#_your_learning_path"></a>Your Learning Path</h2>
+<h2 id="_your_mission_the_ai_factory_blueprint"><a class="anchor" href="#_your_mission_the_ai_factory_blueprint"></a>Your Mission: The "AI Factory" Blueprint</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>We have structured this course to take you from concept to code:</p>
+<p>You are not just learning to run <code>oc create secret</code>. You are learning to build the <strong>Data Supply Chain</strong> that powers the AI Factory.</p>
+</div>
+<div class="paragraph">
+<p>In the upcoming modules, you will:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><strong>The Blueprint (Next Module):</strong> We will dive deep into the technical architecture. You will learn how <code>ConnectionTypes</code> create the standards, how <code>RWX</code> backing stores differ from <code>RWO</code>, and how the Metadata Layer (External Databases) powers the entire system.</p>
+<p><strong>Analyze the Physics:</strong> Understand why downloading models to <code>emptyDir</code> kills production stability.</p>
 </li>
 <li>
-<p><strong>The Implementation (Hands-On Lab):</strong> You will act as the Factory Architect. Using a GitOps approach, you will deploy three standardized configuration files to instantly provision:</p>
-<div class="ulist">
-<ul>
-<li>
-<p>A secure <strong>S3 Data Connection</strong> to a Data Lake.</p>
+<p><strong>Build the Highway:</strong> Deploy <strong>OCI Data Connections</strong> to stream models instantly.</p>
 </li>
 <li>
-<p>A high-performance <strong>Shared Storage</strong> volume for team collaboration.</p>
+<p><strong>Secure the Vault:</strong> Provision <strong>Shared Storage</strong> that supports air-gapped workflows.</p>
 </li>
 <li>
-<p>A public <strong>OCI Modelcar</strong> connection for instant model streaming.</p>
-</li>
-</ul>
-</div>
+<p><strong>Connect the Brain:</strong> Wire up the external <strong>Databases</strong> required for RHOAI 3’s advanced metadata tracking.</p>
 </li>
 </ol>
 </div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title">The Shift in Mindset</div>
 <div class="paragraph">
-<p><strong>Ready to build the supply chain? Let&#8217;s explore the blueprint.</strong></p>
+<p>We are stopping the practice of treating models like "files." In RHOAI 3, we treat models like <strong>software artifacts</strong>—versioned, immutable, and cached.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p><strong>Ready to architect the solution? Let&#8217;s examine the blueprint.</strong></p>
 </div>
 </div>
 </div>

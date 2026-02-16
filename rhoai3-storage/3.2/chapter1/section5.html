@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>The Sharp Edges: Field Notes for Platform Engineers :: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</title>
-    <link rel="prev" href="storage-lab.html">
+    <title>Field Notes for Platform Engineers :: The Storage Strategy, Architecting for AI Scale</title>
+    <link rel="prev" href="section2.html">
     <link rel="next" href="quiz.html">
     <meta name="description" content="Critical "gotchas," configuration warnings, and troubleshooting tips derived from real-world RHOAI deployments.">
     <meta name="generator" content="Antora 3.1.3">
@@ -16,7 +16,7 @@
   <nav class="navbar">
     <div class="navbar-brand">
       <a class="navbar-item" href="https://www.redhat.com" target="_blank"><img src="../../../_/img/redhat-logo.png" height="40px" alt="Red Hat"></a>
-      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">The Storage Strategy, Architecting for AI Scale</a>
       <button class="navbar-burger" data-target="topbar-nav">
         <span></span>
         <span></span>
@@ -36,7 +36,7 @@
     <div class="panels">
 <div class="nav-panel-menu is-active" data-panel="menu">
   <nav class="nav-menu">
-    <h3 class="title"><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></h3>
+    <h3 class="title"><a href="../index.html">The Storage Strategy, Architecting for AI Scale</a></h3>
 <ul class="nav-list">
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
@@ -51,10 +51,16 @@
     <a class="nav-link" href="section1.html">Architecture Deep Dive</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="storage-lab.html">Create Data Conenctions</a>
+    <a class="nav-link" href="section3.html">Data Connection Types</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="storage-lab.html">Data and Cluster Connections</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section2.html">Lab: Review for Inclusion</a>
   </li>
   <li class="nav-item is-current-page" data-depth="1">
-    <a class="nav-link" href="section5.html">Troubleshooting</a>
+    <a class="nav-link" href="section5.html">Field Notes for Platform Engineers</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="quiz.html">Quiz</a>
@@ -66,12 +72,12 @@
 </div>
 <div class="nav-panel-explore" data-panel="explore">
   <div class="context">
-    <span class="title">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</span>
+    <span class="title">The Storage Strategy, Architecting for AI Scale</span>
     <span class="version">3.2</span>
   </div>
   <ul class="components">
     <li class="component is-current">
-      <a class="title" href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a>
+      <a class="title" href="../index.html">The Storage Strategy, Architecting for AI Scale</a>
       <ul class="versions">
         <li class="version is-current is-latest">
           <a href="../index.html">3.2</a>
@@ -89,8 +95,8 @@
   <a href="../index.html" class="home-link"></a>
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
-    <li><a href="../index.html">Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage</a></li>
-    <li><a href="section5.html">Troubleshooting</a></li>
+    <li><a href="../index.html">The Storage Strategy, Architecting for AI Scale</a></li>
+    <li><a href="section5.html">Field Notes for Platform Engineers</a></li>
   </ul>
 </nav>
 </div>
@@ -99,7 +105,7 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">The Sharp Edges: Field Notes for Platform Engineers</h1>
+<h1 class="page">Field Notes for Platform Engineers</h1>
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph lead">
@@ -211,10 +217,174 @@
 </li>
 </ul>
 </div>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_field_notes_the_sharp_edges_of_ai_storage"><a class="anchor" href="#_field_notes_the_sharp_edges_of_ai_storage"></a>Field Notes: The Sharp Edges of AI Storage</h2>
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>Configuration is easy. Day-2 Operations are where the battle is won.</strong></p>
+</div>
+<div class="paragraph">
+<p>Now that you understand the physics of AI storage, you need to maintain it. In a high-velocity environment, default Kubernetes settings are often insufficient for GenAI workloads.</p>
+</div>
+<div class="paragraph">
+<p>Based on real-world deployments of Red Hat OpenShift AI 3, here are the <strong>Five Critical Configurations</strong> that separate a stable platform from a fragile one.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_1_the_timeout_trap_oci_modelcars"><a class="anchor" href="#_1_the_timeout_trap_oci_modelcars"></a>1. The "Timeout" Trap (OCI Modelcars)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When you use the OCI protocol to stream a 70GB model, the container runtime (CRI-O) must pull all layers before the Pod can start.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Default:</strong> Knative (the engine behind Model Serving) often has a default <code>progress-deadline</code> of <strong>600 seconds (10 minutes)</strong>.</p>
+</li>
+<li>
+<p><strong>The Failure:</strong> If your network takes 11 minutes to pull the 70GB image, the deployment is marked as <code>Failed</code> and the pod is killed—even if it was 99% done.</p>
+</li>
+<li>
+<p><strong>The Fix:</strong> You must increase the <code>progressDeadlineSeconds</code> in your <code>InferenceService</code> or global Knative config to <strong>1800s (30 mins)</strong> or more for large foundation models.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_2_the_data_loss_risk_pvc_reclaim_policy"><a class="anchor" href="#_2_the_data_loss_risk_pvc_reclaim_policy"></a>2. The "Data Loss" Risk (PVC Reclaim Policy)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>By default, standard Storage Classes (like <code>gp3-csi</code>) have a <code>reclaimPolicy</code> of <code>Delete</code>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Scenario:</strong> A Data Scientist accidentally deletes their project namespace.</p>
+</li>
+<li>
+<p><strong>The Consequence:</strong> The underlying EBS volume is immediately scrubbed by AWS. The "Golden Dataset" is gone forever.</p>
+</li>
+<li>
+<p><strong>The Fix:</strong> For any Shared Storage (RWX) hosting critical assets, you must patch the Persistent Volume (PV) to <code>Retain</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Protect your Golden Dataset
+oc patch pv &lt;pv-name&gt; -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'</code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_3_the_protocol_pitfall_connectivity"><a class="anchor" href="#_3_the_protocol_pitfall_connectivity"></a>3. The "Protocol" Pitfall (Connectivity)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When configuring Data Connections for S3-compatible stores (MinIO, NooBaa), the most frequent error is <strong>Endpoint Formatting</strong>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Error:</strong> <code>minio-api.cluster.local</code></p>
+</li>
+<li>
+<p><strong>The Fix:</strong> You <strong>must</strong> include the protocol scheme.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Correct: <code><a href="http://minio-api.cluster.local:9000" class="bare">http://minio-api.cluster.local:9000</a></code></p>
+</li>
+<li>
+<p>Correct: <code><a href="https://s3.us-east-1.amazonaws.com" class="bare">https://s3.us-east-1.amazonaws.com</a></code></p>
+</li>
+<li>
+<p><strong>Why?</strong> The Boto3 client injected into the workbench requires the full URI scheme to resolve correctly.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_4_the_helper_pod_pattern_air_gapped_loading"><a class="anchor" href="#_4_the_helper_pod_pattern_air_gapped_loading"></a>4. The "Helper Pod" Pattern (Air-Gapped Loading)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In a disconnected (Air-Gapped) environment, you cannot simply "download" a model from Hugging Face to your PVC.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Problem:</strong> PVCs are just disks; they don&#8217;t have internet access.</p>
+</li>
+<li>
+<p><strong>The Solution:</strong> You must use a <strong>Helper Pod</strong>.</p>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Spin up a temporary Pod (e.g., <code>ubi9-minimal</code>) with the PVC mounted.</p>
+</li>
+<li>
+<p>Use <code>oc cp</code> to upload the model files from your laptop to the Pod.</p>
+</li>
+<li>
+<p>Delete the Helper Pod.</p>
+</li>
+<li>
+<p>The data remains on the PVC, ready for the Model Server to mount it as <code>Read-Only</code>.</p>
+</li>
+</ol>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_5_the_database_mandate_rhoai_3_specific_2"><a class="anchor" href="#_5_the_database_mandate_rhoai_3_specific_2"></a>5. The Database Mandate (RHOAI 3 Specific)</h2>
+<div class="sectionbody">
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title">Critical Architecture Change</div>
+<div class="paragraph">
+<p>Do not attempt to use SQLite for production Model Registries.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Change:</strong> RHOAI 3 deprecates file-based databases for the Model Registry.</p>
+</li>
+<li>
+<p><strong>The Requirement:</strong> You must provision an external <strong>MySQL (8.x)</strong> or <strong>PostgreSQL</strong> database.</p>
+</li>
+<li>
+<p><strong>The Why:</strong> Using local PVCs for metadata results in database locking issues when multiple API servers try to write simultaneously. Production SLAs require a proper DB engine.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Now that you know where the landmines are, let&#8217;s deploy the safe path.</strong></p>
+</div>
 </div>
 </div>
 <nav class="pagination">
-  <span class="prev"><a href="storage-lab.html">Create Data Conenctions</a></span>
+  <span class="prev"><a href="section2.html">Lab: Review for Inclusion</a></span>
   <span class="next"><a href="quiz.html">Quiz</a></span>
 </nav>
 </article>
