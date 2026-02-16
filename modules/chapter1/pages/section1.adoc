@@ -6,6 +6,14 @@
 
 In the previous module, we established that a Data Supply Chain produces **Velocity**, **Security**, and **Collaboration**. Now, we must examine the specific OpenShift AI (RHOAI) primitives that execute this vision.
 
+To build a stable platform, you must respect the physics of the underlying infrastructure.
+
+In standard web development, a 500MB container image is considered "large." In AI, a 70GB model is considered "medium."
+
+When you try to move objects of this size using standard Kubernetes patterns, things break. Nodes run out of disk space. Networks saturate. Pods enter crash loops.
+
+This module breaks down the Three Storage Tiers of RHOAI 3 and explains the mechanical differences between them so you can architect for stability.
+
 As a Platform Engineer, you are not just managing hard drives; you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory."
 
 == 1. The Universal Adapter: Connection Types vs. Data Connections

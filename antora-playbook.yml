@@ -1,5 +1,5 @@
 site:
-  title: Red Hat OpenShift AI (RHOAI) Data Connectivity and Storage
+  title: The Storage Strategy: Architecting for AI Scale
   start_page: rhoai3-storage::index.adoc
 
 content:

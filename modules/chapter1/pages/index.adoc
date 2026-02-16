@@ -1,52 +1,63 @@
-= The Data Supply Chain: Architecting the AI Factory
-:navtitle: The Data Supply Chain
+= The Storage Strategy: Architecting for AI Scale
+:navtitle: The Storage Strategy
 :imagesdir: ../images
+:role: Product Concept
+:audience: Platform Engineers & Architects
+:description: Moving beyond connectivity to designing a high-performance, resilient AI storage layer.
 
-In the modern AI enterprise, **GPUs are the engine, but data is the fuel.**
+[.lead]
+*Connectivity is easy. Performance is engineering.*
 
-Most organizations burn millions on high-performance compute, only to let it sit idle because their data logistics are broken. Data Scientists waste days waiting for IT to open firewall ports. They hardcode AWS credentials into Jupyter notebooks, creating security nightmares. They download terabytes of redundant data to unmanaged block storage because the shared cluster options are "too hard to use."
+In the early stages of AI adoption, the primary challenge is simply **access**: *"How do I connect my Jupyter Notebook to an S3 bucket?"*
 
-This is **Shadow AI**.
+But as you move from "Science Project" to "Production Service," the challenges shift dramatically. You are no longer moving 1GB CSV files; you are serving **70GB Large Language Models (LLMs)** to thousands of concurrent users.
 
-It is an unmanaged, ungoverned landscape where every model is treated like a unique "pet." It works for one model, but it collapses at scale.
+At this scale, storage is no longer just a place to keep files—it becomes the **primary bottleneck** of your entire platform.
 
+* **The Risk:** If every pod downloads a 50GB model on startup, you flood the network and stall your rollout.
+* **The Cost:** If every team duplicates datasets to block storage, your cloud bill explodes.
+* **The Failure:** If you rely on ephemeral storage for production serving, a single node reboot can take down your service for 20 minutes while it re-downloads assets.
 
-
-**In this course, you will industrialize your data logistics.**
-
-You will learn to make OpenShift AI storage **work for you**, transforming it from a passive hard drive into an active business asset. You will move beyond the "Wild West" of manual tickets to build a governed **Data Supply Chain** where data flows securely and instantly from your "Cold" Data Lakes to your "Hot" GPU memory.
-
-== The Architecture of Value
-
-When you build an AI platform, you are not just provisioning storage; you are designing the workflow of your organization. Every storage mechanism you choose produces a specific business outcome.
-
-In this course, we will architect three specific layers of value:
-
-=== 1. The Universal Adapter (Data Connections)
-* **The Struggle:** Coding for "Direct Access." It is faster today to hardcode an S3 key, but it creates "Vendor Lock-in" and security risks tomorrow.
-* **The Solution:** **Data Connections.** You will configure secure, injected secrets that act as universal adapters.
-* **The Business Value:** **Portability.** Your code simply asks for `conn-s3`. In Development, the platform points it to a sandbox; in Production, it points to the live warehouse. The code *never changes*, and the data scientist *never sees the password*.
-
-=== 2. The Collaborative Workspace (Cluster Storage)
-* **The Struggle:** "It works on my machine." Models live on personal laptops or isolated "ReadWriteOnce" (RWO) volumes. If an employee leaves, their work vanishes with them.
-* **The Solution:** **Shared Team Storage (RWX).** You will build the "Assembly Line" where multiple researchers mount the same high-speed volume to collaborate on datasets and share weights simultaneously.
-* **The Business Value:** **Institutional Memory.** Data and code become team assets, not personal artifacts.
-
-=== 3. Just-In-Time Delivery (Modelcars & OCI)
-* **The Struggle:** Every deployment starts by downloading a 20GB model file to disk, wasting minutes of startup time and racking up egress fees.
-* **The Solution:** **OCI Modelcars.** You will treat models like software artifacts, streaming weights directly from the container registry to the node's memory.
-* **The Business Value:** **Velocity.** Deployments that took minutes now take seconds.
-
-== Your Learning Path
-
-We have structured this course to take you from concept to code:
-
-1.  **The Blueprint (Next Module):** We will dive deep into the technical architecture. You will learn how `ConnectionTypes` create the standards, how `RWX` backing stores differ from `RWO`, and how the Metadata Layer (External Databases) powers the entire system.
-2.  **The Implementation (Hands-On Lab):** You will act as the Factory Architect. Using a GitOps approach, you will deploy three standardized configuration files to instantly provision:
-    * A secure **S3 Data Connection** to a Data Lake.
-    * A high-performance **Shared Storage** volume for team collaboration.
-    * A public **OCI Modelcar** connection for instant model streaming.
+**In this course, you will evolve from managing "Disks" to architecting "Strategies."**
 
 
 
-*Ready to build the supply chain? Let's explore the blueprint.*
+== The Three Pillars of AI Storage
+
+image::storage-conn.png[align="center", title="Architecting the AI Supply Chain: Velocity, Security, and Scale"]
+
+We will replace the "One-Size-Fits-All" approach with a tiered strategy designed for specific AI workloads.
+
+=== 1. The Velocity Tier (OCI Modelcars)
+* **The Challenge:** Initialization Latency. Waiting 15 minutes for a model to download before a pod becomes "Ready."
+* **The Solution:** **Boot-from-Registry.** By packaging models as OCI images (Modelcars), you leverage the cluster's native image puller.
+* **The Outcome:** **Instant Scaling.** The underlying layers are cached on the node. Scaling from 1 replica to 50 takes seconds, not hours, because the data is already there.
+
+=== 2. The Persistence Tier (Cluster Storage)
+* **The Challenge:** The "Air-Gap" & Collaboration. How do you serve proprietary models in disconnected environments, or share a "Golden Dataset" with 50 researchers without making 50 copies?
+* **The Solution:** **ReadWriteMany (RWX) & Retain Policies.** We will configure shared volumes that act as a central library for your teams.
+* **The Outcome:** **Efficiency.** A single 1TB volume serves the entire organization, slashing storage costs and ensuring everyone is training on the exact same data version.
+
+=== 3. The Abstraction Tier (Data Connections)
+* **The Challenge:** Governance. Preventing hardcoded credentials and ensuring environment parity between Dev and Prod.
+* **The Solution:** **Universal Data Connections.** We will use Kubernetes Secrets to inject connection details for S3 and Databases (MySQL/PostgreSQL) at runtime.
+* **The Outcome:** **Portability.** The same code runs in the Sandbox and in Production without a single line change.
+
+== Your Mission: The "AI Factory" Blueprint
+
+You are not just learning to run `oc create secret`. You are learning to build the **Data Supply Chain** that powers the AI Factory.
+
+In the upcoming modules, you will:
+
+1.  **Analyze the Physics:** Understand why downloading models to `emptyDir` kills production stability.
+2.  **Build the Highway:** Deploy **OCI Data Connections** to stream models instantly.
+3.  **Secure the Vault:** Provision **Shared Storage** that supports air-gapped workflows.
+4.  **Connect the Brain:** Wire up the external **Databases** required for RHOAI 3’s advanced metadata tracking.
+
+[IMPORTANT]
+.The Shift in Mindset
+====
+We are stopping the practice of treating models like "files." In RHOAI 3, we treat models like **software artifacts**—versioned, immutable, and cached.
+====
+
+*Ready to architect the solution? Let's examine the blueprint.* 

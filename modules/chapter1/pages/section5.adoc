@@ -40,3 +40,75 @@ Do not attempt to use SQLite for production Model Registries.
 
 * **The Change:** RHOAI 3 deprecates file-based databases for the Model Registry.
 * **The Requirement:** You must provision an external **MySQL (8.x)** or **PostgreSQL** database. Using local PVCs for metadata will result in performance bottlenecks and is not supported for production SLAs.
+
+
+---
+
+
+
+== Field Notes: The Sharp Edges of AI Storage
+:navtitle: Operational Best Practices
+:imagesdir: ../images
+:role: Operational Guide
+:audience: Platform Engineers & SREs
+:description: Critical configuration warnings, timeout adjustments, and data safety protocols for production AI.
+
+[.lead]
+*Configuration is easy. Day-2 Operations are where the battle is won.*
+
+Now that you understand the physics of AI storage, you need to maintain it. In a high-velocity environment, default Kubernetes settings are often insufficient for GenAI workloads.
+
+Based on real-world deployments of Red Hat OpenShift AI 3, here are the **Five Critical Configurations** that separate a stable platform from a fragile one.
+
+== 1. The "Timeout" Trap (OCI Modelcars)
+
+
+When you use the OCI protocol to stream a 70GB model, the container runtime (CRI-O) must pull all layers before the Pod can start.
+
+ * **The Default:** Knative (the engine behind Model Serving) often has a default `progress-deadline` of **600 seconds (10 minutes)**.
+ * **The Failure:** If your network takes 11 minutes to pull the 70GB image, the deployment is marked as `Failed` and the pod is killed—even if it was 99% done.
+ * **The Fix:** You must increase the `progressDeadlineSeconds` in your `InferenceService` or global Knative config to **1800s (30 mins)** or more for large foundation models.
+
+== 2. The "Data Loss" Risk (PVC Reclaim Policy)
+By default, standard Storage Classes (like `gp3-csi`) have a `reclaimPolicy` of `Delete`.
+
+  * **The Scenario:** A Data Scientist accidentally deletes their project namespace.
+  * **The Consequence:** The underlying EBS volume is immediately scrubbed by AWS. The "Golden Dataset" is gone forever.
+  * **The Fix:** For any Shared Storage (RWX) hosting critical assets, you must patch the Persistent Volume (PV) to `Retain`.
++
+[source,bash]
+----
+# Protect your Golden Dataset
+oc patch pv <pv-name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
+----
+
+== 3. The "Protocol" Pitfall (Connectivity)
+When configuring Data Connections for S3-compatible stores (MinIO, NooBaa), the most frequent error is **Endpoint Formatting**.
+
+  * **The Error:** `minio-api.cluster.local`
+ * **The Fix:** You *must* include the protocol scheme.
+    ** Correct: `http://minio-api.cluster.local:9000`
+    ** Correct: `https://s3.us-east-1.amazonaws.com`
+    ** *Why?* The Boto3 client injected into the workbench requires the full URI scheme to resolve correctly.
+
+== 4. The "Helper Pod" Pattern (Air-Gapped Loading)
+In a disconnected (Air-Gapped) environment, you cannot simply "download" a model from Hugging Face to your PVC.
+
+ * **The Problem:** PVCs are just disks; they don't have internet access.
+ * **The Solution:** You must use a **Helper Pod**.
+    1.  Spin up a temporary Pod (e.g., `ubi9-minimal`) with the PVC mounted.
+    2.  Use `oc cp` to upload the model files from your laptop to the Pod.
+    3.  Delete the Helper Pod.
+    4.  The data remains on the PVC, ready for the Model Server to mount it as `Read-Only`.
+
+== 5. The Database Mandate (RHOAI 3 Specific)
+[IMPORTANT]
+.Critical Architecture Change
+====
+Do not attempt to use SQLite for production Model Registries.
+====
+ * **The Change:** RHOAI 3 deprecates file-based databases for the Model Registry.
+ * **The Requirement:** You must provision an external **MySQL (8.x)** or **PostgreSQL** database.
+ * **The Why:** Using local PVCs for metadata results in database locking issues when multiple API servers try to write simultaneously. Production SLAs require a proper DB engine.
+
+*Now that you know where the landmines are, let's deploy the safe path.*

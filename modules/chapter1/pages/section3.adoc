@@ -1,150 +1,110 @@
-= Extending the Mesh: Database & Custom Connections
-:role: Advanced Configuration
-:audience: Platform Engineers
-:description: How to configure RHOAI 3 to manage credentials for Databases (PostgreSQL/MySQL) and Warehouses (Snowflake/Trino).
+= The Physics of AI Storage: Primitives & Protocols
+:navtitle: Storage Architecture
+:imagesdir: ../images
+:role: Technical Deep Dive
+:audience: Platform Engineers & Architects
+:description: Understanding the impact of storage protocols on Node I/O, Caching, and Pod Stability.
 
 [.lead]
-*Data doesn't just live in buckets. It lives in rows, columns, and transactions.*
+*To build a stable platform, you must respect the physics of the underlying infrastructure.*
 
-In the previous labs, we focused on **unstructured data** (images, models, logs) stored in Object Storage. However, real-world AI often requires **structured data**—customer records in PostgreSQL, sales transactions in Snowflake, or feature vectors in Redis.
+In standard web development, a 500MB container image is considered "large." In AI, a 70GB model is considered "medium."
 
-If you stop your automation at S3, your Data Scientists will go back to hardcoding database passwords.
+When you try to move objects of this size using standard Kubernetes patterns, things break. Nodes run out of disk space. Networks saturate. Pods enter crash loops.
 
-In this module, you will learn how to extend the "AI Factory" to support **Custom Connection Types**. You will teach RHOAI how to speak "Database."
+This module breaks down the **Three Storage Tiers** of RHOAI 3 and explains the mechanical differences between them so you can architect for stability.
+
+== 1. The "EmptyDir" Problem (Why S3 Fails at Scale)
+
+The most common mistake Platform Engineers make is treating Object Storage (S3) as a universal solution for Model Serving.
+
+When a Model Server connects to an S3 bucket to load a model, it typically follows this workflow:
+
+ 1.  **Init:** An `initContainer` starts.
+ 2.  **Download:** It pulls the 50GB model file from S3.
+ 3.  **Write:** It writes that file to an `emptyDir` volume (ephemeral storage) on the Node's disk.
+ 4.  **Serve:** The main container mounts that volume and loads the model into RAM.
 
 
 
-== The Two-Step Architecture
+=== The Architectural Risk
+ * **Node Thrashing:** If you schedule 4 replicas of a 50GB model on one node, you just demanded **200GB of ephemeral disk space**. If the node doesn't have it, the Kubelet will start **evicting pods**.
+ * **Bandwidth Storms:** If a node reboots, all 4 pods restart and try to download 200GB simultaneously, saturating the network interface.
+ * **Latency:** The pod is not "Ready" until the download finishes. This can take 10-20 minutes.
 
-Unlike S3 or OCI, which are built-in, RHOAI does not know what a "PostgreSQL" connection looks like by default. You must define it.
+**Strategic Rule:** Use S3 for *Training Data* (Ingestion). Do not use it for *Production Serving* of large models.
 
-This requires a two-step workflow:
- .  **Define the Standard (The Template):** You create a `ConnectionType` resource that defines the schema (e.g., "I need a Host, a Port, and a Password").
- .  **Provision the Access (The Instance):** You create the `Secret` that fills in those blanks.
+== 2. The Velocity Tier: OCI Modelcars (The Solution)
 
-== Step 1: Define the Connection Type
-First, we must tell the RHOAI Dashboard how to render the form for a database connection and which environment variables to inject.
+To solve the "EmptyDir" problem, RHOAI 3 supports the **OCI Protocol** (Modelcars). This treats the model not as a *file*, but as a *Container Image*.
 
-[source,bash]
-----
-#!/bin/bash
-# define-postgres-type.sh
-# Registers "PostgreSQL" as a valid Connection Type in RHOAI 3
+=== The Physics of OCI
+When you define a Data Connection with `opendatahub.io/connection-type-protocol: "oci"`, the cluster uses the underlying container runtime (CRI-O) to pull the data.
 
-echo "Defining 'Corporate PostgreSQL' connection type..."
+ * **Layer Caching:** If 10 replicas start on the same node, CRI-O pulls the image layers **once**. All 10 pods share the read-only layer on the disk.
+ * **Zero Duplication:** You use 50GB of disk space, not 500GB.
+ * **Instant Startup:** If the image is already cached on the node, startup time is near-instant.
 
-cat <<EOF | oc apply -f -
-apiVersion: dashboard.opendatahub.io/v1alpha
-kind: ConnectionType
-metadata:
-  name: postgres-v1
-  labels:
-    opendatahub.io/dashboard: "true"
-spec:
-  displayName: "Corporate PostgreSQL"
-  description: "Standard connection for corporate transactional databases."
-  category: "Database"
-  fields:
-    - name: Host
-      type: text
-      required: true
-      envVar: DB_HOST
-    - name: Port
-      type: text
-      defaultValue: "5432"
-      required: true
-      envVar: DB_PORT
-    - name: Database
-      type: text
-      required: true
-      envVar: DB_NAME
-    - name: Username
-      type: text
-      required: true
-      envVar: DB_USER
-    - name: Password
-      type: password
-      required: true
-      envVar: DB_PASSWORD
-EOF
-----
 
- * **`envVar`:** This is the magic. It maps the form field "Host" to the environment variable `DB_HOST` inside the container.
- * **`category`:** Groups this under "Database" in the UI, separating it from Object Storage.
 
-== Step 2: Create the Data Connection
-Now that the type exists, you can provision credentials for a specific project (e.g., "Sales Read-Only").
+== 3. The Persistence Tier: Cluster Storage (PVCs)
 
-[source,bash]
-----
-#!/bin/bash
-# connect-sales-db.sh <project>
+While OCI is for speed, **Persistent Volume Claims (PVCs)** are for **state** and **isolation**.
 
-PROJECT=$1
-CONNECTION_NAME="sales-production-db"
+=== RWO vs. RWX: The Physics of Access
+You must choose the right Access Mode based on the physics of your storage backend.
 
-echo "Creating Database Connection in $PROJECT..."
+[cols="1,2,2"]
+|===
+| Access Mode | The Analogy | The Architectural Constraint
 
-cat <<EOF | oc apply -n "$PROJECT" -f -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: $CONNECTION_NAME
-  labels:
-    opendatahub.io/dashboard: "true"
-    opendatahub.io/managed: "true"
-  annotations:
-    # Links to the Custom Type we created in Step 1
-    opendatahub.io/connection-type: "postgres-v1"
-    
-    # User-friendly metadata
-    openshift.io/display-name: "Sales Production DB (Read-Only)"
-    openshift.io/description: "Access to the sales_transactions table."
-type: Opaque
-stringData:
-  # These keys MUST match the 'fields' defined in the ConnectionType
-  Host: "prod-db.internal.corp"
-  Port: "5432"
-  Database: "sales_data"
-  Username: "readonly_user"
-  Password: "super-secure-password"
-EOF
-----
+| **ReadWriteOnce (RWO)**
+| **The Hard Drive**
+| **Block Storage.** It physical mounts a block device to a specific Node. It cannot be mounted to two nodes at once. If the pod moves, the drive must unmount and remount.
+| *Best For:* User Scratchpads, Databases, Single-User Notebooks.
 
-== The Payoff: Why do this?
+| **ReadWriteMany (RWX)**
+| **The File Server**
+| **Network File System (NFS/CephFS).** It connects via the network. Multiple nodes can mount it simultaneously.
+| *Best For:* Shared Team Folders, Distributed Training, Air-Gapped Model Hosting.
+|===
 
-By standardizing database access, you achieve **Code Portability**.
+=== The "Retain" Policy (Critical Safety)
+By default, when a user deletes a PVC, Kubernetes **deletes the data**.
+For "Golden Datasets" or "Production Models" stored on PVCs, you must change the `ReclaimPolicy` to `Retain`. This ensures that even if a namespace is nuked, the underlying storage remains safe.
 
-=== The "Shadow IT" Way (Hardcoded)
-The data scientist writes code that works *only* on their laptop or *only* in the Dev cluster.
-[source,python]
-----
-# Fails when moved to production
-conn = psycopg2.connect("host=192.168.1.5 dbname=sales user=admin ...")
-----
+== 4. The Abstraction Tier: The API Primitives
 
-=== The "Factory" Way (Abstracted)
-The data scientist writes code that works anywhere.
-[source,python]
-----
-import os
-import psycopg2
+To configure any of the above, RHOAI 3 uses two specific API resources.
 
-# Works in Dev (Sandbox DB) AND Prod (Warehouse DB)
-# The Platform injects the correct values based on the environment.
-conn = psycopg2.connect(
-    host=os.getenv("DB_HOST"),
-    database=os.getenv("DB_NAME"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD")
-)
-----
+=== A. The Connection Type (The Template)
 
-== Summary
-Data Connections are not just for S3. They are your **Universal Credential Broker**.
+An administrator-defined resource that dictates the *schema* of a connection.
 
- * **Platform Engineer:** Defines the schema (`ConnectionType`).
- * **Security Team:** Manages the secrets (`Secret`).
- * **Data Scientist:** Consumes the environment variables (`os.getenv`).
+ * *Purpose:* Governance. It forces users to provide specific fields (e.g., "Endpoint", "Region").
+ * *Role:* The Platform Engineer creates this **once**.
 
-*Next Step: Now that you have connected all data types, let's explore how to monitor storage usage.*
+=== B. The Data Connection (The Instance)
+A Kubernetes Secret that contains the actual credentials.
+
+ * *Purpose:* Injection. It maps the values to Environment Variables inside the Pod.
+ * *Role:* The User (or Automation Script) creates this **per project**.
+
+[WARNING]
+.Deprecation Alert
+====
+RHOAI 3 has standardized the annotations.
+ * **Deprecated:** `opendatahub.io/connection-type-ref`
+ * **Required:** `opendatahub.io/connection-type-protocol` (Values: `s3`, `oci`, `uri`)
+====
+
+== Summary: The Decision Matrix
+
+As a Platform Engineer, here is your decision tree:
+
+ 1.  **Ingesting Raw Data?** -> **S3 Connection.**
+ 2.  **Serving Large Models in Production?** -> **OCI Connection** (for caching).
+ 3.  **Collaborating with a Team?** -> **RWX PVC.**
+ 4.  **Air-Gapped Environment?** -> **RWX PVC** (with `Retain` policy).
+
+*Now that we understand the physics, let's look at the "Sharp Edges"—the specific configurations that cause outages.*

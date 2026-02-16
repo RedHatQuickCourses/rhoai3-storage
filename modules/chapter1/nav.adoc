@@ -1,7 +1,7 @@
 // * xref:index.adoc[Introduction & Value]
 * xref:section1.adoc[Architecture Deep Dive]
 * xref:storage-lab.adoc[Create Data Conenctions]
-// * xref:section3.adoc[Database & Custom Connections]
+* xref:section3.adoc[Database & Custom Connections]
 * xref:section5.adoc[Troubleshooting]
 
 * xref:quiz.adoc[Quiz]
