@@ -24,10 +24,10 @@ MODE_INPUT=$(echo "$4" | tr '[:upper:]' '[:lower:]')
 # Common examples: 'gp3-csi', 'ocs-storagecluster-ceph-rbd', 'nfs-client'
 
 # 1. Class for Single User (Block Storage - Fast)
-RWO_STORAGE_CLASS="gp3-csi"
+RWO_STORAGE_CLASS="gp2-csi"
 
 # 2. Class for Shared Team (File Storage - NFS/CephFS)
-RWX_STORAGE_CLASS="ocs-storagecluster-cephfs"
+RWX_STORAGE_CLASS="RWO"
 # ------------------------------------------------------
 
 # Logic to select the right Access Mode and Class
