@@ -149,7 +149,7 @@ git clone https://github.com/RedHatQuickCourses/rhoai3-storage.git
 cd rhoai3-storage/deploy
 
 # Make the scripts executable
-chmod +x *.sh</code></pre>
+chmod +x ./deploy/*.sh</code></pre>
 </div>
 </div>
 </div>
@@ -171,15 +171,23 @@ chmod +x *.sh</code></pre>
 </div>
 <div class="listingblock">
 <div class="content">
+<pre>. --- CONFIGURATION: EDIT THIS TO MATCH YOUR CLUSTER ---
+ * You can find your classes by running: oc get sc
+ * Common examples: 'gp3-csi', 'ocs-storagecluster-ceph-rbd', 'nfs-client'
+ * Update the cluster-storage.sh with your avialable storage classes.</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># 1. Create a project for our factory
 oc new-project ai-factory-lab
 
 # 2. Provision Personal Storage (ReadWriteOnce) - 20GB
 # Usage: ./cluster-storage.sh &lt;project&gt; &lt;name&gt; &lt;size&gt; &lt;mode&gt;
-./cluster-storage.sh ai-factory-lab personal-scratch-1 20 rwo
+./deploy/cluster-storage.sh ai-factory-lab personal-scratch-1 20 rwo
 
 # 3. Provision Shared Team Storage (ReadWriteMany) - 100GB
-./cluster-storage.sh ai-factory-lab team-golden-data 100 rwx</code></pre>
+./deploy/cluster-storage.sh ai-factory-lab team-golden-data 100 rwo</code></pre>
 </div>
 </div>
 </div>
@@ -214,7 +222,7 @@ oc new-project ai-factory-lab
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Usage: ./dataconnect.sh &lt;project&gt; &lt;connection-name&gt;
 # Note: The script defaults to MinIO. Edit variables inside if using AWS.
-./dataconnect.sh ai-factory-lab corp-data-lake</code></pre>
+./deploy/dataconnect.sh ai-factory-lab corp-data-lake</code></pre>
 </div>
 </div>
 </div>
