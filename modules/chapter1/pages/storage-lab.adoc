@@ -31,7 +31,7 @@ git clone https://github.com/RedHatQuickCourses/rhoai3-storage.git
 cd rhoai3-storage/deploy
 
 # Make the scripts executable
-chmod +x *.sh
+chmod +x ./deploy/*.sh
 ----
 
 == Part 1: The Foundation (Cluster Storage)
@@ -43,6 +43,14 @@ Manual provisioning leads to configuration drift. We will use the `cluster-stora
 === Action: Provision Storage Types
 You need to create a project and provision both storage types to verify your cluster's capabilities.
 
+[NOTE]
+----
+. --- CONFIGURATION: EDIT THIS TO MATCH YOUR CLUSTER ---
+ * You can find your classes by running: oc get sc
+ * Common examples: 'gp3-csi', 'ocs-storagecluster-ceph-rbd', 'nfs-client'
+ * Update the cluster-storage.sh with your avialable storage classes.
+----
+
 [source,bash]
 ----
 # 1. Create a project for our factory
@@ -50,10 +58,10 @@ oc new-project ai-factory-lab
 
 # 2. Provision Personal Storage (ReadWriteOnce) - 20GB
 # Usage: ./cluster-storage.sh <project> <name> <size> <mode>
-./cluster-storage.sh ai-factory-lab personal-scratch-1 20 rwo
+./deploy/cluster-storage.sh ai-factory-lab personal-scratch-1 20 rwo
 
 # 3. Provision Shared Team Storage (ReadWriteMany) - 100GB
-./cluster-storage.sh ai-factory-lab team-golden-data 100 rwx
+./deploy/cluster-storage.sh ai-factory-lab team-golden-data 100 rwo
 ----
 
 === Validation
@@ -76,7 +84,7 @@ We will use `dataconnect.sh` to inject a standard "Corporate S3" connection that
 ----
 # Usage: ./dataconnect.sh <project> <connection-name>
 # Note: The script defaults to MinIO. Edit variables inside if using AWS.
-./dataconnect.sh ai-factory-lab corp-data-lake
+./deploy/dataconnect.sh ai-factory-lab corp-data-lake
 ----
 
 === CLI Validation
