@@ -6,7 +6,7 @@
     <title>Field Notes: The Sharp Edges of AI Storage :: The Storage Strategy, Architecting for AI Scale</title>
     <link rel="prev" href="storage-lab.html">
     <link rel="next" href="quiz.html">
-    <meta name="description" content="Critical configuration warnings, timeout adjustments, and data safety protocols for production AI.">
+    <meta name="description" content="Critical configuration warnings, timeout adjustments, and data safety protocols for production AI in RHOAI 3.3.">
     <meta name="generator" content="Antora 3.1.3">
     <link rel="stylesheet" href="../../../_/css/site.css">
     <script>var uiRootPath = '../../../_'</script>
@@ -109,10 +109,10 @@
 <p><strong>Configuration is easy. Day-2 Operations are where the battle is won.</strong></p>
 </div>
 <div class="paragraph">
-<p>Now that you understand the physics of AI storage, you need to maintain it. In a high-velocity environment, default Kubernetes settings are often insufficient for GenAI workloads.</p>
+<p>Now that you understand the physics of AI storage and the new 3.3 Pipeline architecture, you need to maintain it. In a high-velocity environment, default Kubernetes settings are often insufficient for Generative AI workloads.</p>
 </div>
 <div class="paragraph">
-<p>Based on real-world deployments of Red Hat OpenShift AI 3, here are the <strong>Five Critical Configurations</strong> that separate a stable platform from a fragile one.</p>
+<p>Based on real-world deployments and the architectural shifts in OpenShift AI 3.3, here are the <strong>Seven Critical Configurations</strong> that separate a stable platform from a fragile one.</p>
 </div>
 </div>
 </div>
@@ -120,112 +120,58 @@
 <h2 id="_1_the_timeout_trap_oci_modelcars"><a class="anchor" href="#_1_the_timeout_trap_oci_modelcars"></a>1. The "Timeout" Trap (OCI Modelcars)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>When you use the OCI protocol to stream a 70GB model, the container runtime (CRI-O) must pull all layers before the Pod can start.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>The Default:</strong> Knative (the engine behind Model Serving) often has a default <code>progress-deadline</code> of <strong>600 seconds (10 minutes)</strong>.</p>
-</li>
-<li>
-<p><strong>The Failure:</strong> If your network takes 11 minutes to pull the 70GB image, the deployment is marked as <code>Failed</code> and the pod is killed—even if it was 99% done.</p>
-</li>
-<li>
-<p><strong>The Fix:</strong> You must increase the <code>progressDeadlineSeconds</code> in your <code>InferenceService</code> or global Knative config to <strong>1800s (30 mins)</strong> or more for large foundation models.</p>
-</li>
-</ul>
+<p>When you use the OCI protocol to stream a 70GB model, the container runtime (CRI-O) must pull all layers before the Pod can start.
+* <strong>The Default:</strong> Knative (the engine behind Model Serving) often has a default <code>progress-deadline</code> of <strong>600 seconds (10 minutes)</strong>.
+* <strong>The Failure:</strong> If your network takes 11 minutes to pull the 70GB image, the deployment is marked as <code>Failed</code> and the pod is killed—even if it was 99% done.
+* <strong>The Fix:</strong> You must increase the <code>progressDeadlineSeconds</code> in your <code>InferenceService</code> or global Knative config to <strong>1800s (30 mins)</strong> or more for large foundation models.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_2_the_data_loss_risk_pvc_reclaim_policy"><a class="anchor" href="#_2_the_data_loss_risk_pvc_reclaim_policy"></a>2. The "Data Loss" Risk (PVC Reclaim Policy)</h2>
+<h2 id="_2_the_workspace_import_trap_3_3_pipelines"><a class="anchor" href="#_2_the_workspace_import_trap_3_3_pipelines"></a>2. The "Workspace Import" Trap (3.3 Pipelines)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>By default, standard Storage Classes (like <code>gp3-csi</code>) have a <code>reclaimPolicy</code> of <code>Delete</code>.</p>
+<p>OpenShift AI 3.3 introduces Ephemeral Pipeline Workspaces (PVCs) for fast data transit. However, you cannot directly download an OCI Modelcar into a workspace volume natively.
+* <strong>The Problem:</strong> If a pipeline task expects an OCI image but you only provide the <code>oci://</code> URI, the task will fail to find the model files on the workspace disk.
+* <strong>The Fix (Side-Loading):</strong> You must explicitly define an <code>importer</code> component in your pipeline code to pull the OCI artifact, and then use a subsequent python component (e.g., using <code>shutil.copytree</code>) to copy the artifact into the <code>dsl.WORKSPACE_PATH_PLACEHOLDER</code>.</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>The Scenario:</strong> A Data Scientist accidentally deletes their project namespace.</p>
-</li>
-<li>
-<p><strong>The Consequence:</strong> The underlying EBS volume is immediately scrubbed by AWS. The "Golden Dataset" is gone forever.</p>
-</li>
-<li>
-<p><strong>The Fix:</strong> For any Shared Storage (RWX) hosting critical assets, you must patch the Persistent Volume (PV) to <code>Retain</code>.</p>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_3_the_dirty_database_migration_error"><a class="anchor" href="#_3_the_dirty_database_migration_error"></a>3. The "Dirty Database" Migration Error</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In OpenShift AI 3.3, the ML Metadata (MLMD) server was completely removed from the Model Registry to allow direct database interaction. If you are upgrading, your database schema migration might fail.
+* <strong>The Error:</strong> Your Model Registry pod crashes with: <code>error: error connecting to datastore: Dirty database version {version}. Fix and force version.</code>
+* <strong>The Fix:</strong> You must manually reset the "dirty" state in your MySQL database. Exec into the database pod and run:</p>
+</div>
+<div class="paragraph">
+<p>+</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "USE &lt;your-db-name&gt;; UPDATE schema_migrations SET dirty=0;"</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_4_the_data_loss_risk_pvc_reclaim_policy"><a class="anchor" href="#_4_the_data_loss_risk_pvc_reclaim_policy"></a>4. The "Data Loss" Risk (PVC Reclaim Policy)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>By default, standard Storage Classes (like <code>gp3-csi</code>) have a <code>reclaimPolicy</code> of <code>Delete</code>.
+* <strong>The Scenario:</strong> A Data Scientist accidentally deletes their project namespace.
+* <strong>The Consequence:</strong> The underlying EBS volume is immediately scrubbed by the cloud provider. The "Golden Dataset" or Pipeline Workspace is gone forever.
+* <strong>The Fix:</strong> For any Shared Storage (RWX) hosting critical assets, you must patch the Persistent Volume (PV) to <code>Retain</code>.</p>
+</div>
+<div class="paragraph">
+<p>+</p>
+</div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Protect your Golden Dataset
 oc patch pv &lt;pv-name&gt; -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'</code></pre>
 </div>
-</div>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_3_the_protocol_pitfall_connectivity"><a class="anchor" href="#_3_the_protocol_pitfall_connectivity"></a>3. The "Protocol" Pitfall (Connectivity)</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>When configuring Data Connections for S3-compatible stores (MinIO, NooBaa), the most frequent error is <strong>Endpoint Formatting</strong>.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>The Error:</strong> <code>minio-api.cluster.local</code></p>
-</li>
-<li>
-<p><strong>The Fix:</strong> You <strong>must</strong> include the protocol scheme.</p>
-<div class="ulist">
-<ul>
-<li>
-<p>Correct: <code><a href="http://minio-api.cluster.local:9000" class="bare">http://minio-api.cluster.local:9000</a></code></p>
-</li>
-<li>
-<p>Correct: <code><a href="https://s3.us-east-1.amazonaws.com" class="bare">https://s3.us-east-1.amazonaws.com</a></code></p>
-</li>
-<li>
-<p><strong>Why?</strong> The Boto3 client injected into the workbench requires the full URI scheme to resolve correctly.</p>
-</li>
-</ul>
-</div>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_4_the_helper_pod_pattern_air_gapped_loading"><a class="anchor" href="#_4_the_helper_pod_pattern_air_gapped_loading"></a>4. The "Helper Pod" Pattern (Air-Gapped Loading)</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>In a disconnected (Air-Gapped) environment, you cannot simply "download" a model from Hugging Face to your PVC.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>The Problem:</strong> PVCs are just disks; they don&#8217;t have internet access.</p>
-</li>
-<li>
-<p><strong>The Solution:</strong> You must use a <strong>Helper Pod</strong>.</p>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Spin up a temporary Pod (e.g., <code>ubi9-minimal</code>) with the PVC mounted.</p>
-</li>
-<li>
-<p>Use <code>oc cp</code> to upload the model files from your laptop to the Pod.</p>
-</li>
-<li>
-<p>Delete the Helper Pod.</p>
-</li>
-<li>
-<p>The data remains on the PVC, ready for the Model Server to mount it as <code>Read-Only</code>.</p>
-</li>
-</ol>
-</div>
-</li>
-</ul>
 </div>
 </div>
 </div>
@@ -233,53 +179,38 @@ oc patch pv &lt;pv-name&gt; -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain
 <h2 id="_5_the_trust_gap_certificates"><a class="anchor" href="#_5_the_trust_gap_certificates"></a>5. The "Trust" Gap (Certificates)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>If you are using an on-premise Object Store (MinIO) secured with <strong>Self-Signed Certificates</strong>, your Data Connections will fail silently.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>The Symptom:</strong> Workbenches hang or Pipeline steps fail with <code>SSL: CERTIFICATE_VERIFY_FAILED</code>.</p>
-</li>
-<li>
-<p><strong>The Fix:</strong> You must inject the <strong>Cluster CA Bundle</strong> into the component. RHOAI components (Pipelines, Model Serving) need to "trust" your storage backend. Ensure your custom CA bundles are configured in the <code>DSCI</code> (Data Science Cluster Initialization) resource.</p>
-</li>
-</ul>
+<p>If you are using an on-premise Object Store (MinIO) or an external database (Amazon RDS) secured with <strong>Self-Signed Certificates</strong>, your Data Connections will fail silently.
+* <strong>The Symptom:</strong> Workbenches hang, pipelines fail to compile, or you see <code>tls: failed to verify certificate: x509: certificate signed by unknown authority</code>.
+* <strong>The Fix:</strong> You must inject your OpenShift Cluster&#8217;s <code>kube-root-ca.crt</code> bundle into the <code>DSCI</code> (Data Science Cluster Initialization) resource. Platform components (Pipelines, Model Registry) will not trust your storage backend without it.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_6_the_database_mandate_rhoai_3_specific"><a class="anchor" href="#_6_the_database_mandate_rhoai_3_specific"></a>6. The Database Mandate (RHOAI 3 Specific)</h2>
+<h2 id="_6_the_protocol_pitfall_connectivity"><a class="anchor" href="#_6_the_protocol_pitfall_connectivity"></a>6. The "Protocol" Pitfall (Connectivity)</h2>
 <div class="sectionbody">
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-important" title="Important"></i>
-</td>
-<td class="content">
-<div class="title">Critical Architecture Change</div>
 <div class="paragraph">
-<p>Do not attempt to use SQLite for production Model Registries.</p>
+<p>When configuring Data Connections for S3-compatible stores (MinIO, Ceph), the most frequent error is <strong>Endpoint Formatting</strong>.
+* <strong>The Error:</strong> Entering <code>minio-api.cluster.local:9000</code> into the dashboard.
+* <strong>The Fix:</strong> You <strong>must</strong> include the HTTP protocol scheme.
+    <strong> Correct: <code><a href="http://minio-api.cluster.local:9000" class="bare">http://minio-api.cluster.local:9000</a></code>
+    </strong> Correct: <code><a href="https://s3.us-east-1.amazonaws.com" class="bare">https://s3.us-east-1.amazonaws.com</a></code>
+    <strong>* *Why?</strong> The Boto3 clients injected into the workbenches and pipelines require the full URI scheme to resolve correctly.</p>
 </div>
-</td>
-</tr>
-</table>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>The Change:</strong> RHOAI 3 deprecates file-based databases for the Model Registry.</p>
-</li>
-<li>
-<p><strong>The Requirement:</strong> You must provision an external <strong>MySQL (8.x)</strong> or <strong>PostgreSQL</strong> database.</p>
-</li>
-<li>
-<p><strong>The Why:</strong> Using local PVCs for metadata results in database locking issues when multiple API servers try to write simultaneously. Production SLAs require a proper DB engine.</p>
-</li>
-</ul>
+</div>
+<div class="sect1">
+<h2 id="_7_the_helper_pod_pattern_air_gapped_loading"><a class="anchor" href="#_7_the_helper_pod_pattern_air_gapped_loading"></a>7. The "Helper Pod" Pattern (Air-Gapped Loading)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In a disconnected (Air-Gapped) environment, you cannot simply "download" a model from Hugging Face to your PVC. PVCs are just disks; they do not have internet access.
+* <strong>The Solution:</strong> You must use a <strong>Helper Pod</strong>.
+    1.  Spin up a temporary Pod (e.g., <code>ubi9-minimal</code>) with the PVC mounted.
+    2.  Use <code>oc cp</code> to upload the model files from your local workstation to the Pod.
+    3.  Delete the Helper Pod.
+    4.  The data remains on the PVC, ready for the Model Server to mount it as <code>Read-Only</code> via the <code>pvc://</code> routing scheme.</p>
 </div>
 <div class="paragraph">
-<p><strong>Now that you know where the landmines are, let&#8217;s deploy the safe path.</strong></p>
+<p><strong>Now that you know where the landmines are, you are ready to construct the AI Supply Chain.</strong></p>
 </div>
 </div>
 </div>

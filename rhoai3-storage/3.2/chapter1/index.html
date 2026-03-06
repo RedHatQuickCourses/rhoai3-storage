@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>The Storage Strategy: Architecting for AI Scale :: The Storage Strategy, Architecting for AI Scale</title>
-    <meta name="description" content="Moving beyond connectivity to designing a high-performance, resilient AI storage layer.">
+    <meta name="description" content="Moving beyond connectivity to designing a high-performance, resilient AI storage layer for OpenShift AI 3.3.">
     <meta name="generator" content="Antora 3.1.3">
     <link rel="stylesheet" href="../../../_/css/site.css">
     <script>var uiRootPath = '../../../_'</script>
@@ -110,7 +110,7 @@
 <p>In the early stages of AI adoption, the primary challenge is simply <strong>access</strong>: <strong>"How do I connect my Jupyter Notebook to an S3 bucket?"</strong></p>
 </div>
 <div class="paragraph">
-<p>But as you move from "Science Project" to "Production Service," the challenges shift dramatically. You are no longer moving 1GB CSV files; you are serving <strong>70GB Large Language Models (LLMs)</strong> to thousands of concurrent users.</p>
+<p>But as you move from "Science Project" to "Production Service," the challenges shift dramatically. You are no longer moving 1GB CSV files; you are serving <strong>70GB Large Language Models (LLMs)</strong> to thousands of concurrent users, and automating complex AI Pipelines.</p>
 </div>
 <div class="paragraph">
 <p>At this scale, storage is no longer just a place to keep files—it becomes the <strong>primary bottleneck</strong> of your entire platform.</p>
@@ -121,7 +121,7 @@
 <p><strong>The Risk:</strong> If every pod downloads a 50GB model on startup, you flood the network and stall your rollout.</p>
 </li>
 <li>
-<p><strong>The Cost:</strong> If every team duplicates datasets to block storage, your cloud bill explodes.</p>
+<p><strong>The Cost:</strong> If your automated AI pipelines pass massive intermediate datasets back and forth to an external S3 bucket, your cloud egress bills explode and your pipelines crawl.</p>
 </li>
 <li>
 <p><strong>The Failure:</strong> If you rely on ephemeral storage for production serving, a single node reboot can take down your service for 20 minutes while it re-downloads assets.</p>
@@ -131,19 +131,19 @@
 <div class="paragraph">
 <p><strong>In this course, you will evolve from managing "Disks" to architecting "Strategies."</strong></p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_the_three_pillars_of_ai_storage"><a class="anchor" href="#_the_three_pillars_of_ai_storage"></a>The Three Pillars of AI Storage</h2>
-<div class="sectionbody">
 <div class="imageblock text-center">
 <div class="content">
 <img src="_images/storage-conn.png" alt="storage conn">
 </div>
 <div class="title">Figure 1. Architecting the AI Supply Chain: Velocity, Security, and Scale</div>
 </div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_three_pillars_of_ai_storage"><a class="anchor" href="#_the_three_pillars_of_ai_storage"></a>The Three Pillars of AI Storage</h2>
+<div class="sectionbody">
 <div class="paragraph">
-<p>We will replace the "One-Size-Fits-All" approach with a tiered strategy designed for specific AI workloads.</p>
+<p>We will replace the "One-Size-Fits-All" approach with a tiered strategy specifically designed for OpenShift AI 3.3 workloads.</p>
 </div>
 <div class="sect2">
 <h3 id="_1_the_velocity_tier_oci_modelcars"><a class="anchor" href="#_1_the_velocity_tier_oci_modelcars"></a>1. The Velocity Tier (OCI Modelcars)</h3>
@@ -153,7 +153,7 @@
 <p><strong>The Challenge:</strong> Initialization Latency. Waiting 15 minutes for a model to download before a pod becomes "Ready."</p>
 </li>
 <li>
-<p><strong>The Solution:</strong> <strong>Boot-from-Registry.</strong> By packaging models as OCI images (Modelcars), you leverage the cluster&#8217;s native image puller.</p>
+<p><strong>The Solution:</strong> <strong>Boot-from-Registry.</strong> By packaging models as OCI images (Modelcars), you leverage the cluster&#8217;s native container image puller.</p>
 </li>
 <li>
 <p><strong>The Outcome:</strong> <strong>Instant Scaling.</strong> The underlying layers are cached on the node. Scaling from 1 replica to 50 takes seconds, not hours, because the data is already there.</p>
@@ -162,33 +162,33 @@
 </div>
 </div>
 <div class="sect2">
-<h3 id="_2_the_persistence_tier_cluster_storage"><a class="anchor" href="#_2_the_persistence_tier_cluster_storage"></a>2. The Persistence Tier (Cluster Storage)</h3>
+<h3 id="_2_the_persistence_tier_cluster_storage_pipeline_workspaces"><a class="anchor" href="#_2_the_persistence_tier_cluster_storage_pipeline_workspaces"></a>2. The Persistence Tier (Cluster Storage &amp; Pipeline Workspaces)</h3>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>The Challenge:</strong> The "Air-Gap" &amp; Collaboration. How do you serve proprietary models in disconnected environments, or share a "Golden Dataset" with 50 researchers without making 50 copies?</p>
+<p><strong>The Challenge:</strong> S3 Ping-Ponging and Data Duplication. How do you share massive datasets efficiently between pipeline tasks or between data scientists?</p>
 </li>
 <li>
-<p><strong>The Solution:</strong> <strong>ReadWriteMany (RWX) &amp; Retain Policies.</strong> We will configure shared volumes that act as a central library for your teams.</p>
+<p><strong>The Solution:</strong> <strong>Shared Volumes (RWX) &amp; Ephemeral Workspaces.</strong> OpenShift AI 3.3 shifts away from relying purely on S3 for intermediate data. We now use high-speed Persistent Volume Claims (PVCs) for both collaborative team spaces and automated Pipeline Workspaces.</p>
 </li>
 <li>
-<p><strong>The Outcome:</strong> <strong>Efficiency.</strong> A single 1TB volume serves the entire organization, slashing storage costs and ensuring everyone is training on the exact same data version.</p>
+<p><strong>The Outcome:</strong> <strong>High-Speed Transit.</strong> A single 1TB volume serves an entire team, and pipeline components exchange massive datasets directly via the local cluster disk without repeatedly pushing or pulling from external cloud storage.</p>
 </li>
 </ul>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_3_the_abstraction_tier_data_connections"><a class="anchor" href="#_3_the_abstraction_tier_data_connections"></a>3. The Abstraction Tier (Data Connections)</h3>
+<h3 id="_3_the_abstraction_tier_data_connections_gitops"><a class="anchor" href="#_3_the_abstraction_tier_data_connections_gitops"></a>3. The Abstraction Tier (Data Connections &amp; GitOps)</h3>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>The Challenge:</strong> Governance. Preventing hardcoded credentials and ensuring environment parity between Dev and Prod.</p>
+<p><strong>The Challenge:</strong> Governance and Lock-in. Preventing hardcoded credentials and fragile database dependencies.</p>
 </li>
 <li>
-<p><strong>The Solution:</strong> <strong>Universal Data Connections.</strong> We will use Kubernetes Secrets to inject connection details for S3 / OCI / URI storage types.</p>
+<p><strong>The Solution:</strong> <strong>Kubernetes-Native Abstraction.</strong> We use the new Connections API to inject standard URIs (<code>s3://</code>, <code>pvc://</code>, <code>oci://</code>) via Kubernetes Secrets. Furthermore, OpenShift AI 3.3 moves pipeline storage out of internal databases and into Kubernetes API Custom Resources.</p>
 </li>
 <li>
-<p><strong>The Outcome:</strong> <strong>Portability.</strong> The same code runs in the Sandbox and in Production without a single line change.</p>
+<p><strong>The Outcome:</strong> <strong>Complete Portability.</strong> Your storage connections, model URIs, and entire pipeline definitions can now be fully managed by GitOps tools (like Argo CD), ensuring environment parity between Dev and Prod.</p>
 </li>
 </ul>
 </div>
@@ -207,16 +207,16 @@
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><strong>Analyze the Physics:</strong> Understand why downloading models to <code>emptyDir</code> kills production stability.</p>
+<p><strong>Analyze the Physics:</strong> Understand why downloading models to <code>emptyDir</code> kills production stability, and how Pipeline Workspaces solve S3 latency.</p>
 </li>
 <li>
-<p><strong>Build the Highway:</strong> Deploy <strong>OCI Data Connections</strong> to stream models instantly.</p>
+<p><strong>Build the Highway:</strong> Deploy <strong>OCI Data Connections</strong> and master the specific URI routing formats required by RHOAI 3.3.</p>
 </li>
 <li>
-<p><strong>Secure the Vault:</strong> Provision <strong>Shared Storage</strong> that supports air-gapped workflows.</p>
+<p><strong>Secure the Vault:</strong> Provision <strong>Shared Storage</strong> that supports both high-speed pipelines and air-gapped model hosting.</p>
 </li>
 <li>
-<p><strong>Connect the Brain:</strong> Wire up the external <strong>Databases</strong> required for RHOAI 3’s advanced metadata tracking.</p>
+<p><strong>Automate the Floor:</strong> Learn the "Sharp Edges" of managing external databases and GitOps pipelines.</p>
 </li>
 </ol>
 </div>
@@ -229,7 +229,7 @@
 <td class="content">
 <div class="title">The Shift in Mindset</div>
 <div class="paragraph">
-<p>We are stopping the practice of treating models like "files." In RHOAI 3, we treat models like <strong>software artifacts</strong>—versioned, immutable, and cached.</p>
+<p>We are stopping the practice of treating models like "files." In OpenShift AI 3.3, we treat models and pipelines like <strong>software artifacts</strong>—versioned, immutable, and natively integrated into Kubernetes.</p>
 </div>
 </td>
 </tr>
