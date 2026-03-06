@@ -1,110 +1,112 @@
-= The Physics of AI Storage
-:navtitle: Storage Architecture
-:imagesdir: ../images
-:role: Technical Deep Dive
-:audience: Platform Engineers & Architects
-:description: Understanding the impact of storage protocols on Node I/O, Caching, and Pod Stability.
+= Extending the Mesh: Custom Connections & Databases
+:navtitle: Custom Connections
+:role: Advanced Configuration
+:audience: Platform Engineers
+:description: How to configure RHOAI 3.3 to manage credentials for Relational Databases, Vector Stores, and custom data warehouses.
 
 [.lead]
-*To build a stable platform, you must respect the physics of the underlying infrastructure.*
+*Data doesn't just live in buckets. It lives in rows, columns, and vector embeddings.*
 
-In standard web development, a 500MB container image is considered "large." In AI, a 70GB model is considered "medium."
+In the previous modules, we focused heavily on **unstructured data** (models, logs, pipeline artifacts) stored via S3 or OCI protocols. However, real-world AI—especially Retrieval-Augmented Generation (RAG) and predictive modeling—requires **structured data**.
 
-When you try to move objects of this size using standard Kubernetes patterns, things break. Nodes run out of disk space. Networks saturate. Pods enter crash loops.
+If you stop your automation at S3, your data scientists will bypass the platform and go back to hardcoding PostgreSQL passwords directly into their Jupyter Notebooks.
 
-This module breaks down the **Three Storage Tiers** of RHOAI 3 and explains the mechanical differences between them so you can architect for stability.
+In this module, you will learn how to extend the "AI Factory" by creating **Custom Connection Types**. You will teach OpenShift AI how to securely speak to any database or external API.
 
-== 1. The "EmptyDir" Problem (Why S3 Fails at Scale)
+== 1. The Limitation of Default Types
 
-The most common mistake Platform Engineers make is treating Object Storage (S3) as a universal solution for Model Serving.
+Out of the box, OpenShift AI 3.3 provides pre-installed Connection Types for:
+* S3-compatible object storage
+* OCI-compliant registries
+* URI-based repositories
 
-When a Model Server connects to an S3 bucket to load a model, it typically follows this workflow:
+It does **not** provide a default form for Snowflake, MongoDB, MySQL, or Milvus. To support these, the Platform Engineer must define the schema using the `ConnectionType` custom resource. 
 
- 1.  **Init:** An `initContainer` starts.
- 2.  **Download:** It pulls the 50GB model file from S3.
- 3.  **Write:** It writes that file to an `emptyDir` volume (ephemeral storage) on the Node's disk.
- 4.  **Serve:** The main container mounts that volume and loads the model into RAM.
+== 2. Architecting a Custom Connection Type
 
+A `ConnectionType` is a Kubernetes Custom Resource (CR) that tells the OpenShift AI dashboard how to render a form, and critically, how to map the user's inputs to standard Environment Variables.
 
+=== Example: Defining a Corporate PostgreSQL Standard
+Imagine your organization requires data scientists to query an internal PostgreSQL database. You want to ensure the connection strings are standardized.
 
-=== The Architectural Risk
- * **Node Thrashing:** If you schedule 4 replicas of a 50GB model on one node, you just demanded **200GB of ephemeral disk space**. If the node doesn't have it, the Kubelet will start **evicting pods**.
- * **Bandwidth Storms:** If a node reboots, all 4 pods restart and try to download 200GB simultaneously, saturating the network interface.
- * **Latency:** The pod is not "Ready" until the download finishes. This can take 10-20 minutes.
+As a cluster administrator, you apply the following YAML to your cluster:
 
-**Strategic Rule:** Use S3 for *Training Data* (Ingestion). Do not use it for *Production Serving* of large models.
+[source,yaml]
+----
+apiVersion: dashboard.opendatahub.io/v1alpha
+kind: ConnectionType
+metadata:
+  name: corporate-postgres-v1
+  labels:
+    opendatahub.io/dashboard: "true" # Required to show in the UI
+spec:
+  displayName: "Corporate PostgreSQL"
+  description: "Standard connection for read-only transactional databases."
+  category: "Database"
+  fields:
+    - name: Host
+      type: text
+      required: true
+      envVar: DB_HOST
+    - name: Port
+      type: text
+      defaultValue: "5432"
+      required: true
+      envVar: DB_PORT
+    - name: Database
+      type: text
+      required: true
+      envVar: DB_NAME
+    - name: Username
+      type: text
+      required: true
+      envVar: DB_USER
+    - name: Password
+      type: password
+      required: true
+      envVar: DB_PASSWORD
+----
 
-== 2. The Velocity Tier: OCI Modelcars (The Solution)
+=== The Payoff: Code Portability
+Once this type is applied, users can create a connection from the dashboard UI. The platform securely injects the credentials into their workbench. 
 
-To solve the "EmptyDir" problem, RHOAI 3 supports the **OCI Protocol** (Modelcars). This treats the model not as a *file*, but as a *Container Image*.
+The data scientist writes code that works anywhere, without ever seeing the password:
+[source,python]
+----
+import os
+import psycopg2
 
-=== The Physics of OCI
-When you define a Data Connection with `opendatahub.io/connection-type-protocol: "oci"`, the cluster uses the underlying container runtime (CRI-O) to pull the data.
+# The Platform injects the correct values based on the environment.
+conn = psycopg2.connect(
+    host=os.getenv("DB_HOST"),
+    database=os.getenv("DB_NAME"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD")
+)
+----
 
- * **Layer Caching:** If 10 replicas start on the same node, CRI-O pulls the image layers **once**. All 10 pods share the read-only layer on the disk.
- * **Zero Duplication:** You use 50GB of disk space, not 500GB.
- * **Instant Startup:** If the image is already cached on the node, startup time is near-instant.
+== 3. The 3.3 Database Mandates (Required Connections)
 
+In OpenShift AI 3.3, setting up database connections is no longer just for custom data science workloads; it is a strict requirement for the platform's control plane. 
 
+You will need to architect connections to the following external systems to support production AI:
 
-== 3. The Persistence Tier: Cluster Storage (PVCs)
+=== A. The Model Registry (Metadata)
+* **Requirement:** External **MySQL** (version 5.x or 8.x) or **MariaDB** (version 10.3+).
+* **Why:** Local SQLite files are deprecated for production metadata. The Model Registry interacts directly with the underlying relational database to track lineage, quantization schemas, and pipeline deployment events without database locking issues.
 
-While OCI is for speed, **Persistent Volume Claims (PVCs)** are for **state** and **isolation**.
+=== B. Llama Stack (Retrieval-Augmented Generation)
+When deploying GenAI models that require RAG architectures (giving LLMs access to your private documents), you must connect to specialized vector databases.
+* **Vector Store (Large Scale):** Requires a connection to **Remote Milvus**. This typically utilizes a gRPC endpoint on port `19530`.
+* **Vector Store (Transactional):** Requires a connection to **PostgreSQL** with the `pgvector` extension, typically on port `5432`.
+* **State/Metadata:** Llama Stack requires PostgreSQL to persist critical GenAI state data, including agent states and conversation history.
 
-=== RWO vs. RWX: The Physics of Access
-You must choose the right Access Mode based on the physics of your storage backend.
-
-[cols="1,2,2"]
-|===
-| Access Mode | The Analogy | The Architectural Constraint
-
-| **ReadWriteOnce (RWO)**
-| **The Hard Drive**
-| **Block Storage.** It physical mounts a block device to a specific Node. It cannot be mounted to two nodes at once. If the pod moves, the drive must unmount and remount.
-| *Best For:* User Scratchpads, Databases, Single-User Notebooks.
-
-| **ReadWriteMany (RWX)**
-| **The File Server**
-| **Network File System (NFS/CephFS).** It connects via the network. Multiple nodes can mount it simultaneously.
-| *Best For:* Shared Team Folders, Distributed Training, Air-Gapped Model Hosting.
-|===
-
-=== The "Retain" Policy (Critical Safety)
-By default, when a user deletes a PVC, Kubernetes **deletes the data**.
-For "Golden Datasets" or "Production Models" stored on PVCs, you must change the `ReclaimPolicy` to `Retain`. This ensures that even if a namespace is nuked, the underlying storage remains safe.
-
-== 4. The Abstraction Tier: The API Primitives
-
-To configure any of the above, RHOAI 3 uses two specific API resources.
-
-=== A. The Connection Type (The Template)
-
-An administrator-defined resource that dictates the *schema* of a connection.
-
- * *Purpose:* Governance. It forces users to provide specific fields (e.g., "Endpoint", "Region").
- * *Role:* The Platform Engineer creates this **once**.
-
-=== B. The Data Connection (The Instance)
-A Kubernetes Secret that contains the actual credentials.
-
- * *Purpose:* Injection. It maps the values to Environment Variables inside the Pod.
- * *Role:* The User (or Automation Script) creates this **per project**.
-
-[WARNING]
-.Deprecation Alert
+[IMPORTANT]
+.Certificate Verification for Databases
 ====
-RHOAI 3 has standardized the annotations.
- * **Deprecated:** `opendatahub.io/connection-type-ref`
- * **Required:** `opendatahub.io/connection-type-protocol` (Values: `s3`, `oci`, `uri`)
+If your external databases (like Amazon RDS or an internal Postgres instance) use self-signed certificates, the AI pipelines manager and Model Registry will fail to connect. 
+
+You must inject your custom Certificate Authority (CA) bundle into the `DSCI` (Data Science Cluster Initialization) resource, or the connections will result in an `x509: certificate signed by unknown authority` error.
 ====
 
-== Summary: The Decision Matrix
-
-As a Platform Engineer, here is your decision tree:
-
- 1.  **Ingesting Raw Data?** -> **S3 Connection.**
- 2.  **Serving Large Models in Production?** -> **OCI Connection** (for caching).
- 3.  **Collaborating with a Team?** -> **RWX PVC.**
- 4.  **Air-Gapped Environment?** -> **RWX PVC** (with `Retain` policy).
-
-*Now that we understand the physics, let's look at the "Sharp Edges"—the specific configurations that cause outages.*
+*Now that we have extended the mesh to include structured data, let's explore the "Sharp Edges" of operating this infrastructure day-to-day.*
