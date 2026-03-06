@@ -104,9 +104,10 @@ oc create secret generic aws-connection-minio \
     --dry-run=client -o yaml | \
     oc apply -f -
 
-oc label secret aws-connection-minio \
-    "opendatahub.io/dashboard=true" \
-    "opendatahub.io/managed=true" \
+oc annotate secret aws-connection-minio \
+    "opendatahub.io/connection-type=s3" \
+    "opendatahub.io/connection-type-protocol=s3" \
+    "openshift.io/display-name=Local MinIO Storage" \
     -n "$NAMESPACE" \
     --overwrite
 

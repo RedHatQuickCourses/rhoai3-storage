@@ -1,49 +1,51 @@
 = Knowledge Check: Verify Your Architecture Skills
 :role: Assessment
 :audience: Platform Engineers
-:description: A short quiz to validate understanding of RHOAI 3 Storage and Connectivity concepts.
+:description: A short quiz to validate your understanding of OpenShift AI 3.3 Storage, Connectivity, and Pipeline architectures.
 
 [.lead]
 *Did you master the factory floor? Let's find out.*
 
-== Question 1: The Strategy
-**Scenario:** A team of 5 researchers needs to access a read-only 2TB dataset of satellite imagery simultaneously. They do not need to modify the images.
-**Which storage class strategy is most appropriate?**
+== Question 1: The Pipeline Strategy
+**Scenario:** You are architecting a new AI Pipeline. The tasks need to pass a massive 50GB intermediate dataset between each other. 
+**What is the most efficient storage strategy in OpenShift AI 3.3 to handle this data transfer?**
 
-* [ ] A. Provision 5 separate RWO volumes and copy the data to each one.
-* [ ] B. Provision one RWO volume and have them take turns.
-* [x] C. Provision one RWX (ReadWriteMany) volume and mount it to all 5 workbenches as Read-Only.
-* [ ] D. Store the images in a Git repository.
+* [ ] A. Upload the dataset to an external S3 bucket at the end of each task and download it at the start of the next.
+* [x] B. Use an Ephemeral Pipeline Workspace backed by a Persistent Volume Claim (PVC).
+* [ ] C. Store the data inside the internal MySQL database.
+* [ ] D. Package the intermediate data into an OCI container image.
 
-_Answer: C. RWX is designed for collaborative access to shared data without duplication._
+_Answer: B. OpenShift AI 3.3 introduces Pipeline Workspaces. This allows pipeline components to exchange large intermediate data directly via local cluster disk, improving performance and reducing object storage costs._
 
 == Question 2: The Security
-**Scenario:** You need to rotate the AWS Access Keys used by the "Fraud Detection" team.
-**How do you update the credentials without breaking their code?**
+**Scenario:** You need to rotate the AWS Access Keys used by the "Fraud Detection" team. 
+**How do you update the credentials without breaking the data scientist's code?**
 
-* [ ] A. Email the new keys to the team and ask them to update their notebooks.
+* [ ] A. Email the new keys to the team and ask them to update their Jupyter notebooks.
 * [ ] B. Update the hardcoded values in the `deployment.yaml` file.
 * [x] C. Update the Kubernetes Secret associated with the Data Connection.
 * [ ] D. Delete the workbench and recreate it.
 
-_Answer: C. Data Connections abstract credentials into Secrets. Updating the Secret automatically propagates the new values to the environment variables upon the next pod start._
+_Answer: C. Data Connections abstract credentials into Kubernetes Secrets. Updating the Secret automatically propagates the new values to the environment variables._
 
-== Question 3: The Architecture (RHOAI 3)
-**Scenario:** You are deploying a production Model Registry in RHOAI 3.
-**Where should the metadata be stored?**
+== Question 3: The Architecture (GitOps)
+**Scenario:** Your organization requires that all production AI Pipelines be managed via GitOps (e.g., using Argo CD). 
+**How must you configure your pipeline server to support this?**
 
-* [ ] A. In a text file on a PVC.
-* [ ] B. In an SQLite database on the local node.
-* [x] C. In an external MySQL or PostgreSQL database.
-* [ ] D. In the OpenShift etcd key-value store.
+* [ ] A. Set the pipeline server to store definitions in the internal MariaDB database.
+* [ ] B. Export the pipelines manually as ZIP files and upload them to Git.
+* [x] C. Configure the pipeline server to use Kubernetes API storage (`spec.apiServer.pipelineStore: kubernetes`).
+* [ ] D. Pipelines cannot be managed by GitOps tools.
 
-_Answer: C. RHOAI 3 requires external databases (MySQL/Postgres) for production components like Model Registry and Llama Stack to ensure scalability._
+_Answer: C. By using the Kubernetes API storage mode, pipelines and pipeline versions are stored as standard Custom Resources (`Pipeline` and `PipelineVersion`) in the cluster, making them natively compatible with GitOps tools._
 
-== Question 4: The Configuration
-**Scenario:** A user reports their workbench is restarting unexpectedly. You recently changed the global "Default PVC Size" in the Cluster Settings.
-**Is this related?**
+== Question 4: The Operational Hazard
+**Scenario:** You are deploying a 70GB Foundation Model using the `oci://` protocol (Modelcar). The network is healthy, but the deployment repeatedly fails and marks the pod as "Failed" after exactly 10 minutes. 
+**What is the most likely cause?**
 
-* [x] A. Yes, changing the default PVC size triggers a rollout restart of workbench pods.
-* [ ] B. No, PVC settings only affect new workbenches.
+* [ ] A. The CRI-O node cache is completely full.
+* [ ] B. The OCI registry requires a different connection type.
+* [x] C. The deployment exceeded the default Knative `progress-deadline` timeout.
+* [ ] D. The Persistent Volume Claim (PVC) is set to `ReadOnlyMany`.
 
-_Answer: A. Modifying the PVC size setting in the dashboard restarts workbench pods and makes them unavailable for up to 30 seconds._
+_Answer: C. Pulling massive multi-gigabyte container images can easily exceed the default 10-minute timeout configured in underlying Knative Serving objects. You must explicitly annotate the InferenceService to increase this threshold._
