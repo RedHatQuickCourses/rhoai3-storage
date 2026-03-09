@@ -9,18 +9,18 @@ To build a Data Supply Chain, you first need a "Warehouse" (Object Storage) and 
 Once the infrastructure is live, you will act as the **Platform Architect**. You will define the "Universal Adapters" (Data Connections) that allow your Data Scientists to consume these resources securely, without ever knowing the root passwords.
 
 == Prerequisites
-* Access to an OpenShift cluster with **RHOAI 3** installed.
-* `cluster-admin` privileges.
-* The `oc` CLI tool installed.
+ * Access to an OpenShift cluster with **RHOAI 3** installed.
+ * `cluster-admin` privileges.
+ * The `oc` CLI tool installed.
 
 
 == Phase 1: The Infrastructure (Deploy the Factory)
 
 We have packaged the "Plumbing" into a Fast Track script. This script will:
-1.  Create the `rhoai-model-registry-lab` namespace.
-2.  Deploy **MinIO** (S3-compatible storage).
-3.  Deploy **MySQL** (Relational Database).
-4.  Expose them internally to the cluster.
+ 1.  Create the `rhoai-model-registry-lab` namespace.
+ 2.  Deploy **MinIO** (S3-compatible storage).
+ 3.  Deploy **MySQL** (Relational Database).
+ 4.  Expose them internally to the cluster.
 
 === 1. Acquire the Infrastructure Code
 Create a file named `setup.sh` and paste the following content. This simulates checking out the "Ops Team" repository.

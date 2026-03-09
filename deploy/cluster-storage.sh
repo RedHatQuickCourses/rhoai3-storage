@@ -19,7 +19,7 @@ SIZE_GB=$3
 
 # --- CONFIGURATION: EDIT THIS TO MATCH YOUR CLUSTER ---
 # Find your available RWO classes by running: oc get sc
-STORAGE_CLASS="gp3-csi" # Defaulting to AWS block storage
+STORAGE_CLASS="openshift-storage.cephfs.csi.ceph.com" # Defaulting to AWS block storage
 # ------------------------------------------------------
 
 echo "🔹 Configuration: Block Storage (RWO) using class '$STORAGE_CLASS'"
