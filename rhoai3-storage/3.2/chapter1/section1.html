@@ -54,7 +54,7 @@
     <a class="nav-link" href="section3.html">Data Connection Types</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="storage-lab.html">Data and Cluster Connections</a>
+    <a class="nav-link" href="storage-lab.html">Storage Lab Exercises</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="section5.html">Field Notes for Platform Engineers</a>
@@ -265,14 +265,22 @@
 </div>
 </div>
 <div class="sect2">
-<h3 id="_the_3_3_shift_ephemeral_pipeline_workspaces_the_s3_replacement"><a class="anchor" href="#_the_3_3_shift_ephemeral_pipeline_workspaces_the_s3_replacement"></a>The 3.3 Shift: Ephemeral Pipeline Workspaces (The S3 Replacement)</h3>
+<h3 id="_the_3_3_shift_dual_storage_ai_pipelines"><a class="anchor" href="#_the_3_3_shift_dual_storage_ai_pipelines"></a>The 3.3 Shift: Dual-Storage AI Pipelines</h3>
 <div class="paragraph">
-<p>In previous versions, AI Pipelines passed intermediate data between tasks by constantly uploading to and downloading from an S3 bucket. You could not even activate the pipeline server without an S3 connection.</p>
+<p>In previous versions, AI Pipelines passed intermediate data between tasks by constantly uploading to and downloading from an S3 bucket (S3 Ping-Ponging).</p>
 </div>
 <div class="paragraph">
-<p>OpenShift AI 3.3 fundamentally shifts this. <strong>Object storage (S3) is no longer required to activate pipelines.</strong> Instead, configuring high-speed Persistent Volume Claims (PVCs) via the Data Science Pipelines Application (DSPA) is now the <strong>mandatory first step</strong>.
- * <strong>How it works:</strong> The DSPA dynamically creates an ephemeral shared PVC for the duration of a pipeline run.
- * <strong>The Value:</strong> Pipeline components exchange massive datasets directly via the local cluster disk, drastically improving execution speeds and completely eliminating cloud storage egress costs for intermediate steps.</p>
+<p>OpenShift AI 3.3 fundamentally shifts this by adopting a <strong>Dual-Storage (Hybrid) Architecture</strong> for the Data Science Pipelines Application (DSPA). You must configure both of the following to activate a production pipeline server:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>The Archive (S3 Object Storage):</strong> An S3-compatible connection is strictly required to instantiate the pipeline server. This bucket acts as the permanent control-plane archive. It stores the compiled pipeline YAML, the step-by-step execution logs, and the final output artifacts.</p>
+</li>
+<li>
+<p><strong>The Workbench (PVC Workspaces):</strong> To eliminate the cloud egress costs and latency of "S3 Ping-Ponging," RHOAI 3.3 utilizes Persistent Volume Claims (PVCs) for the data plane. The DSPA dynamically creates an ephemeral shared PVC during the pipeline run. Pipeline components exchange massive intermediate datasets directly via the local cluster disk.</p>
+</li>
+</ol>
 </div>
 </div>
 </div>
@@ -287,8 +295,8 @@
 <h3 id="_the_database_mandate"><a class="anchor" href="#_the_database_mandate"></a>The Database Mandate</h3>
 <div class="paragraph">
 <p>Local SQLite files are deprecated for production metadata. They suffer from database locking issues under high concurrency.
- * <strong>Model Registry:</strong> Now strictly requires an external <strong>MySQL (8.x)</strong> or <strong>PostgreSQL</strong> database to track model lineage and versions.
- * <strong>Vector Databases (RAG):</strong> When configuring Llama Stack for Retrieval-Augmented Generation, "Inline" deployments are strictly for testing. Production requires <strong>Remote Milvus</strong> (utilizing a gRPC endpoint, typically port 19530) or <strong>PostgreSQL</strong> with the <code>pgvector</code> extension (port 5432).</p>
+* <strong>Model Registry:</strong> Now strictly requires an external <strong>MySQL (8.x)</strong> or <strong>PostgreSQL</strong> database to track model lineage and versions.
+* <strong>Vector Databases (RAG):</strong> When configuring Llama Stack for Retrieval-Augmented Generation, "Inline" deployments are strictly for testing. Production requires <strong>Remote Milvus</strong> (utilizing a gRPC endpoint, typically port 19530) or <strong>PostgreSQL</strong> with the <code>pgvector</code> extension (port 5432).</p>
 </div>
 </div>
 <div class="sect2">

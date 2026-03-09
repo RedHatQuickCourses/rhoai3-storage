@@ -52,7 +52,7 @@
     <a class="nav-link" href="chapter1/section3.html">Data Connection Types</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="chapter1/storage-lab.html">Data and Cluster Connections</a>
+    <a class="nav-link" href="chapter1/storage-lab.html">Storage Lab Exercises</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="chapter1/section5.html">Field Notes for Platform Engineers</a>
@@ -109,7 +109,7 @@
 <p>In the early stages of AI adoption, the primary challenge is simply <strong>access</strong>: <strong>"How do I connect my Jupyter Notebook to an S3 bucket?"</strong></p>
 </div>
 <div class="paragraph">
-<p>But as you move from "science project" to "production service," the challenges shift dramatically. You are no longer moving 1GB CSV files; you are serving <strong>70GB Large Language Models (LLMs)</strong> to thousands of concurrent users, and automating complex AI pipelines.</p>
+<p>But as you move from "Science Project" to "Production Service," the challenges shift dramatically. You are no longer moving 1GB CSV files; you are serving <strong>70GB Large Language Models (LLMs)</strong> to thousands of concurrent users, and automating complex AI Pipelines.</p>
 </div>
 <div class="paragraph">
 <p>At this scale, storage is no longer just a place to keep files—it becomes the <strong>primary bottleneck</strong> of your entire platform.</p>
@@ -153,17 +153,17 @@
 </div>
 </div>
 <div class="sect2">
-<h3 id="_2_the_persistence_tier_cluster_storage_pipeline_workspaces"><a class="anchor" href="#_2_the_persistence_tier_cluster_storage_pipeline_workspaces"></a>2. The Persistence Tier (Cluster Storage &amp; Pipeline Workspaces)</h3>
+<h3 id="_2_the_persistence_tier_dual_storage_pipelines"><a class="anchor" href="#_2_the_persistence_tier_dual_storage_pipelines"></a>2. The Persistence Tier (Dual-Storage Pipelines)</h3>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>The Challenge:</strong> S3 Ping-Ponging and Data Duplication. How do you share massive datasets efficiently between pipeline tasks or between data scientists?</p>
+<p><strong>The Challenge:</strong> S3 Ping-Ponging and Data Duplication. How do you share massive datasets efficiently between pipeline tasks without losing your execution logs?</p>
 </li>
 <li>
-<p><strong>The Solution:</strong> <strong>Shared Volumes (RWX) &amp; Ephemeral Workspaces.</strong> OpenShift AI 3.3 fundamentally shifts how pipelines operate. <strong>Object storage (S3) is no longer required to activate pipelines.</strong> Instead, configuring high-speed Persistent Volume Claims (PVCs) via the Data Science Pipelines Application (DSPA) is now the <strong>mandatory first step</strong>.</p>
+<p><strong>The Solution:</strong> <strong>The Hybrid Architecture.</strong> OpenShift AI 3.3 pipelines require a dual-storage approach. We use <strong>S3-compatible Object Storage</strong> as the permanent archive for artifacts and logs, paired with high-speed <strong>Persistent Volume Claims (PVCs)</strong> for ephemeral pipeline workspaces.</p>
 </li>
 <li>
-<p><strong>The Outcome:</strong> <strong>High-Speed Transit.</strong> A single 1TB volume serves an entire team, and pipeline components exchange massive datasets directly via the local cluster disk without repeatedly pushing or pulling from external cloud storage.</p>
+<p><strong>The Outcome:</strong> <strong>High-Speed Transit.</strong> Pipeline components exchange massive datasets directly via the local cluster disk during execution, while the final results and logs are safely committed to the cloud archive.</p>
 </li>
 </ul>
 </div>
@@ -198,7 +198,7 @@
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><strong>Analyze the Physics:</strong> Understand why downloading models to <code>emptyDir</code> kills production stability, and how Pipeline Workspaces replace the legacy S3 requirement.</p>
+<p><strong>Analyze the Physics:</strong> Understand why downloading models to <code>emptyDir</code> kills production stability, and how to architect the Hybrid Pipeline storage model.</p>
 </li>
 <li>
 <p><strong>Build the Highway:</strong> Deploy <strong>OCI Data Connections</strong> and master the specific URI routing formats required by RHOAI 3.3.</p>

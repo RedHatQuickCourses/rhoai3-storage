@@ -51,7 +51,7 @@
     <a class="nav-link" href="section3.html">Data Connection Types</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="storage-lab.html">Data and Cluster Connections</a>
+    <a class="nav-link" href="storage-lab.html">Storage Lab Exercises</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="section5.html">Field Notes for Platform Engineers</a>
@@ -365,8 +365,9 @@ metadata:
   labels:
     opendatahub.io/dashboard: "true"
   annotations:
-    opendatahub.io/connection-type: "corporate-mysql"
-    openshift.io/display-name: "Model Registry Database"
+    opendatahub.io/connection-type: "corporate-minio-standard"
+    opendatahub.io/connection-type-protocol: "s3" # &lt;-- ADD THIS
+    openshift.io/display-name: "Finance Data Lake"
 type: Opaque
 stringData:
   Host: "mysql.rhoai-model-registry-lab.svc.cluster.local"
