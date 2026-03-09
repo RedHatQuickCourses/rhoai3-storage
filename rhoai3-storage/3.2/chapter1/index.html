@@ -110,7 +110,7 @@
 <p>In the early stages of AI adoption, the primary challenge is simply <strong>access</strong>: <strong>"How do I connect my Jupyter Notebook to an S3 bucket?"</strong></p>
 </div>
 <div class="paragraph">
-<p>But as you move from "Science Project" to "Production Service," the challenges shift dramatically. You are no longer moving 1GB CSV files; you are serving <strong>70GB Large Language Models (LLMs)</strong> to thousands of concurrent users, and automating complex AI Pipelines.</p>
+<p>But as you move from "science project" to "production service," the challenges shift dramatically. You are no longer moving 1GB CSV files; you are serving <strong>70GB Large Language Models (LLMs)</strong> to thousands of concurrent users, and automating complex AI pipelines.</p>
 </div>
 <div class="paragraph">
 <p>At this scale, storage is no longer just a place to keep files—it becomes the <strong>primary bottleneck</strong> of your entire platform.</p>
@@ -130,12 +130,6 @@
 </div>
 <div class="paragraph">
 <p><strong>In this course, you will evolve from managing "Disks" to architecting "Strategies."</strong></p>
-</div>
-<div class="imageblock text-center">
-<div class="content">
-<img src="_images/storage-conn.png" alt="storage conn">
-</div>
-<div class="title">Figure 1. Architecting the AI Supply Chain: Velocity, Security, and Scale</div>
 </div>
 </div>
 </div>
@@ -169,7 +163,7 @@
 <p><strong>The Challenge:</strong> S3 Ping-Ponging and Data Duplication. How do you share massive datasets efficiently between pipeline tasks or between data scientists?</p>
 </li>
 <li>
-<p><strong>The Solution:</strong> <strong>Shared Volumes (RWX) &amp; Ephemeral Workspaces.</strong> OpenShift AI 3.3 shifts away from relying purely on S3 for intermediate data. We now use high-speed Persistent Volume Claims (PVCs) for both collaborative team spaces and automated Pipeline Workspaces.</p>
+<p><strong>The Solution:</strong> <strong>Shared Volumes (RWX) &amp; Ephemeral Workspaces.</strong> OpenShift AI 3.3 fundamentally shifts how pipelines operate. <strong>Object storage (S3) is no longer required to activate pipelines.</strong> Instead, configuring high-speed Persistent Volume Claims (PVCs) via the Data Science Pipelines Application (DSPA) is now the <strong>mandatory first step</strong>.</p>
 </li>
 <li>
 <p><strong>The Outcome:</strong> <strong>High-Speed Transit.</strong> A single 1TB volume serves an entire team, and pipeline components exchange massive datasets directly via the local cluster disk without repeatedly pushing or pulling from external cloud storage.</p>
@@ -207,7 +201,7 @@
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><strong>Analyze the Physics:</strong> Understand why downloading models to <code>emptyDir</code> kills production stability, and how Pipeline Workspaces solve S3 latency.</p>
+<p><strong>Analyze the Physics:</strong> Understand why downloading models to <code>emptyDir</code> kills production stability, and how Pipeline Workspaces replace the legacy S3 requirement.</p>
 </li>
 <li>
 <p><strong>Build the Highway:</strong> Deploy <strong>OCI Data Connections</strong> and master the specific URI routing formats required by RHOAI 3.3.</p>
@@ -216,7 +210,7 @@
 <p><strong>Secure the Vault:</strong> Provision <strong>Shared Storage</strong> that supports both high-speed pipelines and air-gapped model hosting.</p>
 </li>
 <li>
-<p><strong>Automate the Floor:</strong> Learn the "Sharp Edges" of managing external databases and GitOps pipelines.</p>
+<p><strong>Automate the Floor:</strong> Learn the "Sharp Edges" of UI visibility labels, external databases, and GitOps pipelines.</p>
 </li>
 </ol>
 </div>

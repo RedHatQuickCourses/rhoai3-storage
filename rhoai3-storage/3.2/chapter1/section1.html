@@ -138,20 +138,21 @@
 </li>
 </ul>
 </div>
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-important" title="Important"></i>
-</td>
-<td class="content">
-<div class="title">The Connection API Mandate</div>
+<div class="sect2">
+<h3 id="_the_day_1_secret_ui_visibility_vs_backend_routing"><a class="anchor" href="#_the_day_1_secret_ui_visibility_vs_backend_routing"></a>The "Day 1" Secret: UI Visibility vs. Backend Routing</h3>
 <div class="paragraph">
-<p>For automation, you must use the Connections API. The legacy annotation <code>opendatahub.io/connection-type-ref</code> is deprecated. You must use <code>opendatahub.io/connection-type-protocol</code> for all new connection secrets.</p>
+<p>Many Platform Engineers deploy connection secrets via automation that route perfectly, but fail to appear in the Data Science dashboard. To master the Connections API, you must explicitly separate backend routing from frontend visibility:</p>
 </div>
-</td>
-</tr>
-</table>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Frontend Visibility (The Label):</strong> You <strong>must</strong> apply the label <code>opendatahub.io/managed: "true"</code>. This tells the OpenShift AI Dashboard to expose this connection to Data Scientists in the UI. Without it, the connection is functionally invisible.</p>
+</li>
+<li>
+<p><strong>Backend Routing (The Annotation):</strong> You <strong>must</strong> apply the annotation <code>opendatahub.io/connection-type-protocol: &lt;type&gt;</code> (e.g., <code>s3</code>, <code>oci</code>, <code>uri</code>). This tells the underlying Inference Service or Pipeline engine how to mechanically pull the data.</p>
+</li>
+</ul>
+</div>
 </div>
 </div>
 </div>
@@ -264,20 +265,14 @@
 </div>
 </div>
 <div class="sect2">
-<h3 id="_the_3_3_shift_ephemeral_pipeline_workspaces"><a class="anchor" href="#_the_3_3_shift_ephemeral_pipeline_workspaces"></a>The 3.3 Shift: Ephemeral Pipeline Workspaces</h3>
+<h3 id="_the_3_3_shift_ephemeral_pipeline_workspaces_the_s3_replacement"><a class="anchor" href="#_the_3_3_shift_ephemeral_pipeline_workspaces_the_s3_replacement"></a>The 3.3 Shift: Ephemeral Pipeline Workspaces (The S3 Replacement)</h3>
 <div class="paragraph">
-<p>In previous versions, AI Pipelines passed intermediate data between tasks by constantly uploading to and downloading from S3.
-In OpenShift AI 3.3, this inefficient "ping-ponging" is replaced by <strong>Pipeline Workspaces</strong>.</p>
+<p>In previous versions, AI Pipelines passed intermediate data between tasks by constantly uploading to and downloading from an S3 bucket. You could not even activate the pipeline server without an S3 connection.</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>How it works:</strong> The DataScience Pipelines Application (DSPA) dynamically creates an ephemeral shared PVC for the duration of a pipeline run.</p>
-</li>
-<li>
-<p><strong>The Value:</strong> Pipeline components exchange massive datasets directly via the local cluster disk, drastically improving execution speeds and reducing cloud egress costs.</p>
-</li>
-</ul>
+<div class="paragraph">
+<p>OpenShift AI 3.3 fundamentally shifts this. <strong>Object storage (S3) is no longer required to activate pipelines.</strong> Instead, configuring high-speed Persistent Volume Claims (PVCs) via the Data Science Pipelines Application (DSPA) is now the <strong>mandatory first step</strong>.
+* <strong>How it works:</strong> The DSPA dynamically creates an ephemeral shared PVC for the duration of a pipeline run.
+* <strong>The Value:</strong> Pipeline components exchange massive datasets directly via the local cluster disk, drastically improving execution speeds and completely eliminating cloud storage egress costs for intermediate steps.</p>
 </div>
 </div>
 </div>
@@ -312,7 +307,7 @@ In OpenShift AI 3.3, this inefficient "ping-ponging" is replaced by <strong>Pipe
 </ul>
 </div>
 <div class="paragraph">
-<p><strong>Now that you understand the blueprint, let&#8217;s examine the "Sharp Edges" of operating this architecture in production.</strong></p>
+<p><strong>Now that you understand the blueprint, let&#8217;s examine how to extend it for structured data and databases.</strong></p>
 </div>
 </div>
 </div>
