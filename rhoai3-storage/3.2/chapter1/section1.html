@@ -271,8 +271,8 @@
 </div>
 <div class="paragraph">
 <p>OpenShift AI 3.3 fundamentally shifts this. <strong>Object storage (S3) is no longer required to activate pipelines.</strong> Instead, configuring high-speed Persistent Volume Claims (PVCs) via the Data Science Pipelines Application (DSPA) is now the <strong>mandatory first step</strong>.
-* <strong>How it works:</strong> The DSPA dynamically creates an ephemeral shared PVC for the duration of a pipeline run.
-* <strong>The Value:</strong> Pipeline components exchange massive datasets directly via the local cluster disk, drastically improving execution speeds and completely eliminating cloud storage egress costs for intermediate steps.</p>
+ * <strong>How it works:</strong> The DSPA dynamically creates an ephemeral shared PVC for the duration of a pipeline run.
+ * <strong>The Value:</strong> Pipeline components exchange massive datasets directly via the local cluster disk, drastically improving execution speeds and completely eliminating cloud storage egress costs for intermediate steps.</p>
 </div>
 </div>
 </div>
@@ -287,8 +287,8 @@
 <h3 id="_the_database_mandate"><a class="anchor" href="#_the_database_mandate"></a>The Database Mandate</h3>
 <div class="paragraph">
 <p>Local SQLite files are deprecated for production metadata. They suffer from database locking issues under high concurrency.
-* <strong>Model Registry:</strong> Now strictly requires an external <strong>MySQL (8.x)</strong> or <strong>PostgreSQL</strong> database to track model lineage and versions.
-* <strong>Vector Databases (RAG):</strong> When configuring Llama Stack for Retrieval-Augmented Generation, "Inline" deployments are strictly for testing. Production requires <strong>Remote Milvus</strong> (utilizing a gRPC endpoint, typically port 19530) or <strong>PostgreSQL</strong> with the <code>pgvector</code> extension (port 5432).</p>
+ * <strong>Model Registry:</strong> Now strictly requires an external <strong>MySQL (8.x)</strong> or <strong>PostgreSQL</strong> database to track model lineage and versions.
+ * <strong>Vector Databases (RAG):</strong> When configuring Llama Stack for Retrieval-Augmented Generation, "Inline" deployments are strictly for testing. Production requires <strong>Remote Milvus</strong> (utilizing a gRPC endpoint, typically port 19530) or <strong>PostgreSQL</strong> with the <code>pgvector</code> extension (port 5432).</p>
 </div>
 </div>
 <div class="sect2">
