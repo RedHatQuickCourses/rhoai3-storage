@@ -197,8 +197,9 @@ metadata:
   labels:
     opendatahub.io/dashboard: "true"
   annotations:
-    opendatahub.io/connection-type: "corporate-mysql"
-    openshift.io/display-name: "Model Registry Database"
+    opendatahub.io/connection-type: "corporate-minio-standard" 
+    opendatahub.io/connection-type-protocol: "s3" # <-- ADD THIS
+    openshift.io/display-name: "Finance Data Lake"
 type: Opaque
 stringData:
   Host: "mysql.rhoai-model-registry-lab.svc.cluster.local"

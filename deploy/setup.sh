@@ -113,6 +113,7 @@ oc annotate secret aws-connection-minio \
 
 echo "✔ Storage Secret Created. It is now visible in the RHOAI Dashboard."
 
+
 # ---------------------------------------------------------------------------------
 # 6. Summary
 # ---------------------------------------------------------------------------------

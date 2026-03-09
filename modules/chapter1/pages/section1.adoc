@@ -18,34 +18,32 @@ This module breaks down the architecture required to prevent that, categorized i
 
 To achieve **Zero-Touch Security** and environment parity, RHOAI 3 separates the *definition* of a credential from the *usage* of a credential. 
 
- * **Connection Types (The Template):** Think of this as the "Electrical Socket" on the wall. The Administrator defines the shape of the socket to ensure safety and standardization (e.g., creating a "Corporate S3" type requiring a Bucket and Endpoint).
- * **Data Connections (The Instance):** Think of this as the "Plug." It is the specific instance where a user provides their credentials to fit the socket. It is stored securely as a Kubernetes Secret and injected into Pods at runtime.
+* **Connection Types (The Template):** Think of this as the "Electrical Socket" on the wall. The Administrator defines the shape of the socket to ensure safety and standardization (e.g., creating a "Corporate S3" type requiring a Bucket and Endpoint).
+* **Data Connections (The Instance):** Think of this as the "Plug." It is the specific instance where a user provides their credentials to fit the socket. It is stored securely as a Kubernetes Secret and injected into Pods at runtime.
 
 === The "Day 1" Secret: UI Visibility vs. Backend Routing
 Many Platform Engineers deploy connection secrets via automation that route perfectly, but fail to appear in the Data Science dashboard. To master the Connections API, you must explicitly separate backend routing from frontend visibility:
 
-
-
- * **Frontend Visibility (The Label):** You *must* apply the label `opendatahub.io/managed: "true"`. This tells the OpenShift AI Dashboard to expose this connection to Data Scientists in the UI. Without it, the connection is functionally invisible.
- * **Backend Routing (The Annotation):** You *must* apply the annotation `opendatahub.io/connection-type-protocol: <type>` (e.g., `s3`, `oci`, `uri`). This tells the underlying Inference Service or Pipeline engine how to mechanically pull the data.
+* **Frontend Visibility (The Label):** You *must* apply the label `opendatahub.io/managed: "true"`. This tells the OpenShift AI Dashboard to expose this connection to Data Scientists in the UI. Without it, the connection is functionally invisible.
+* **Backend Routing (The Annotation):** You *must* apply the annotation `opendatahub.io/connection-type-protocol: <type>` (e.g., `s3`, `oci`, `uri`). This tells the underlying Inference Service or Pipeline engine how to mechanically pull the data.
 
 == 2. The Gateway: External Storage Protocols
 
 Not all data moves the same way. RHOAI provides three primary protocols to optimize for capacity, speed, or precision.
 
 === A. S3-Compatible Object Storage (`s3`)
- * **The Role:** The Warehouse.
- * **Usage:** Massive datasets, data lakes, and standard model serving.
- * **The "Sharp Edge":** When using on-premise object stores (like MinIO) secured with self-signed certificates, you must inject the **Cluster CA Bundle** into the platform's `DSCI` resource, or the connections will fail silently.
+* **The Role:** The Warehouse.
+* **Usage:** Massive datasets, data lakes, and standard model serving.
+* **The "Sharp Edge":** When using on-premise object stores (like MinIO) secured with self-signed certificates, you must inject the **Cluster CA Bundle** into the platform's `DSCI` resource, or the connections will fail silently.
 
 === B. OCI Model Registries (`oci`)
 * **The Role:** The Accelerator.
-  * **Usage:** High-speed model inference and distribution via "Modelcars."
- * **The Physics:** Instead of downloading models as loose files, we package them as container images. It leverages the node's CRI-O container cache. If 10 users need the same model, the node pulls the layers *once*, and all 10 pods start instantly, producing massive deduplication.
+* **Usage:** High-speed model inference and distribution via "Modelcars."
+* **The Physics:** Instead of downloading models as loose files, we package them as container images. It leverages the node's CRI-O container cache. If 10 users need the same model, the node pulls the layers *once*, and all 10 pods start instantly, producing massive deduplication.
 
 === C. Direct URIs (`uri`)
- * **The Role:** The Precision Link.
- * **Usage:** Direct HTTP/HTTPS access to specific model versions or files without exposing the entire root bucket.
+* **The Role:** The Precision Link.
+* **Usage:** Direct HTTP/HTTPS access to specific model versions or files without exposing the entire root bucket.
 
 === Syntax Cheat Sheet: Direct Model URIs
 When configuring an Inference Service to pull a model, RHOAI 3.3 standardizes the routing using specific URI prefixes. You must use the exact format based on your storage backend:
@@ -75,14 +73,16 @@ Once data arrives from the "Warehouse," it needs a high-speed place to live whil
 * **ReadWriteOnce (RWO) - "The Scratchpad":** High-speed block storage (EBS, vSphere). It maps 1:1 with a user's Workbench. It is physically incapable of attaching to multiple nodes simultaneously.
 * **ReadWriteMany (RWX) - "The Collaboration Zone":** Network file storage (CephFS, NFS). It mounts to multiple nodes simultaneously. It is strictly required for shared team folders and distributed training architectures.
 
-=== The 3.3 Shift: Ephemeral Pipeline Workspaces (The S3 Replacement)
+=== The 3.3 Shift: Dual-Storage AI Pipelines
 
 
-In previous versions, AI Pipelines passed intermediate data between tasks by constantly uploading to and downloading from an S3 bucket. You could not even activate the pipeline server without an S3 connection.
 
-OpenShift AI 3.3 fundamentally shifts this. **Object storage (S3) is no longer required to activate pipelines.** Instead, configuring high-speed Persistent Volume Claims (PVCs) via the Data Science Pipelines Application (DSPA) is now the *mandatory first step*. 
- * **How it works:** The DSPA dynamically creates an ephemeral shared PVC for the duration of a pipeline run. 
- * **The Value:** Pipeline components exchange massive datasets directly via the local cluster disk, drastically improving execution speeds and completely eliminating cloud storage egress costs for intermediate steps.
+In previous versions, AI Pipelines passed intermediate data between tasks by constantly uploading to and downloading from an S3 bucket (S3 Ping-Ponging). 
+
+OpenShift AI 3.3 fundamentally shifts this by adopting a **Dual-Storage (Hybrid) Architecture** for the Data Science Pipelines Application (DSPA). You must configure both of the following to activate a production pipeline server:
+
+1. **The Archive (S3 Object Storage):** An S3-compatible connection is strictly required to instantiate the pipeline server. This bucket acts as the permanent control-plane archive. It stores the compiled pipeline YAML, the step-by-step execution logs, and the final output artifacts.
+2. **The Workbench (PVC Workspaces):** To eliminate the cloud egress costs and latency of "S3 Ping-Ponging," RHOAI 3.3 utilizes Persistent Volume Claims (PVCs) for the data plane. The DSPA dynamically creates an ephemeral shared PVC during the pipeline run. Pipeline components exchange massive intermediate datasets directly via the local cluster disk.
 
 == 4. The Foundation: Metadata and GitOps
 
@@ -90,8 +90,8 @@ In RHOAI 3.3, the control plane has been fundamentally redesigned to support the
 
 === The Database Mandate
 Local SQLite files are deprecated for production metadata. They suffer from database locking issues under high concurrency.
- * **Model Registry:** Now strictly requires an external **MySQL (8.x)** or **PostgreSQL** database to track model lineage and versions.
- * **Vector Databases (RAG):** When configuring Llama Stack for Retrieval-Augmented Generation, "Inline" deployments are strictly for testing. Production requires **Remote Milvus** (utilizing a gRPC endpoint, typically port 19530) or **PostgreSQL** with the `pgvector` extension (port 5432).
+* **Model Registry:** Now strictly requires an external **MySQL (8.x)** or **PostgreSQL** database to track model lineage and versions.
+* **Vector Databases (RAG):** When configuring Llama Stack for Retrieval-Augmented Generation, "Inline" deployments are strictly for testing. Production requires **Remote Milvus** (utilizing a gRPC endpoint, typically port 19530) or **PostgreSQL** with the `pgvector` extension (port 5432).
 
 === GitOps Pipeline Storage
 Prior to 3.3, pipeline definitions were trapped inside internal databases. 
