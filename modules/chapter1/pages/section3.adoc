@@ -38,7 +38,8 @@ kind: ConnectionType
 metadata:
   name: corporate-postgres-v1
   labels:
-    opendatahub.io/dashboard: "true" # Required to show in the UI
+    opendatahub.io/dashboard: "true"
+    opendatahub.io/managed: "true" # <-- REQUIRED FOR 3.3 UI VISIBILITY
 spec:
   displayName: "Corporate PostgreSQL"
   description: "Standard connection for read-only transactional databases."

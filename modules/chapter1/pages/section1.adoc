@@ -18,32 +18,34 @@ This module breaks down the architecture required to prevent that, categorized i
 
 To achieve **Zero-Touch Security** and environment parity, RHOAI 3 separates the *definition* of a credential from the *usage* of a credential. 
 
-* **Connection Types (The Template):** Think of this as the "Electrical Socket" on the wall. The Administrator defines the shape of the socket to ensure safety and standardization (e.g., creating a "Corporate S3" type requiring a Bucket and Endpoint).
-* **Data Connections (The Instance):** Think of this as the "Plug." It is the specific instance where a user provides their credentials to fit the socket. It is stored securely as a Kubernetes Secret and injected into Pods at runtime.
+ * **Connection Types (The Template):** Think of this as the "Electrical Socket" on the wall. The Administrator defines the shape of the socket to ensure safety and standardization (e.g., creating a "Corporate S3" type requiring a Bucket and Endpoint).
+ * **Data Connections (The Instance):** Think of this as the "Plug." It is the specific instance where a user provides their credentials to fit the socket. It is stored securely as a Kubernetes Secret and injected into Pods at runtime.
 
-[IMPORTANT]
-.The Connection API Mandate
-====
-For automation, you must use the Connections API. The legacy annotation `opendatahub.io/connection-type-ref` is deprecated. You must use `opendatahub.io/connection-type-protocol` for all new connection secrets.
-====
+=== The "Day 1" Secret: UI Visibility vs. Backend Routing
+Many Platform Engineers deploy connection secrets via automation that route perfectly, but fail to appear in the Data Science dashboard. To master the Connections API, you must explicitly separate backend routing from frontend visibility:
+
+
+
+ * **Frontend Visibility (The Label):** You *must* apply the label `opendatahub.io/managed: "true"`. This tells the OpenShift AI Dashboard to expose this connection to Data Scientists in the UI. Without it, the connection is functionally invisible.
+ * **Backend Routing (The Annotation):** You *must* apply the annotation `opendatahub.io/connection-type-protocol: <type>` (e.g., `s3`, `oci`, `uri`). This tells the underlying Inference Service or Pipeline engine how to mechanically pull the data.
 
 == 2. The Gateway: External Storage Protocols
 
 Not all data moves the same way. RHOAI provides three primary protocols to optimize for capacity, speed, or precision.
 
 === A. S3-Compatible Object Storage (`s3`)
-* **The Role:** The Warehouse.
-* **Usage:** Massive datasets, data lakes, and standard model serving.
-* **The "Sharp Edge":** When using on-premise object stores (like MinIO) secured with self-signed certificates, you must inject the **Cluster CA Bundle** into the platform's `DSCI` resource, or the connections will fail silently.
+ * **The Role:** The Warehouse.
+ * **Usage:** Massive datasets, data lakes, and standard model serving.
+ * **The "Sharp Edge":** When using on-premise object stores (like MinIO) secured with self-signed certificates, you must inject the **Cluster CA Bundle** into the platform's `DSCI` resource, or the connections will fail silently.
 
 === B. OCI Model Registries (`oci`)
 * **The Role:** The Accelerator.
-* **Usage:** High-speed model inference and distribution via "Modelcars."
-* **The Physics:** Instead of downloading models as loose files, we package them as container images. It leverages the node's CRI-O container cache. If 10 users need the same model, the node pulls the layers *once*, and all 10 pods start instantly, producing massive deduplication.
+  * **Usage:** High-speed model inference and distribution via "Modelcars."
+ * **The Physics:** Instead of downloading models as loose files, we package them as container images. It leverages the node's CRI-O container cache. If 10 users need the same model, the node pulls the layers *once*, and all 10 pods start instantly, producing massive deduplication.
 
 === C. Direct URIs (`uri`)
-* **The Role:** The Precision Link.
-* **Usage:** Direct HTTP/HTTPS access to specific model versions or files without exposing the entire root bucket.
+ * **The Role:** The Precision Link.
+ * **Usage:** Direct HTTP/HTTPS access to specific model versions or files without exposing the entire root bucket.
 
 === Syntax Cheat Sheet: Direct Model URIs
 When configuring an Inference Service to pull a model, RHOAI 3.3 standardizes the routing using specific URI prefixes. You must use the exact format based on your storage backend:
@@ -73,12 +75,14 @@ Once data arrives from the "Warehouse," it needs a high-speed place to live whil
 * **ReadWriteOnce (RWO) - "The Scratchpad":** High-speed block storage (EBS, vSphere). It maps 1:1 with a user's Workbench. It is physically incapable of attaching to multiple nodes simultaneously.
 * **ReadWriteMany (RWX) - "The Collaboration Zone":** Network file storage (CephFS, NFS). It mounts to multiple nodes simultaneously. It is strictly required for shared team folders and distributed training architectures.
 
-=== The 3.3 Shift: Ephemeral Pipeline Workspaces
-In previous versions, AI Pipelines passed intermediate data between tasks by constantly uploading to and downloading from S3. 
-In OpenShift AI 3.3, this inefficient "ping-ponging" is replaced by **Pipeline Workspaces**.
+=== The 3.3 Shift: Ephemeral Pipeline Workspaces (The S3 Replacement)
 
-* **How it works:** The DataScience Pipelines Application (DSPA) dynamically creates an ephemeral shared PVC for the duration of a pipeline run. 
-* **The Value:** Pipeline components exchange massive datasets directly via the local cluster disk, drastically improving execution speeds and reducing cloud egress costs.
+
+In previous versions, AI Pipelines passed intermediate data between tasks by constantly uploading to and downloading from an S3 bucket. You could not even activate the pipeline server without an S3 connection.
+
+OpenShift AI 3.3 fundamentally shifts this. **Object storage (S3) is no longer required to activate pipelines.** Instead, configuring high-speed Persistent Volume Claims (PVCs) via the Data Science Pipelines Application (DSPA) is now the *mandatory first step*. 
+* **How it works:** The DSPA dynamically creates an ephemeral shared PVC for the duration of a pipeline run. 
+* **The Value:** Pipeline components exchange massive datasets directly via the local cluster disk, drastically improving execution speeds and completely eliminating cloud storage egress costs for intermediate steps.
 
 == 4. The Foundation: Metadata and GitOps
 
@@ -96,4 +100,4 @@ OpenShift AI administrators can now configure the Pipeline Server to use **Kuber
 
 * **The Value:** This allows Platform Engineers to manage the entire pipeline lifecycle using standard GitOps tools like Argo CD, guaranteeing environment parity between Dev, Staging, and Prod clusters.
 
-*Now that you understand the blueprint, let's examine the "Sharp Edges" of operating this architecture in production.*
+*Now that you understand the blueprint, let's examine how to extend it for structured data and databases.*

@@ -7,6 +7,7 @@
 # Usage:       ./create-rhoai-connection-v2.sh <project-name> <connection-name>
 # ==============================================================================
 
+
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <project-name> <connection-name>"
     exit 1
@@ -18,7 +19,7 @@ CONNECTION_NAME=$2
 # --- CONFIGURATION ---
 AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-minio}"
 AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-minio123}"
-AWS_S3_ENDPOINT="${AWS_S3_ENDPOINT:-minio-service.$PROJECT_NAME.svc.cluster.local}"
+AWS_S3_ENDPOINT="${AWS_S3_ENDPOINT:-http://minio-service.$PROJECT_NAME.svc.cluster.local:9000}"
 AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 AWS_S3_BUCKET="${AWS_S3_BUCKET:-private-models}"
 # ---------------------
@@ -32,16 +33,10 @@ metadata:
   name: $CONNECTION_NAME
   labels:
     opendatahub.io/dashboard: "true"
-    opendatahub.io/managed: "true"
+    opendatahub.io/managed: "true" # <-- ADDED: 3.3 UI Visibility Requirement
   annotations:
-    # --- THE MISSING LINK ---
-    # This value MUST match the name of a registered ConnectionType in the cluster.
-    # Default types are usually 's3', 'uri', or 'oci'.
     opendatahub.io/connection-type: "s3"
-
-    # Defines the technical driver (software protocol)
-    opendatahub.io/connection-type-protocol: "s3"
-
+    opendatahub.io/connection-type-protocol: "s3" # <-- ADDED: 3.3 Backend Routing Requirement
     openshift.io/display-name: "Corporate S3 Data"
     openshift.io/description: "Read-only access to the corporate data lake."
 type: Opaque

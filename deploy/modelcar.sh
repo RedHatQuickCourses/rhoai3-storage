@@ -7,6 +7,7 @@
 # Usage:       ./create-oci-connection.sh <project-name>
 # ==============================================================================
 
+
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <project-name>"
     exit 1
@@ -26,23 +27,17 @@ kind: Secret
 metadata:
   name: $CONNECTION_NAME
   labels:
-    # Visibility Label
     opendatahub.io/dashboard: "true"
-    opendatahub.io/managed: "true"
+    opendatahub.io/managed: "true" # <-- ADDED: 3.3 UI Visibility Requirement
   annotations:
-    # LINK TO TEMPLATE: Uses the 'oci' icon and form style
     opendatahub.io/connection-type: "oci"
-    
-    # DRIVER PROTOCOL: Tells RHOAI this is a container image source
-    opendatahub.io/connection-type-protocol: "oci"
-
+    opendatahub.io/connection-type-protocol: "oci" # <-- ADDED: 3.3 Backend Routing Requirement
     openshift.io/display-name: "Granite 3.2 8B (Modelcar)"
     openshift.io/description: "Public OCI image from Red Hat Modelcar catalog."
 type: Opaque
 stringData:
   # For OCI connections, we typically just need the full URI.
-  # No Username/Password required for public Quay.io images.
-  OCI_URI: "$MODEL_IMAGE"
+  URI: "oci://$MODEL_IMAGE"
 EOF
 
 if [ $? -eq 0 ]; then
