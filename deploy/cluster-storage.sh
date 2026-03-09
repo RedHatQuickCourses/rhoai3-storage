@@ -2,10 +2,8 @@
 
 # ==============================================================================
 # Script Name: cluster-storage.sh
-# Description: Provisions persistent Block Storage (RWO) for an AI Project.
-#              (Tailored for cloud environments like AWS EBS / gp3-csi)
+# Description: Provisions a Shared Pipeline Workspace (RWX) using CephFS.
 # Usage:       ./cluster-storage.sh <project-name> <pvc-name> <size-gb>
-# Example:     ./cluster-storage.sh ai-supply-chain golden-dataset 100
 # ==============================================================================
 
 if [ "$#" -ne 3 ]; then
@@ -17,12 +15,10 @@ PROJECT_NAME=$1
 PVC_NAME=$2
 SIZE_GB=$3
 
-# --- CONFIGURATION: EDIT THIS TO MATCH YOUR CLUSTER ---
-# Find your available RWO classes by running: oc get sc
-STORAGE_CLASS="openshift-storage.cephfs.csi.ceph.com" # Defaulting to AWS block storage
-# ------------------------------------------------------
+# --- USING YOUR NATIVE FILE STORAGE ---
+STORAGE_CLASS="ocs-external-storagecluster-cephfs"
 
-echo "🔹 Configuration: Block Storage (RWO) using class '$STORAGE_CLASS'"
+echo "🔹 Configuration: Shared Workspace (RWX) using class '$STORAGE_CLASS'"
 echo "Creating ${SIZE_GB}Gi Storage in '$PROJECT_NAME'..."
 
 cat <<EOF | oc apply -n "$PROJECT_NAME" -f -
@@ -36,7 +32,7 @@ metadata:
     created-by: "platform-automation"
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: ${SIZE_GB}Gi
@@ -45,4 +41,3 @@ spec:
 EOF
 
 echo "✔ Persistent Volume Claim created successfully."
-echo "⏳ Note: Block storage may remain in 'WaitForFirstConsumer' state until mounted by a Pod."

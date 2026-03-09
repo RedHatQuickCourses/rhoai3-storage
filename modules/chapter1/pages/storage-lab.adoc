@@ -43,7 +43,7 @@ We will provision a block storage volume (ReadWriteOnce) for our workspace, and 
 ----
 # 1. Provision Storage (100GB, RWO)
 # Usage: ./cluster-storage.sh <project> <name> <size> <mode>
-./cluster-storage.sh ai-supply-chain golden-dataset 100 rwo
+./cluster-storage.sh ai-supply-chain golden-dataset 100
 
 # 2. Force the Volume to Bind 
 # Cloud Block Storage often waits for a consumer before creating the physical disk.
