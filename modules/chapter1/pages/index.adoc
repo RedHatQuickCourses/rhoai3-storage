@@ -20,6 +20,9 @@ At this scale, storage is no longer just a place to keep files—it becomes the 
 
 **In this course, you will evolve from managing "Disks" to architecting "Strategies."**
 
+image::storage-conn.png[align="center", title="Storage Types and Protocols AI Models for Generative AI"]
+
+
 == The Three Pillars of AI Storage
 
 We will replace the "One-Size-Fits-All" approach with a tiered strategy specifically designed for OpenShift AI 3.3 workloads.

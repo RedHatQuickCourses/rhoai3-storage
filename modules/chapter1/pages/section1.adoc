@@ -75,8 +75,6 @@ Once data arrives from the "Warehouse," it needs a high-speed place to live whil
 
 === The 3.3 Shift: Dual-Storage AI Pipelines
 
-
-
 In previous versions, AI Pipelines passed intermediate data between tasks by constantly uploading to and downloading from an S3 bucket (S3 Ping-Ponging). 
 
 OpenShift AI 3.3 fundamentally shifts this by adopting a **Dual-Storage (Hybrid) Architecture** for the Data Science Pipelines Application (DSPA). You must configure both of the following to activate a production pipeline server:
@@ -90,8 +88,9 @@ In RHOAI 3.3, the control plane has been fundamentally redesigned to support the
 
 === The Database Mandate
 Local SQLite files are deprecated for production metadata. They suffer from database locking issues under high concurrency.
-* **Model Registry:** Now strictly requires an external **MySQL (8.x)** or **PostgreSQL** database to track model lineage and versions.
-* **Vector Databases (RAG):** When configuring Llama Stack for Retrieval-Augmented Generation, "Inline" deployments are strictly for testing. Production requires **Remote Milvus** (utilizing a gRPC endpoint, typically port 19530) or **PostgreSQL** with the `pgvector` extension (port 5432).
+
+ * **Model Registry:** Now strictly requires an external **MySQL (8.x)** or **PostgreSQL** database to track model lineage and versions.
+ * **Vector Databases (RAG):** When configuring Llama Stack for Retrieval-Augmented Generation, "Inline" deployments are strictly for testing. Production requires **Remote Milvus** (utilizing a gRPC endpoint, typically port 19530) or **PostgreSQL** with the `pgvector` extension (port 5432).
 
 === GitOps Pipeline Storage
 Prior to 3.3, pipeline definitions were trapped inside internal databases. 

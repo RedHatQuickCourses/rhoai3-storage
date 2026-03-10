@@ -14,19 +14,22 @@ Based on real-world deployments and the architectural shifts in OpenShift AI 3.3
 
 == 1. The "Timeout" Trap (OCI Modelcars)
 When you use the OCI protocol to stream a 70GB model, the container runtime (CRI-O) must pull all layers before the Pod can start.
-* **The Default:** Knative (the engine behind Model Serving) often has a default `progress-deadline` of **600 seconds (10 minutes)**.
-* **The Failure:** If your network takes 11 minutes to pull the 70GB image, the deployment is marked as `Failed` and the pod is killed—even if it was 99% done.
-* **The Fix:** You must increase the `progressDeadlineSeconds` in your `InferenceService` or global Knative config to **1800s (30 mins)** or more for large foundation models.
+
+ * **The Default:** Knative (the engine behind Model Serving) often has a default `progress-deadline` of **600 seconds (10 minutes)**.
+ * **The Failure:** If your network takes 11 minutes to pull the 70GB image, the deployment is marked as `Failed` and the pod is killed—even if it was 99% done.
+ * **The Fix:** You must increase the `progressDeadlineSeconds` in your `InferenceService` or global Knative config to **1800s (30 mins)** or more for large foundation models.
 
 == 2. The "Workspace Import" Trap (3.3 Pipelines)
 OpenShift AI 3.3 introduces Ephemeral Pipeline Workspaces (PVCs) for fast data transit. However, you cannot directly download an OCI Modelcar into a workspace volume natively.
-* **The Problem:** If a pipeline task expects an OCI image but you only provide the `oci://` URI, the task will fail to find the model files on the workspace disk.
-* **The Fix (Side-Loading):** You must explicitly define an `importer` component in your pipeline code to pull the OCI artifact, and then use a subsequent python component (e.g., using `shutil.copytree`) to copy the artifact into the `dsl.WORKSPACE_PATH_PLACEHOLDER`.
+ 
+ * **The Problem:** If a pipeline task expects an OCI image but you only provide the `oci://` URI, the task will fail to find the model files on the workspace disk.
+ * **The Fix (Side-Loading):** You must explicitly define an `importer` component in your pipeline code to pull the OCI artifact, and then use a subsequent python component (e.g., using `shutil.copytree`) to copy the artifact into the `dsl.WORKSPACE_PATH_PLACEHOLDER`.
 
 == 3. The "Dirty Database" Migration Error
 In OpenShift AI 3.3, the ML Metadata (MLMD) server was completely removed from the Model Registry to allow direct database interaction. If you are upgrading, your database schema migration might fail.
-* **The Error:** Your Model Registry pod crashes with: `error: error connecting to datastore: Dirty database version {version}. Fix and force version.`
-* **The Fix:** You must manually reset the "dirty" state in your MySQL database. Exec into the database pod and run:
+
+ * **The Error:** Your Model Registry pod crashes with: `error: error connecting to datastore: Dirty database version {version}. Fix and force version.`
+ * **The Fix:** You must manually reset the "dirty" state in your MySQL database. Exec into the database pod and run:
 +
 [source,bash]
 ----
@@ -46,21 +49,22 @@ oc patch pv <pv-name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
 ----
 
 == 5. The "Trust" Gap (Certificates)
-If you are using an on-premise Object Store (MinIO) or an external database (Amazon RDS) secured with **Self-Signed Certificates**, your Data Connections will fail silently.
-* **The Symptom:** Workbenches hang, pipelines fail to compile, or you see `tls: failed to verify certificate: x509: certificate signed by unknown authority`.
-* **The Fix:** You must inject your OpenShift Cluster's `kube-root-ca.crt` bundle into the `DSCI` (Data Science Cluster Initialization) resource. Platform components (Pipelines, Model Registry) will not trust your storage backend without it.
+If you are using an on-premise Object Store (MinIO) or an external database (Amazon RDS) secured with **Self-Signed Certificates**, your Data Connections will fail silently..
+ * **The Symptom:** Workbenches hang, pipelines fail to compile, or you see `tls: failed to verify certificate: x509: certificate signed by unknown authority`.
+ * **The Fix:** You must inject your OpenShift Cluster's `kube-root-ca.crt` bundle into the `DSCI` (Data Science Cluster Initialization) resource. Platform components (Pipelines, Model Registry) will not trust your storage backend without it.
 
 == 6. The "Protocol" Pitfall (Connectivity)
 When configuring Data Connections for S3-compatible stores (MinIO, Ceph), the most frequent error is **Endpoint Formatting**.
-* **The Error:** Entering `minio-api.cluster.local:9000` into the dashboard.
-* **The Fix:** You *must* include the HTTP protocol scheme.
+ * **The Error:** Entering `minio-api.cluster.local:9000` into the dashboard.
+ * **The Fix:** You *must* include the HTTP protocol scheme.
     ** Correct: `http://minio-api.cluster.local:9000`
     ** Correct: `https://s3.us-east-1.amazonaws.com`
     ** *Why?* The Boto3 clients injected into the workbenches and pipelines require the full URI scheme to resolve correctly.
 
 == 7. The "Helper Pod" Pattern (Air-Gapped Loading)
 In a disconnected (Air-Gapped) environment, you cannot simply "download" a model from Hugging Face to your PVC. PVCs are just disks; they do not have internet access.
-* **The Solution:** You must use a **Helper Pod**.
+
+ * **The Solution:** You must use a **Helper Pod**.
     1.  Spin up a temporary Pod (e.g., `ubi9-minimal`) with the PVC mounted.
     2.  Use `oc cp` to upload the model files from your local workstation to the Pod.
     3.  Delete the Helper Pod.

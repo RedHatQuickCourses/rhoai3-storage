@@ -16,9 +16,10 @@ In this module, you will learn how to extend the "AI Factory" by creating **Cust
 == 1. The Limitation of Default Types
 
 Out of the box, OpenShift AI 3.3 provides pre-installed Connection Types for:
-* S3-compatible object storage
-* OCI-compliant registries
-* URI-based repositories
+
+ * S3-compatible object storage
+ * OCI-compliant registries
+ * URI-based repositories
 
 It does **not** provide a default form for Snowflake, MongoDB, MySQL, or Milvus. To support these, the Platform Engineer must define the schema using the `ConnectionType` custom resource. 
 
@@ -98,9 +99,10 @@ You will need to architect connections to the following external systems to supp
 
 === B. Llama Stack (Retrieval-Augmented Generation)
 When deploying GenAI models that require RAG architectures (giving LLMs access to your private documents), you must connect to specialized vector databases.
-* **Vector Store (Large Scale):** Requires a connection to **Remote Milvus**. This typically utilizes a gRPC endpoint on port `19530`.
-* **Vector Store (Transactional):** Requires a connection to **PostgreSQL** with the `pgvector` extension, typically on port `5432`.
-* **State/Metadata:** Llama Stack requires PostgreSQL to persist critical GenAI state data, including agent states and conversation history.
+
+ * **Vector Store (Large Scale):** Requires a connection to **Remote Milvus**. This typically utilizes a gRPC endpoint on port `19530`.
+ * **Vector Store (Transactional):** Requires a connection to **PostgreSQL** with the `pgvector` extension, typically on port `5432`.
+ * **State/Metadata:** Llama Stack requires PostgreSQL to persist critical GenAI state data, including agent states and conversation history.
 
 [IMPORTANT]
 .Certificate Verification for Databases
@@ -110,4 +112,4 @@ If your external databases (like Amazon RDS or an internal Postgres instance) us
 You must inject your custom Certificate Authority (CA) bundle into the `DSCI` (Data Science Cluster Initialization) resource, or the connections will result in an `x509: certificate signed by unknown authority` error.
 ====
 
-*Now that we have extended the mesh to include structured data, let's explore the "Sharp Edges" of operating this infrastructure day-to-day.*
+*Now that we have extended the mesh to include structured data, let's explore the deploying these resources.*
