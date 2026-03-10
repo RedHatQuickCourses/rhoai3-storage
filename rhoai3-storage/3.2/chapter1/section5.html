@@ -182,19 +182,26 @@
 <h2 id="_4_the_data_loss_risk_pvc_reclaim_policy"><a class="anchor" href="#_4_the_data_loss_risk_pvc_reclaim_policy"></a>4. The "Data Loss" Risk (PVC Reclaim Policy)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>By default, standard Storage Classes (like <code>gp3-csi</code>) have a <code>reclaimPolicy</code> of <code>Delete</code>.
-* <strong>The Scenario:</strong> A Data Scientist accidentally deletes their project namespace.
-* <strong>The Consequence:</strong> The underlying EBS volume is immediately scrubbed by the cloud provider. The "Golden Dataset" or Pipeline Workspace is gone forever.
-* <strong>The Fix:</strong> For any Shared Storage (RWX) hosting critical assets, you must patch the Persistent Volume (PV) to <code>Retain</code>.</p>
+<p>By default, standard Storage Classes (like <code>gp3-csi</code>) have a <code>reclaimPolicy</code> of <code>Delete</code>.</p>
 </div>
-<div class="paragraph">
-<p>+</p>
-</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Scenario:</strong> A Data Scientist accidentally deletes their project namespace.</p>
+</li>
+<li>
+<p><strong>The Consequence:</strong> The underlying EBS volume is immediately scrubbed by the cloud provider. The "Golden Dataset" or Pipeline Workspace is gone forever.</p>
+</li>
+<li>
+<p><strong>The Fix:</strong> For any Shared Storage (RWX) hosting critical assets, you must patch the Persistent Volume (PV) to <code>Retain</code>.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Protect your Golden Dataset
 oc patch pv &lt;pv-name&gt; -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'</code></pre>
 </div>
+</div>
+</li>
+</ul>
 </div>
 </div>
 </div>
@@ -202,9 +209,17 @@ oc patch pv &lt;pv-name&gt; -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain
 <h2 id="_5_the_trust_gap_certificates"><a class="anchor" href="#_5_the_trust_gap_certificates"></a>5. The "Trust" Gap (Certificates)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>If you are using an on-premise Object Store (MinIO) or an external database (Amazon RDS) secured with <strong>Self-Signed Certificates</strong>, your Data Connections will fail silently..
- * <strong>The Symptom:</strong> Workbenches hang, pipelines fail to compile, or you see <code>tls: failed to verify certificate: x509: certificate signed by unknown authority</code>.
- * <strong>The Fix:</strong> You must inject your OpenShift Cluster&#8217;s <code>kube-root-ca.crt</code> bundle into the <code>DSCI</code> (Data Science Cluster Initialization) resource. Platform components (Pipelines, Model Registry) will not trust your storage backend without it.</p>
+<p>If you are using an on-premise Object Store (MinIO) or an external database (Amazon RDS) secured with <strong>Self-Signed Certificates</strong>, your Data Connections will fail silently.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Symptom:</strong> Workbenches hang, pipelines fail to compile, or you see <code>tls: failed to verify certificate: x509: certificate signed by unknown authority</code>.</p>
+</li>
+<li>
+<p><strong>The Fix:</strong> You must inject your OpenShift Cluster&#8217;s <code>kube-root-ca.crt</code> bundle into the <code>DSCI</code> (Data Science Cluster Initialization) resource. Platform components (Pipelines, Model Registry) will not trust your storage backend without it.</p>
+</li>
+</ul>
 </div>
 </div>
 </div>
@@ -212,12 +227,30 @@ oc patch pv &lt;pv-name&gt; -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain
 <h2 id="_6_the_protocol_pitfall_connectivity"><a class="anchor" href="#_6_the_protocol_pitfall_connectivity"></a>6. The "Protocol" Pitfall (Connectivity)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>When configuring Data Connections for S3-compatible stores (MinIO, Ceph), the most frequent error is <strong>Endpoint Formatting</strong>.
- * <strong>The Error:</strong> Entering <code>minio-api.cluster.local:9000</code> into the dashboard.
- * <strong>The Fix:</strong> You <strong>must</strong> include the HTTP protocol scheme.
-    <strong> Correct: <code><a href="http://minio-api.cluster.local:9000" class="bare">http://minio-api.cluster.local:9000</a></code>
-    </strong> Correct: <code><a href="https://s3.us-east-1.amazonaws.com" class="bare">https://s3.us-east-1.amazonaws.com</a></code>
-    <strong>* *Why?</strong> The Boto3 clients injected into the workbenches and pipelines require the full URI scheme to resolve correctly.</p>
+<p>When configuring Data Connections for S3-compatible stores (MinIO, Ceph), the most frequent error is <strong>Endpoint Formatting</strong>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Error:</strong> Entering <code>minio-api.cluster.local:9000</code> into the dashboard.</p>
+</li>
+<li>
+<p><strong>The Fix:</strong> You <strong>must</strong> include the HTTP protocol scheme.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Correct: <code><a href="http://minio-api.cluster.local:9000" class="bare">http://minio-api.cluster.local:9000</a></code></p>
+</li>
+<li>
+<p>Correct: <code><a href="https://s3.us-east-1.amazonaws.com" class="bare">https://s3.us-east-1.amazonaws.com</a></code></p>
+</li>
+<li>
+<p><strong>Why?</strong> The Boto3 clients injected into the workbenches and pipelines require the full URI scheme to resolve correctly.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
 </div>
 </div>
 </div>
@@ -231,8 +264,8 @@ oc patch pv &lt;pv-name&gt; -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain
 <ul>
 <li>
 <p><strong>The Solution:</strong> You must use a <strong>Helper Pod</strong>.</p>
-<div class="olist arabic">
-<ol class="arabic">
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
 <li>
 <p>Spin up a temporary Pod (e.g., <code>ubi9-minimal</code>) with the PVC mounted.</p>
 </li>
