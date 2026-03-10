@@ -298,10 +298,20 @@ oc delete pod data-loader -n ai-supply-chain</code></pre>
 </ol>
 </div>
 <div class="paragraph">
-<p>Notice how the UI expects you to route the deployment based on the architecture you just built. You can now define your deployment locations using the exact 3.3 syntax:
- * <strong>To use the S3 Connection:</strong> <code>s3://private-models/my-model</code>
- * <strong>To use the OCI Accelerator:</strong> <code>oci://quay.io/redhat-ai-services/modelcar-catalog:granite-3.2-8b-instruct</code>
- * <strong>To use the Air-Gapped PVC:</strong> <code>pvc://golden-dataset/model.safetensors</code></p>
+<p>Notice how the UI expects you to route the deployment based on the architecture you just built. You can now define your deployment locations using the exact 3.3 syntax:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>To use the S3 Connection:</strong> <code>s3://private-models/my-model</code></p>
+</li>
+<li>
+<p><strong>To use the OCI Accelerator:</strong> <code>oci://quay.io/redhat-ai-services/modelcar-catalog:granite-3.2-8b-instruct</code></p>
+</li>
+<li>
+<p><strong>To use the Air-Gapped PVC:</strong> <code>pvc://golden-dataset/model.safetensors</code></p>
+</li>
+</ul>
 </div>
 </div>
 </div>
