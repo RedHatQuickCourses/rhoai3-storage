@@ -33,10 +33,10 @@ metadata:
   name: $CONNECTION_NAME
   labels:
     opendatahub.io/dashboard: "true"
-    opendatahub.io/managed: "true" # <-- ADDED: 3.3 UI Visibility Requirement
+    opendatahub.io/managed: "true"
   annotations:
     opendatahub.io/connection-type: "s3"
-    opendatahub.io/connection-type-protocol: "s3" # <-- ADDED: 3.3 Backend Routing Requirement
+    opendatahub.io/connection-type-protocol: "s3"
     openshift.io/display-name: "Corporate S3 Data"
     openshift.io/description: "Read-only access to the corporate data lake."
 type: Opaque

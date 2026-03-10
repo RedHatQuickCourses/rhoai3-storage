@@ -12,9 +12,9 @@ In OpenShift AI 3.3, storage configuration dictates pipeline performance and mod
 
 == Prerequisites
 
-* Access to an OpenShift cluster with **OpenShift AI 3.3** and **OpenShift Data Foundation (ODF)** installed.
-* `cluster-admin` privileges (required to patch Persistent Volumes).
-* The `oc` CLI tool installed.
+ * Access to an OpenShift cluster with **OpenShift AI 3.3** and **OpenShift Data Foundation (ODF)** installed.
+ * `cluster-admin` privileges (required to patch Persistent Volumes).
+ * The `oc` CLI tool installed.
 
 === 1. Set Up Your Workspace
 We have packaged the automation scripts into a Git repository. 
@@ -134,6 +134,7 @@ You have just architected a complete storage solution via the CLI. Now, let's se
  4. Click the **Deployments** tab, and click **Deploy model**.
 
 Notice how the UI expects you to route the deployment based on the architecture you just built. You can now define your deployment locations using the exact 3.3 syntax:
+
  * **To use the S3 Connection:** `s3://private-models/my-model`
  * **To use the OCI Accelerator:** `oci://quay.io/redhat-ai-services/modelcar-catalog:granite-3.2-8b-instruct`
  * **To use the Air-Gapped PVC:** `pvc://golden-dataset/model.safetensors`
