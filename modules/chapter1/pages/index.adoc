@@ -20,7 +20,7 @@ At this scale, storage is no longer just a place to keep files—it becomes the 
 
 **In this course, you will evolve from managing "Disks" to architecting "Strategies."**
 
-image::storage-conn.png[align="center", title="Storage Types and Protocols AI Models for Generative AI"]
+image::storage-connv2.png[align="center", title="Storage Types and Protocols AI Models for Generative AI"]
 
 
 == The Three Pillars of AI Storage
