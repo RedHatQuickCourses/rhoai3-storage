@@ -294,9 +294,17 @@
 <div class="sect2">
 <h3 id="_the_database_mandate"><a class="anchor" href="#_the_database_mandate"></a>The Database Mandate</h3>
 <div class="paragraph">
-<p>Local SQLite files are deprecated for production metadata. They suffer from database locking issues under high concurrency.
-* <strong>Model Registry:</strong> Now strictly requires an external <strong>MySQL (8.x)</strong> or <strong>PostgreSQL</strong> database to track model lineage and versions.
-* <strong>Vector Databases (RAG):</strong> When configuring Llama Stack for Retrieval-Augmented Generation, "Inline" deployments are strictly for testing. Production requires <strong>Remote Milvus</strong> (utilizing a gRPC endpoint, typically port 19530) or <strong>PostgreSQL</strong> with the <code>pgvector</code> extension (port 5432).</p>
+<p>Local SQLite files are deprecated for production metadata. They suffer from database locking issues under high concurrency.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Model Registry:</strong> Now strictly requires an external <strong>MySQL (8.x)</strong> or <strong>PostgreSQL</strong> database to track model lineage and versions.</p>
+</li>
+<li>
+<p><strong>Vector Databases (RAG):</strong> When configuring Llama Stack for Retrieval-Augmented Generation, "Inline" deployments are strictly for testing. Production requires <strong>Remote Milvus</strong> (utilizing a gRPC endpoint, typically port 19530) or <strong>PostgreSQL</strong> with the <code>pgvector</code> extension (port 5432).</p>
+</li>
+</ul>
 </div>
 </div>
 <div class="sect2">

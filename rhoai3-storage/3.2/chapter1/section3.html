@@ -123,10 +123,20 @@
 <h2 id="_1_the_limitation_of_default_types"><a class="anchor" href="#_1_the_limitation_of_default_types"></a>1. The Limitation of Default Types</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Out of the box, OpenShift AI 3.3 provides pre-installed Connection Types for:
-* S3-compatible object storage
-* OCI-compliant registries
-* URI-based repositories</p>
+<p>Out of the box, OpenShift AI 3.3 provides pre-installed Connection Types for:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>S3-compatible object storage</p>
+</li>
+<li>
+<p>OCI-compliant registries</p>
+</li>
+<li>
+<p>URI-based repositories</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
 <p>It does <strong>not</strong> provide a default form for Snowflake, MongoDB, MySQL, or Milvus. To support these, the Platform Engineer must define the schema using the <code>ConnectionType</code> custom resource.</p>
@@ -235,10 +245,20 @@ conn = psycopg2.connect(
 <div class="sect2">
 <h3 id="_b_llama_stack_retrieval_augmented_generation"><a class="anchor" href="#_b_llama_stack_retrieval_augmented_generation"></a>B. Llama Stack (Retrieval-Augmented Generation)</h3>
 <div class="paragraph">
-<p>When deploying GenAI models that require RAG architectures (giving LLMs access to your private documents), you must connect to specialized vector databases.
-* <strong>Vector Store (Large Scale):</strong> Requires a connection to <strong>Remote Milvus</strong>. This typically utilizes a gRPC endpoint on port <code>19530</code>.
-* <strong>Vector Store (Transactional):</strong> Requires a connection to <strong>PostgreSQL</strong> with the <code>pgvector</code> extension, typically on port <code>5432</code>.
-* <strong>State/Metadata:</strong> Llama Stack requires PostgreSQL to persist critical GenAI state data, including agent states and conversation history.</p>
+<p>When deploying GenAI models that require RAG architectures (giving LLMs access to your private documents), you must connect to specialized vector databases.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Vector Store (Large Scale):</strong> Requires a connection to <strong>Remote Milvus</strong>. This typically utilizes a gRPC endpoint on port <code>19530</code>.</p>
+</li>
+<li>
+<p><strong>Vector Store (Transactional):</strong> Requires a connection to <strong>PostgreSQL</strong> with the <code>pgvector</code> extension, typically on port <code>5432</code>.</p>
+</li>
+<li>
+<p><strong>State/Metadata:</strong> Llama Stack requires PostgreSQL to persist critical GenAI state data, including agent states and conversation history.</p>
+</li>
+</ul>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -259,7 +279,7 @@ conn = psycopg2.connect(
 </table>
 </div>
 <div class="paragraph">
-<p><strong>Now that we have extended the mesh to include structured data, let&#8217;s explore the "Sharp Edges" of operating this infrastructure day-to-day.</strong></p>
+<p><strong>Now that we have extended the mesh to include structured data, let&#8217;s explore the deploying these resources.</strong></p>
 </div>
 </div>
 </div>
