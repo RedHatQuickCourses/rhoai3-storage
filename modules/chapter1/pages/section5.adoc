@@ -38,9 +38,10 @@ mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "USE <your-db-name>; UPDATE schema_mig
 
 == 4. The "Data Loss" Risk (PVC Reclaim Policy)
 By default, standard Storage Classes (like `gp3-csi`) have a `reclaimPolicy` of `Delete`.
-* **The Scenario:** A Data Scientist accidentally deletes their project namespace.
-* **The Consequence:** The underlying EBS volume is immediately scrubbed by the cloud provider. The "Golden Dataset" or Pipeline Workspace is gone forever.
-* **The Fix:** For any Shared Storage (RWX) hosting critical assets, you must patch the Persistent Volume (PV) to `Retain`.
+
+ * **The Scenario:** A Data Scientist accidentally deletes their project namespace.
+ * **The Consequence:** The underlying EBS volume is immediately scrubbed by the cloud provider. The "Golden Dataset" or Pipeline Workspace is gone forever.
+ * **The Fix:** For any Shared Storage (RWX) hosting critical assets, you must patch the Persistent Volume (PV) to `Retain`.
 +
 [source,bash]
 ----
@@ -49,25 +50,27 @@ oc patch pv <pv-name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
 ----
 
 == 5. The "Trust" Gap (Certificates)
-If you are using an on-premise Object Store (MinIO) or an external database (Amazon RDS) secured with **Self-Signed Certificates**, your Data Connections will fail silently..
+If you are using an on-premise Object Store (MinIO) or an external database (Amazon RDS) secured with **Self-Signed Certificates**, your Data Connections will fail silently.
+
  * **The Symptom:** Workbenches hang, pipelines fail to compile, or you see `tls: failed to verify certificate: x509: certificate signed by unknown authority`.
  * **The Fix:** You must inject your OpenShift Cluster's `kube-root-ca.crt` bundle into the `DSCI` (Data Science Cluster Initialization) resource. Platform components (Pipelines, Model Registry) will not trust your storage backend without it.
 
 == 6. The "Protocol" Pitfall (Connectivity)
 When configuring Data Connections for S3-compatible stores (MinIO, Ceph), the most frequent error is **Endpoint Formatting**.
+
  * **The Error:** Entering `minio-api.cluster.local:9000` into the dashboard.
  * **The Fix:** You *must* include the HTTP protocol scheme.
-    ** Correct: `http://minio-api.cluster.local:9000`
-    ** Correct: `https://s3.us-east-1.amazonaws.com`
-    ** *Why?* The Boto3 clients injected into the workbenches and pipelines require the full URI scheme to resolve correctly.
+ ** Correct: `http://minio-api.cluster.local:9000`
+ ** Correct: `https://s3.us-east-1.amazonaws.com`
+ ** *Why?* The Boto3 clients injected into the workbenches and pipelines require the full URI scheme to resolve correctly.
 
 == 7. The "Helper Pod" Pattern (Air-Gapped Loading)
 In a disconnected (Air-Gapped) environment, you cannot simply "download" a model from Hugging Face to your PVC. PVCs are just disks; they do not have internet access.
 
  * **The Solution:** You must use a **Helper Pod**.
-    1.  Spin up a temporary Pod (e.g., `ubi9-minimal`) with the PVC mounted.
-    2.  Use `oc cp` to upload the model files from your local workstation to the Pod.
-    3.  Delete the Helper Pod.
-    4.  The data remains on the PVC, ready for the Model Server to mount it as `Read-Only` via the `pvc://` routing scheme.
+ ..  Spin up a temporary Pod (e.g., `ubi9-minimal`) with the PVC mounted.
+ ..  Use `oc cp` to upload the model files from your local workstation to the Pod.
+ ..  Delete the Helper Pod.
+ ..  The data remains on the PVC, ready for the Model Server to mount it as `Read-Only` via the `pvc://` routing scheme.
 
 *Now that you know where the landmines are, you are ready to construct the AI Supply Chain.*
