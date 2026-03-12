@@ -82,21 +82,5 @@ OpenShift AI 3.3 fundamentally shifts this by adopting a **Dual-Storage (Hybrid)
 1. **The Archive (S3 Object Storage):** An S3-compatible connection is strictly required to instantiate the pipeline server. This bucket acts as the permanent control-plane archive. It stores the compiled pipeline YAML, the step-by-step execution logs, and the final output artifacts.
 2. **The Workbench (PVC Workspaces):** To eliminate the cloud egress costs and latency of "S3 Ping-Ponging," RHOAI 3.3 utilizes Persistent Volume Claims (PVCs) for the data plane. The DSPA dynamically creates an ephemeral shared PVC during the pipeline run. Pipeline components exchange massive intermediate datasets directly via the local cluster disk.
 
-== 4. The Foundation: Metadata and GitOps
-
-In RHOAI 3.3, the control plane has been fundamentally redesigned to support the "Industrialized" scale of enterprise AI.
-
-=== The Database Mandate
-Local SQLite files are deprecated for production metadata. They suffer from database locking issues under high concurrency.
-
- * **Model Registry:** Now strictly requires an external **MySQL (8.x)** or **PostgreSQL** database to track model lineage and versions.
- * **Vector Databases (RAG):** When configuring Llama Stack for Retrieval-Augmented Generation, "Inline" deployments are strictly for testing. Production requires **Remote Milvus** (utilizing a gRPC endpoint, typically port 19530) or **PostgreSQL** with the `pgvector` extension (port 5432).
-
-=== GitOps Pipeline Storage
-Prior to 3.3, pipeline definitions were trapped inside internal databases. 
-
-OpenShift AI administrators can now configure the Pipeline Server to use **Kubernetes API storage**. This stores pipelines natively as standard Kubernetes Custom Resources (`Pipeline` and `PipelineVersion`). 
-
-* **The Value:** This allows Platform Engineers to manage the entire pipeline lifecycle using standard GitOps tools like Argo CD, guaranteeing environment parity between Dev, Staging, and Prod clusters.
 
 *Now that you understand the blueprint, let's examine how to extend it for structured data and databases.*

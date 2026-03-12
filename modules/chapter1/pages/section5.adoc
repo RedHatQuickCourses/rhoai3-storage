@@ -50,7 +50,7 @@ oc patch pv <pv-name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
 ----
 
 == 5. The "Trust" Gap (Certificates)
-If you are using an on-premise Object Store (MinIO) or an external database (Amazon RDS) secured with **Self-Signed Certificates**, your Data Connections will fail silently.
+If you are using an on-premise Object Store (MinIO, S4, etc.) or an external database (Amazon RDS) secured with **Self-Signed Certificates**, your Data Connections will fail silently.
 
  * **The Symptom:** Workbenches hang, pipelines fail to compile, or you see `tls: failed to verify certificate: x509: certificate signed by unknown authority`.
  * **The Fix:** You must inject your OpenShift Cluster's `kube-root-ca.crt` bundle into the `DSCI` (Data Science Cluster Initialization) resource. Platform components (Pipelines, Model Registry) will not trust your storage backend without it.
