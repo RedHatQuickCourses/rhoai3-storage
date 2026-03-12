@@ -282,46 +282,6 @@
 </li>
 </ol>
 </div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_4_the_foundation_metadata_and_gitops"><a class="anchor" href="#_4_the_foundation_metadata_and_gitops"></a>4. The Foundation: Metadata and GitOps</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>In RHOAI 3.3, the control plane has been fundamentally redesigned to support the "Industrialized" scale of enterprise AI.</p>
-</div>
-<div class="sect2">
-<h3 id="_the_database_mandate"><a class="anchor" href="#_the_database_mandate"></a>The Database Mandate</h3>
-<div class="paragraph">
-<p>Local SQLite files are deprecated for production metadata. They suffer from database locking issues under high concurrency.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Model Registry:</strong> Now strictly requires an external <strong>MySQL (8.x)</strong> or <strong>PostgreSQL</strong> database to track model lineage and versions.</p>
-</li>
-<li>
-<p><strong>Vector Databases (RAG):</strong> When configuring Llama Stack for Retrieval-Augmented Generation, "Inline" deployments are strictly for testing. Production requires <strong>Remote Milvus</strong> (utilizing a gRPC endpoint, typically port 19530) or <strong>PostgreSQL</strong> with the <code>pgvector</code> extension (port 5432).</p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_gitops_pipeline_storage"><a class="anchor" href="#_gitops_pipeline_storage"></a>GitOps Pipeline Storage</h3>
-<div class="paragraph">
-<p>Prior to 3.3, pipeline definitions were trapped inside internal databases.</p>
-</div>
-<div class="paragraph">
-<p>OpenShift AI administrators can now configure the Pipeline Server to use <strong>Kubernetes API storage</strong>. This stores pipelines natively as standard Kubernetes Custom Resources (<code>Pipeline</code> and <code>PipelineVersion</code>).</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>The Value:</strong> This allows Platform Engineers to manage the entire pipeline lifecycle using standard GitOps tools like Argo CD, guaranteeing environment parity between Dev, Staging, and Prod clusters.</p>
-</li>
-</ul>
-</div>
 <div class="paragraph">
 <p><strong>Now that you understand the blueprint, let&#8217;s examine how to extend it for structured data and databases.</strong></p>
 </div>
