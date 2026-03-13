@@ -17,6 +17,9 @@ At this scale, storage is no longer just a place to keep files—it becomes the 
  * **The Risk:** If every pod downloads a 50GB model on startup, you flood the network and stall your rollout.
  * **The Cost:** If your automated AI pipelines pass massive intermediate datasets back and forth to an external S3 bucket, your cloud egress bills explode and your pipelines crawl.
  * **The Failure:** If you rely on ephemeral storage for production serving, a single node reboot can take down your service for 20 minutes while it re-downloads assets.
+ 
+ ---
+
 
 **In this course, you will evolve from managing "Disks" to architecting "Strategies."**
 

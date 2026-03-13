@@ -6,15 +6,13 @@
 [.lead]
 *To build a factory that scales, you must master the machinery under the floorboards.*
 
-In the previous module, we established *why* OpenShift AI decouples data from compute. Now, we will examine *how* the platform executes this. 
-
 As a Platform Engineer, you are not just managing disks; you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory." To build a stable platform, you must respect the physics of the underlying infrastructure. 
 
-If you treat a 70GB model like a standard web application asset and force your pods to download it to local ephemeral disk (`emptyDir`) on every startup, you will trigger severe network saturation and node thrashing. 
+If you treat a 70GB model like a standard web application asset and force your pods to download it to local ephemeral disk (`emptyDir`) on every startup, you will trigger severe network saturation and node bandwidth. 
 
 This module breaks down the architecture required to prevent that, categorized into four layers: **The Primitives**, **The Gateway**, **The Workspace**, and **The Foundation**.
 
-== 1. The Core Primitives (The Abstraction Layer)
+== 1. Data Connections
 
 To achieve **Zero-Touch Security** and environment parity, RHOAI 3 separates the *definition* of a credential from the *usage* of a credential. 
 
@@ -27,14 +25,14 @@ Many Platform Engineers deploy connection secrets via automation that route perf
 * **Frontend Visibility (The Label):** You *must* apply the label `opendatahub.io/managed: "true"`. This tells the OpenShift AI Dashboard to expose this connection to Data Scientists in the UI. Without it, the connection is functionally invisible.
 * **Backend Routing (The Annotation):** You *must* apply the annotation `opendatahub.io/connection-type-protocol: <type>` (e.g., `s3`, `oci`, `uri`). This tells the underlying Inference Service or Pipeline engine how to mechanically pull the data.
 
-== 2. The Gateway: External Storage Protocols
+== 2. External Storage Protocols
 
 Not all data moves the same way. RHOAI provides three primary protocols to optimize for capacity, speed, or precision.
 
 === A. S3-Compatible Object Storage (`s3`)
 * **The Role:** The Warehouse.
 * **Usage:** Massive datasets, data lakes, and standard model serving.
-* **The "Sharp Edge":** When using on-premise object stores (like MinIO) secured with self-signed certificates, you must inject the **Cluster CA Bundle** into the platform's `DSCI` resource, or the connections will fail silently.
+* **The "Sharp Edge":** When using on-premise object stores (like MinIO, S4, etc.) secured with self-signed certificates, you must inject the **Cluster CA Bundle** into the platform's `DSCI` resource, or the connections will fail silently.
 
 === B. OCI Model Registries (`oci`)
 * **The Role:** The Accelerator.
@@ -75,12 +73,12 @@ Once data arrives from the "Warehouse," it needs a high-speed place to live whil
 
 === The 3.3 Shift: Dual-Storage AI Pipelines
 
-In previous versions, AI Pipelines passed intermediate data between tasks by constantly uploading to and downloading from an S3 bucket (S3 Ping-Ponging). 
+In previous versions, AI Pipelines passed intermediate data between tasks by constantly uploading to and downloading from an S3 bucket (with a charge for each read / write). 
 
-OpenShift AI 3.3 fundamentally shifts this by adopting a **Dual-Storage (Hybrid) Architecture** for the Data Science Pipelines Application (DSPA). You must configure both of the following to activate a production pipeline server:
+OpenShift AI 3.3 fundamentally shifts this by adopting a **Dual-Storage (Hybrid) Architecture** for the Data Science Pipelines Application (DSPA). You must configure both of the following to activate a hybrid pipeline server:
 
 1. **The Archive (S3 Object Storage):** An S3-compatible connection is strictly required to instantiate the pipeline server. This bucket acts as the permanent control-plane archive. It stores the compiled pipeline YAML, the step-by-step execution logs, and the final output artifacts.
-2. **The Workbench (PVC Workspaces):** To eliminate the cloud egress costs and latency of "S3 Ping-Ponging," RHOAI 3.3 utilizes Persistent Volume Claims (PVCs) for the data plane. The DSPA dynamically creates an ephemeral shared PVC during the pipeline run. Pipeline components exchange massive intermediate datasets directly via the local cluster disk.
+2. **The Workbench (PVC Workspaces):** To eliminate the cloud egress costs and latency of "S3 back and forth," RHOAI 3.3 utilizes Persistent Volume Claims (PVCs) for the data plane. The DSPA dynamically creates an ephemeral shared PVC during the pipeline run. Pipeline components exchange massive intermediate datasets directly via the local cluster disk.
 
 
 *Now that you understand the blueprint, let's examine how to extend it for structured data and databases.*
