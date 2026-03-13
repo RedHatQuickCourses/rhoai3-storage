@@ -109,13 +109,10 @@
 <p><strong>To build a factory that scales, you must master the machinery under the floorboards.</strong></p>
 </div>
 <div class="paragraph">
-<p>In the previous module, we established <strong>why</strong> OpenShift AI decouples data from compute. Now, we will examine <strong>how</strong> the platform executes this.</p>
-</div>
-<div class="paragraph">
 <p>As a Platform Engineer, you are not just managing disks; you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory." To build a stable platform, you must respect the physics of the underlying infrastructure.</p>
 </div>
 <div class="paragraph">
-<p>If you treat a 70GB model like a standard web application asset and force your pods to download it to local ephemeral disk (<code>emptyDir</code>) on every startup, you will trigger severe network saturation and node thrashing.</p>
+<p>If you treat a 70GB model like a standard web application asset and force your pods to download it to local ephemeral disk (<code>emptyDir</code>) on every startup, you will trigger severe network saturation and node bandwidth.</p>
 </div>
 <div class="paragraph">
 <p>This module breaks down the architecture required to prevent that, categorized into four layers: <strong>The Primitives</strong>, <strong>The Gateway</strong>, <strong>The Workspace</strong>, and <strong>The Foundation</strong>.</p>
@@ -123,7 +120,7 @@
 </div>
 </div>
 <div class="sect1">
-<h2 id="_1_the_core_primitives_the_abstraction_layer"><a class="anchor" href="#_1_the_core_primitives_the_abstraction_layer"></a>1. The Core Primitives (The Abstraction Layer)</h2>
+<h2 id="_1_data_connections"><a class="anchor" href="#_1_data_connections"></a>1. Data Connections</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>To achieve <strong>Zero-Touch Security</strong> and environment parity, RHOAI 3 separates the <strong>definition</strong> of a credential from the <strong>usage</strong> of a credential.</p>
@@ -157,7 +154,7 @@
 </div>
 </div>
 <div class="sect1">
-<h2 id="_2_the_gateway_external_storage_protocols"><a class="anchor" href="#_2_the_gateway_external_storage_protocols"></a>2. The Gateway: External Storage Protocols</h2>
+<h2 id="_2_external_storage_protocols"><a class="anchor" href="#_2_external_storage_protocols"></a>2. External Storage Protocols</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Not all data moves the same way. RHOAI provides three primary protocols to optimize for capacity, speed, or precision.</p>
@@ -173,7 +170,7 @@
 <p><strong>Usage:</strong> Massive datasets, data lakes, and standard model serving.</p>
 </li>
 <li>
-<p><strong>The "Sharp Edge":</strong> When using on-premise object stores (like MinIO) secured with self-signed certificates, you must inject the <strong>Cluster CA Bundle</strong> into the platform&#8217;s <code>DSCI</code> resource, or the connections will fail silently.</p>
+<p><strong>The "Sharp Edge":</strong> When using on-premise object stores (like MinIO, S4, etc.) secured with self-signed certificates, you must inject the <strong>Cluster CA Bundle</strong> into the platform&#8217;s <code>DSCI</code> resource, or the connections will fail silently.</p>
 </li>
 </ul>
 </div>
@@ -267,10 +264,10 @@
 <div class="sect2">
 <h3 id="_the_3_3_shift_dual_storage_ai_pipelines"><a class="anchor" href="#_the_3_3_shift_dual_storage_ai_pipelines"></a>The 3.3 Shift: Dual-Storage AI Pipelines</h3>
 <div class="paragraph">
-<p>In previous versions, AI Pipelines passed intermediate data between tasks by constantly uploading to and downloading from an S3 bucket (S3 Ping-Ponging).</p>
+<p>In previous versions, AI Pipelines passed intermediate data between tasks by constantly uploading to and downloading from an S3 bucket (with a charge for each read / write).</p>
 </div>
 <div class="paragraph">
-<p>OpenShift AI 3.3 fundamentally shifts this by adopting a <strong>Dual-Storage (Hybrid) Architecture</strong> for the Data Science Pipelines Application (DSPA). You must configure both of the following to activate a production pipeline server:</p>
+<p>OpenShift AI 3.3 fundamentally shifts this by adopting a <strong>Dual-Storage (Hybrid) Architecture</strong> for the Data Science Pipelines Application (DSPA). You must configure both of the following to activate a hybrid pipeline server:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -278,7 +275,7 @@
 <p><strong>The Archive (S3 Object Storage):</strong> An S3-compatible connection is strictly required to instantiate the pipeline server. This bucket acts as the permanent control-plane archive. It stores the compiled pipeline YAML, the step-by-step execution logs, and the final output artifacts.</p>
 </li>
 <li>
-<p><strong>The Workbench (PVC Workspaces):</strong> To eliminate the cloud egress costs and latency of "S3 Ping-Ponging," RHOAI 3.3 utilizes Persistent Volume Claims (PVCs) for the data plane. The DSPA dynamically creates an ephemeral shared PVC during the pipeline run. Pipeline components exchange massive intermediate datasets directly via the local cluster disk.</p>
+<p><strong>The Workbench (PVC Workspaces):</strong> To eliminate the cloud egress costs and latency of "S3 back and forth," RHOAI 3.3 utilizes Persistent Volume Claims (PVCs) for the data plane. The DSPA dynamically creates an ephemeral shared PVC during the pipeline run. Pipeline components exchange massive intermediate datasets directly via the local cluster disk.</p>
 </li>
 </ol>
 </div>
