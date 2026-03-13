@@ -1,4 +1,4 @@
-= The Storage Strategy: Architecting for AI Scale
+= Architecting AI Storage Logistics in OpenShift AI
 :navtitle: The Storage Strategy
 :imagesdir: ../images
 :role: Product Concept
