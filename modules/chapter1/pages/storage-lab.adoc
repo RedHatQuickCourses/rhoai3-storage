@@ -34,28 +34,86 @@ oc new-project ai-supply-chain
 
 
 
-In OpenShift AI 3.3, object storage (S3) is no longer required to activate AI Pipelines. Instead, Persistent Volume Claims (PVCs) act as the high-speed **Pipeline Workspaces**, allowing pipelines to pass massive datasets between tasks without cloud egress latency. 
+In OpenShift AI 3.3, activating AI Pipelines requires a dual-storage approach. S3-compatible object storage is still strictly required to instantiate the pipeline server and act as the permanent archive for your logs and final pipeline artifacts. 
 
-Because this cluster uses OpenShift Data Foundation (`cephfs`), our shared workspaces bind instantly and support multi-node read/write operations out of the box.
+However, during the actual pipeline execution, Persistent Volume Claims (PVCs) act as high-speed **Pipeline Workspaces**. This allows pipelines to pass massive intermediate datasets between tasks directly on the local cluster disk, avoiding constant S3 ingress/egress charges and cloud latency.
 
-=== Action: Provision & Protect
+=== Action: Discover Your Storage Capabilities
+Not every cluster uses the same underlying storage. Cloud block storage (like AWS EBS) behaves very differently than network file storage (like CephFS). You must identify what is available on your cluster.
+
 [source,bash]
 ----
-# 1. Provision CephFS Shared Storage (10GB)
-# Usage: ./cluster-storage.sh <project> <name> <size>
+# List available storage classes
+oc get sc
+----
+* **If your default is Block Storage** (e.g., `gp2-csi`, `gp3-csi`): It strictly requires `ReadWriteOnce` access and uses `WaitForFirstConsumer` (meaning the physical disk isn't created until a pod requests it).
+* **If your default is File Storage** (e.g., `ocs-external-storagecluster-cephfs`): It supports `ReadWriteMany` access and binds instantly.
+
+=== Action: Update the Deployment Script
+Now, you must adapt the baseline deployment script to match your cluster's physics. 
+
+1. Open `cluster-storage.sh` in your text editor.
+2. Update the `STORAGE_CLASS` variable to match the exact name from your `oc get sc` output (e.g., `gp3-csi`).
+3. Under the `spec.accessModes` section of the YAML, ensure it matches your storage type:
+    * Change it to `- ReadWriteOnce` if using block storage (like AWS `gp3-csi`).
+    * Leave it as `- ReadWriteMany` if using file storage (like CephFS).
+4. Save the file.
+
+=== Action: Provision & Force Binding
+Because cloud block storage often waits for a consumer, we will provision the claim and immediately spin up a "Binder Pod" to force the cloud provider to create the physical hard drive.
+
+[source,bash]
+----
+# 1. Provision the Storage Claim (10GB)
 ./cluster-storage.sh ai-supply-chain golden-dataset 10
 
-# 2. THE CRITICAL SAFETY STEP: Patch the Reclaim Policy to 'Retain'
-# Find the instantly-bound PV name
+# 2. Spin up a dummy pod to force the cloud to create the disk
+cat <<EOF | oc apply -n ai-supply-chain -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: storage-binder
+spec:
+  containers:
+    - name: binder
+      image: registry.access.redhat.com/ubi9/ubi-minimal
+      command: ["tail", "-f", "/dev/null"]
+      resources:
+        requests:
+          cpu: "10m"
+          memory: "50Mi"
+      volumeMounts:
+        - mountPath: "/data"
+          name: my-vol
+  volumes:
+    - name: my-vol
+      persistentVolumeClaim:
+        claimName: golden-dataset
+EOF
+
+# 3. Wait for the disk to be created and attached
+echo "⏳ Waiting for cloud storage to provision..."
+oc wait --for=condition=Ready pod/storage-binder -n ai-supply-chain --timeout=120s
+----
+
+=== Action: Protect the Dataset
+Now that the physical disk (PV) exists, we must apply a safety protocol. By default, if a project is deleted, the disk is destroyed. We will patch the Persistent Volume to ensure the data survives.
+
+[source,bash]
+----
+# 1. Ask Kubernetes for the name of the newly created physical hard drive
 PV_NAME=$(oc get pvc golden-dataset -n ai-supply-chain -o jsonpath='{.spec.volumeName}')
 
-# Patch the Persistent Volume
+# 2. Patch that hard drive's policy to 'Retain'
 oc patch pv $PV_NAME -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
 
-# Verify
+# 3. Clean up the Binder Pod (The data remains safe on the retained disk!)
+oc delete pod storage-binder -n ai-supply-chain
+
+# Verify the policy was applied successfully
 oc get pv $PV_NAME
 ----
-*Result:* You should see `RECLAIM POLICY: Retain`. Your pipeline workspace is now protected from accidental deletion.
+*Result:* You should see `RECLAIM POLICY: Retain`. Your pipeline workspace is physically bound and protected from accidental deletion.
 
 == Part 2: The Velocity Tier (OCI Modelcars)
 
@@ -71,24 +129,37 @@ Next, we enable "Instant Scaling" by creating a connection to the Red Hat Modelc
 
 == Part 3: The Air-Gap Simulation (The Helper Pod)
 
+
 In a highly secure enterprise, your cluster might not have internet access to download models. You need a way to "Side-Load" data directly into your PVC so you can use the OpenShift AI 3.3 `pvc://` deployment routing.
 
 We will spin up a temporary "Helper Pod" to stage data onto our `golden-dataset` volume.
 
-=== Action: Side-Load the Model
+=== Action: Side-Load the Model (Admin Override)
+In OpenShift, strict Security Context Constraints (SCCs) force pods to run as randomized, non-root users. However, newly provisioned cloud volumes are often owned by `root`. To write to the root of this volume, we must deploy our Helper Pod with elevated privileges.
+
 [source,bash]
 ----
-# 1. Spin up the Data Loader Pod
+# 1. Create a dedicated Admin Service Account
+oc create sa side-loader-sa -n ai-supply-chain
+
+# 2. Grant it the 'anyuid' SCC to allow root-level disk writes
+oc adm policy add-scc-to-user anyuid -z side-loader-sa -n ai-supply-chain
+
+# 3. Spin up the Data Loader Pod using our new Service Account
 cat <<EOF | oc apply -n ai-supply-chain -f -
 apiVersion: v1
 kind: Pod
 metadata:
   name: data-loader
 spec:
+  serviceAccountName: side-loader-sa
   containers:
     - name: loader
-      image: registry.access.redhat.com/ubi9/ubi-minimal
+      image: registry.access.redhat.com/ubi9/ubi
       command: ["tail", "-f", "/dev/null"]
+      # Force the container to run as root to write to the newly formatted PV
+      securityContext:
+        runAsUser: 0
       volumeMounts:
         - mountPath: "/data"
           name: my-vol
@@ -98,16 +169,22 @@ spec:
         claimName: golden-dataset
 EOF
 
-# 2. Wait for it to be Ready
+# 4. Wait for it to be Ready
 oc wait --for=condition=Ready pod/data-loader -n ai-supply-chain --timeout=60s
 
-# 3. Simulate "Side-Loading" a Model
+# 5. Simulate "Side-Loading" the Model
 echo "Simulated Model Weights v1.0" > model.safetensors
-oc cp model.safetensors ai-supply-chain/data-loader:/data/model.safetensors
+cat model.safetensors | oc exec -i data-loader -n ai-supply-chain -- sh -c 'cat > /data/model.safetensors'
 
-# 4. Clean up the Helper Pod
+# 6. Verify the file was written successfully!
+oc exec data-loader -n ai-supply-chain -- cat /data/model.safetensors
+
+# 7. Clean up the Helper Pod and Service Account
 oc delete pod data-loader -n ai-supply-chain
+oc delete sa side-loader-sa -n ai-supply-chain
 ----
+
+
 *Result:* You have successfully bypassed the internet and staged data directly onto a disconnected volume. Because of our `Retain` policy, deleting the pod keeps the data safe on the disk.
 
 == Part 4: The Ingestion Layer (S3 & URI)
