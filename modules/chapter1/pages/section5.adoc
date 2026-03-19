@@ -1,76 +1,78 @@
-= Field Notes: The Sharp Edges of AI Storage
+= Field Notes & Troubleshooting
 :navtitle: Operational Best Practices
-:imagesdir: ../images
 :role: Operational Guide
 :audience: Platform Engineers & SREs
-:description: Critical configuration warnings, timeout adjustments, and data safety protocols for production AI in RHOAI 3.3.
+:description: Critical configuration warnings, custom connection enforcement, timeout adjustments, and data safety protocols for production AI in RHOAI 3.3.
 
 [.lead]
 *Configuration is easy. Day-2 Operations are where the battle is won.*
 
-Now that you understand the physics of AI storage and the new 3.3 Pipeline architecture, you need to maintain it. In a high-velocity environment, default Kubernetes settings are often insufficient for Generative AI workloads.
+Now that you understand the physics of AI storage, Custom Connection Types, and the new OpenShift AI 3.3 Pipeline architecture, you need to maintain it under heavy load. 
 
-Based on real-world deployments and the architectural shifts in OpenShift AI 3.3, here are the **Seven Critical Configurations** that separate a stable platform from a fragile one.
+In a high-velocity industrial AI environment, default Kubernetes settings will could sabotage your Generative AI workloads. Based on real-world deployments and the latest 3.3 architectural shifts, here are the configurations and operational patterns that help separate a stable platform from a fragile one.
 
-== 1. The "Timeout" Trap (OCI Modelcars)
-When you use the OCI protocol to stream a 70GB model, the container runtime (CRI-O) must pull all layers before the Pod can start.
+== 1. The Custom Connection Mandate (Preventing Rogue Data Access)
 
- * **The Default:** Knative (the engine behind Model Serving) often has a default `progress-deadline` of **600 seconds (10 minutes)**.
- * **The Failure:** If your network takes 11 minutes to pull the 70GB image, the deployment is marked as `Failed` and the pod is killed—even if it was 99% done.
- * **The Fix:** You must increase the `progressDeadlineSeconds` in your `InferenceService` or global Knative config to **1800s (30 mins)** or more for large foundation models.
+We discussed Custom Connections in earlier phases, but it remains your number one operational defense on Day 2. 
 
-== 2. The "Workspace Import" Trap (3.3 Pipelines)
-OpenShift AI 3.3 introduces Ephemeral Pipeline Workspaces (PVCs) for fast data transit. However, you cannot directly download an OCI Modelcar into a workspace volume natively.
- 
- * **The Problem:** If a pipeline task expects an OCI image but you only provide the `oci://` URI, the task will fail to find the model files on the workspace disk.
- * **The Fix (Side-Loading):** You must explicitly define an `importer` component in your pipeline code to pull the OCI artifact, and then use a subsequent python component (e.g., using `shutil.copytree`) to copy the artifact into the `dsl.WORKSPACE_PATH_PLACEHOLDER`.
+* **The Shadow AI Failure:** Data scientists bypassing the platform to manually hardcode database credentials or connect to untrusted external buckets directly in their Python code. 
+* **The Factory Fix:** You must enforce the use of `ConnectionType` Custom Resources for all structured and unstructured data. By strictly defining the "Socket" (e.g., Corporate PostgreSQL, Amazon S3, MinIO) and injecting the "Plug" (Data Connection secrets), you ensure all data access is auditable, repeatable, and managed by GitOps. 
 
-== 3. The "Dirty Database" Migration Error
-In OpenShift AI 3.3, the ML Metadata (MLMD) server was completely removed from the Model Registry to allow direct database interaction. If you are upgrading, your database schema migration might fail.
+[WARNING]
+.The "Protocol" Pitfall (Connectivity)
+====
+When configuring Data Connections for S3-compatible stores (MinIO, Ceph) via the UI or GitOps, the most frequent operational error is Endpoint Formatting. 
 
- * **The Error:** Your Model Registry pod crashes with: `error: error connecting to datastore: Dirty database version {version}. Fix and force version.`
- * **The Fix:** You must manually reset the "dirty" state in your MySQL database. Exec into the database pod and run:
-+
+Entering `minio-api.cluster.local:9000` into the dashboard connection form will fail. You *must* include the HTTP/HTTPS protocol scheme (e.g., `http://minio-api.cluster.local:9000`). The underlying Boto3 clients injected into workbenches and pipelines strictly require the full URI scheme to resolve correctly.
+====
+
+== 2. The "Timeout" Trap (OCI Modelcars)
+
+When you use the OCI protocol to stream a massive foundation model (e.g., 70GB Granite or Llama model), the underlying container runtime (CRI-O) must pull all layers over the network before the Pod can transition to a "Ready" state. 
+
+* **The Shadow AI Failure:** Knative (the serverless engine behind Model Serving) defaults to a `progress-deadline` of 600 seconds (10 minutes). If your network takes 11 minutes to pull the image, Knative marks the deployment as `Failed` and ruthlessly kills the pod—even if it was 99% complete.
+* **The Factory Fix:** You must explicitly override the default physics. Increase the `progressDeadlineSeconds` in your `InferenceService` (or global Knative config) to **1800s (30 mins)** or higher to accommodate large LLM pulls and protect your Time-to-First-Token (TTFT) metrics.
+
+== 3. The "Workspace Import" Trap (3.3 Pipelines)
+
+OpenShift AI 3.3 introduces Ephemeral Pipeline Workspaces (PVCs) for high-speed data transit between tasks. However, you cannot directly download an OCI Modelcar into a workspace volume natively.
+
+* **The Shadow AI Failure:** If a pipeline task expects an OCI image but you only provide the `oci://` URI, the pipeline task will fail because it cannot find the extracted model files on the workspace disk.
+* **The Factory Fix (Side-Loading):** You must explicitly define an `importer` component in your pipeline code to pull the OCI artifact. Then, you must use a subsequent Python component (e.g., using `shutil.copytree`) to physically copy the artifact from the importer into the `dsl.WORKSPACE_PATH_PLACEHOLDER`.
+
+== 4. The "Dirty Database" Migration Error
+
+In OpenShift AI 3.3, the ML Metadata (MLMD) server was completely removed from the Model Registry. The registry now interacts directly with your mandated external database (MySQL/MariaDB). 
+
+* **The Shadow AI Failure:** If you are upgrading from a previous version, your database schema migration might fail. Your Model Registry pod will crash with the following log: `error: error connecting to datastore: Dirty database version {version}. Fix and force version.`.
+* **The Factory Fix:** You must manually intervene as the database administrator to reset the "dirty" state. Exec into the database pod and run the following command:
+
 [source,bash]
 ----
+# Reset the schema migration state to allow the Model Registry to start
 mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "USE <your-db-name>; UPDATE schema_migrations SET dirty=0;"
 ----
 
-== 4. The "Data Loss" Risk (PVC Reclaim Policy)
-By default, standard Storage Classes (like `gp3-csi`) have a `reclaimPolicy` of `Delete`.
+== 5. The "Data Loss" Risk (PVC Reclaim Policy)
 
- * **The Scenario:** A Data Scientist accidentally deletes their project namespace.
- * **The Consequence:** The underlying EBS volume is immediately scrubbed by the cloud provider. The "Golden Dataset" or Pipeline Workspace is gone forever.
- * **The Fix:** For any Shared Storage (RWX) hosting critical assets, you must patch the Persistent Volume (PV) to `Retain`.
-+
+By default, standard cloud Storage Classes (like AWS `gp3-csi`) have a `reclaimPolicy` set to `Delete`. 
+
+* **The Shadow AI Failure:** A Data Scientist accidentally deletes their project namespace. The underlying cloud volume is immediately scrubbed by the cloud provider. The multi-terabyte "Golden Dataset" or active Pipeline Workspace is gone forever.
+* **The Factory Fix:** For any Shared Storage (RWX) or Persistent Volume hosting critical, irreplaceable assets, you must patch the physical PV to `Retain`.
+
 [source,bash]
 ----
-# Protect your Golden Dataset
+# Protect your Golden Dataset from accidental namespace deletion
 oc patch pv <pv-name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
 ----
 
-== 5. The "Trust" Gap (Certificates)
-If you are using an on-premise Object Store (MinIO, S4, etc.) or an external database (Amazon RDS) secured with **Self-Signed Certificates**, your Data Connections will fail silently.
+== 6. The "Trust" Gap (Certificates)
 
- * **The Symptom:** Workbenches hang, pipelines fail to compile, or you see `tls: failed to verify certificate: x509: certificate signed by unknown authority`.
- * **The Fix:** You must inject your OpenShift Cluster's `kube-root-ca.crt` bundle into the `DSCI` (Data Science Cluster Initialization) resource. Platform components (Pipelines, Model Registry) will not trust your storage backend without it.
+If you are using an on-premise Object Store (MinIO, Ceph) or an external database (Amazon RDS) secured with Self-Signed Certificates, your Data Connections will fail silently.
 
-== 6. The "Protocol" Pitfall (Connectivity)
-When configuring Data Connections for S3-compatible stores (MinIO, Ceph), the most frequent error is **Endpoint Formatting**.
+* **The Shadow AI Failure:** Workbenches hang, pipelines fail to compile, or you see `tls: failed to verify certificate: x509: certificate signed by unknown authority`.
+* **The Factory Fix:** You must inject your OpenShift Cluster's `kube-root-ca.crt` bundle into the `DSCI` (Data Science Cluster Initialization) resource. Platform components (Pipelines, Model Registry) will not trust your storage backend without it.
 
- * **The Error:** Entering `minio-api.cluster.local:9000` into the dashboard.
- * **The Fix:** You *must* include the HTTP protocol scheme.
- ** Correct: `http://minio-api.cluster.local:9000`
- ** Correct: `https://s3.us-east-1.amazonaws.com`
- ** *Why?* The Boto3 clients injected into the workbenches and pipelines require the full URI scheme to resolve correctly.
+---
 
-== 7. The "Helper Pod" Pattern (Air-Gapped Loading)
-In a disconnected (Air-Gapped) environment, you cannot simply "download" a model from Hugging Face to your PVC. PVCs are just disks; they do not have internet access.
-
- * **The Solution:** You must use a **Helper Pod**.
- ..  Spin up a temporary Pod (e.g., `ubi9-minimal`) with the PVC mounted.
- ..  Use `oc cp` to upload the model files from your local workstation to the Pod.
- ..  Delete the Helper Pod.
- ..  The data remains on the PVC, ready for the Model Server to mount it as `Read-Only` via the `pvc://` routing scheme.
-
-*Now that you know where the landmines are, you are ready to construct the AI Supply Chain.*
+*This concludes the core enablement for OpenShift AI Storage Logistics. By transitioning from Shadow AI to the Factory Model, you have secured your connections, protected your datasets, and optimized your GPU ROI.*

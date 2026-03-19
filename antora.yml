@@ -1,6 +1,6 @@
 name: rhoai3-storage
 title: Architecting AI Storage Logistics in OpenShift AI
-version: 3.2
+version: 3.3
 nav:
 - modules/ROOT/nav.adoc
 - modules/chapter1/nav.adoc

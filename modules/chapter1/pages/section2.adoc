@@ -1,230 +1,122 @@
-= Lab: Automating the Data Supply Chain
-:navtitle: Fast Track Lab
-:imagesdir: ../images
+= Configuring the Environment
+:navtitle: Phase 0 (Bootstrapping)
+:role: Enablement Course
+:audience: Platform Engineers & Architects
+:description: Essential cluster-level configurations, certificate management, and Custom Connection Types required before deploying OpenShift AI workloads.
 
-*Stop clicking. Start engineering.*
+[.lead]
+*Before a single data scientist writes a line of code, the infrastructure must be bulletproof. Let's lay the groundwork.*
 
-To build a Data Supply Chain, you first need a "Warehouse" (Object Storage) and a "Brain" (Metadata Storage). In a real corporate environment, these already exist. In this lab, we will simulate that environment by deploying a real instance of **MinIO** and **MySQL** to your cluster in seconds.
+As a Platform Architect, your Day 0 responsibility is establishing the rules of engagement. If you hand over a raw cluster without wiring up corporate security, database persistence, and standardized credentials, your teams will invent their own risky workarounds. 
 
-Once the infrastructure is live, you will act as the **Platform Architect**. You will define the "Universal Adapters" (Data Connections) that allow your Data Scientists to consume these resources securely, without ever knowing the root passwords.
+This phase covers the steps you execute at the cluster-admin level. We are going to establish certificate trust, mandate persistent metadata stores, and extend the OpenShift AI dashboard to natively speak to your corporate data warehouses. 
 
-== Prerequisites
- * Access to an OpenShift cluster with **RHOAI 3** installed.
- * `cluster-admin` privileges.
- * The `oc` CLI tool installed.
+== 1. Internal Certificate Authority (CA)
 
+In an enterprise environment, your data lakes (MinIO, Ceph) and relational databases (Amazon RDS, internal Postgres) are almost certainly secured by internal, self-signed certificates. 
 
-== Phase 1: The Infrastructure (Deploy the Factory)
+If OpenShift AI does not explicitly trust your internal Certificate Authority (CA),  platform components will silently fail to connect, throwing `x509: certificate signed by unknown authority` errors. Chasing down TLS handshake failures across a distributed system is a massive drain on engineering time. 
 
-We have packaged the "Plumbing" into a Fast Track script. This script will:
- 1.  Create the `rhoai-model-registry-lab` namespace.
- 2.  Deploy **MinIO** (S3-compatible storage).
- 3.  Deploy **MySQL** (Relational Database).
- 4.  Expose them internally to the cluster.
-
-=== 1. Acquire the Infrastructure Code
-Create a file named `setup.sh` and paste the following content. This simulates checking out the "Ops Team" repository.
+By injecting your cluster's CA bundle into the `DSCI` (Data Science Cluster Initialization) resource so that all OpenShift AI components trust your internal endpoints.
 
 [source,bash]
 ----
-#!/bin/bash
-# setup.sh: Automates the "Plumbing" phase.
-set -e
-NAMESPACE="rhoai-model-registry-lab"
+# 1. Fetch the current OpenShift AI trusted CA configuration and save it locally
+oc get dscinitializations.dscinitialization.opendatahub.io default-dsci -o json | jq -r '.spec.trustedCABundle.customCABundle' > /tmp/my-custom-ca-bundles.crt
 
-echo "🚀 Starting AI Supply Chain Infrastructure Setup..."
+# 2. Append the cluster's internal kube-root-ca.crt to your bundle
+oc get configmap kube-root-ca.crt -o jsonpath="{['data']['ca\.crt']}" >> /tmp/my-custom-ca-bundles.crt 
 
-# 1. Create Namespace
-if oc get project "$NAMESPACE" > /dev/null 2>&1; then
-    echo "✔ Namespace $NAMESPACE exists."
-else
-    oc new-project "$NAMESPACE"
-fi
-
-# 2. Deploy MinIO (The Vault)
-echo "➤ Deploying MinIO..."
-# (In a real lab, these would be git checkout files. Here we apply directly.)
-oc apply -f https://raw.githubusercontent.com/RedHatQuickCourses/rhoai3-storage/main/manifests/minio-backend.yaml -n $NAMESPACE
-
-# 3. Deploy MySQL (The Brain)
-echo "➤ Deploying MySQL..."
-oc apply -f https://raw.githubusercontent.com/RedHatQuickCourses/rhoai3-storage/main/manifests/mysql-backend.yaml -n $NAMESPACE
-
-echo "✅ Infrastructure Setup Complete!"
-echo "MinIO URL: http://minio-service.$NAMESPACE.svc.cluster.local:9000"
-echo "MySQL Host: mysql.$NAMESPACE.svc.cluster.local"
-----
-*(Note: For this lab, assume the YAML files referenced in the script are available locally or apply the provided sample files.)*
-
-=== 2. Execute the Provisioning
-Run the script to stand up the factory floor.
-
-[source,bash]
-----
-chmod +x setup.sh
-./setup.sh
+# 3. Patch the DSCI resource to apply the global trust
+oc patch dscinitialization default-dsci --type='json' -p='[{"op":"replace","path":"/spec/trustedCABundle/customCABundle","value":"'"$(awk '{printf "%s\\n", $0}' /tmp/my-custom-ca-bundles.crt)"'"}]'
 ----
 
-**Validation:**
-Check that your "Warehouse" is running.
-[source,bash]
-----
-oc get pods -n rhoai-model-registry-lab
-----
-*Expected Output:* You should see `minio` and `mysql` pods in `Running` state.
+== 2. The Database Baseline
 
-== Phase 2: The Universal Adapter (GitOps Connections)
+In OpenShift AI 3.3, setting up database connections is no longer just for custom data science workloads; it is a strict requirement for the platform's control plane. 
 
-Now that the servers are running, we need to create the "Plugs" that allow RHOAI to connect to them. We will use a **GitOps approach** to ensure these connections are standardized and reproducible.
+You will need to architect connections to the following external systems to support production AI:
 
-=== Step 1: Define the S3 Standard (Connection Type)
-First, we define the "Socket" for our Corporate Data Lake. This tells the RHOAI Dashboard what fields to expect.
+=== A. The Model Registry (Metadata)
 
-**File:** `01-s3-type.yaml`
+ * **Requirement:** External **MySQL** (version 5.x or 8.x) or **MariaDB** (version 10.3+).
+ * **Why:** Local SQLite files are deprecated for production metadata. The Model Registry interacts directly with the underlying relational database to track lineage, quantization schemas, and pipeline deployment events without database locking issues.
+
+=== B. Llama Stack (Retrieval-Augmented Generation)
+When deploying GenAI models that require RAG architectures (giving LLMs access to your private documents), you must connect to specialized vector databases.
+
+ * **Vector Store (Large Scale):** Requires a connection to **Remote Milvus**. This typically utilizes a gRPC endpoint on port `19530`.
+ * **Vector Store (Transactional):** Requires a connection to **PostgreSQL** with the `pgvector` extension, typically on port `5432`.
+ * **State/Metadata:** Llama Stack requires PostgreSQL to persist critical GenAI state data, including agent states and conversation history.
+
+
+== 3. Extending the Dashboard (Custom Connection Types)
+
+Out of the box, OpenShift AI provides UI templates for S3, OCI, and URI connections. However, it does not inherently know what fields are required to connect to Snowflake, MongoDB, or your newly mandated PostgreSQL databases. 
+
+If you do not build a "Socket" for these databases, data scientists will inevitably hardcode passwords directly into their Jupyter Notebooks to get their work done. 
+
+To prevent this, you define a `ConnectionType` Custom Resource (CR). This CR instructs the OpenShift AI dashboard on how to render a secure input form and maps the user's plain-text inputs directly to standardized Environment Variables inside the pods.
+
+=== Action: Define a Corporate PostgreSQL Standard
+
+Apply this configuration to your cluster to create a standardized, reusable PostgreSQL connection template:
+
 [source,yaml]
 ----
 apiVersion: dashboard.opendatahub.io/v1alpha
 kind: ConnectionType
 metadata:
-  name: corporate-minio-standard
+  name: corporate-postgres-v1
   labels:
     opendatahub.io/dashboard: "true"
+    opendatahub.io/managed: "true" # <1>
 spec:
-  displayName: "Corporate MinIO Standard"
-  category: "Object Storage"
-  description: "Standard connection to the internal MinIO Data Lake."
-  fields:
-    - name: Endpoint
-      type: text
-      required: true
-      envVar: AWS_S3_ENDPOINT
-    - name: Bucket
-      type: text
-      required: true
-      envVar: AWS_S3_BUCKET
-    - name: Access Key
-      type: text
-      required: true
-      envVar: AWS_ACCESS_KEY_ID
-    - name: Secret Key
-      type: password
-      required: true
-      envVar: AWS_SECRET_ACCESS_KEY
-----
-[source,bash]
-----
-oc apply -f 01-s3-type.yaml
-----
-
-=== Step 2: Create the Data Connection (The Instance)
-Now, we create the actual connection for the "Finance Team" that points to the MinIO instance we just deployed. Notice we use the internal ClusterIP service URL.
-
-**File:** `02-finance-connection.yaml`
-[source,yaml]
-----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: finance-data-lake
-  namespace: rhoai-model-registry-lab
-  labels:
-    opendatahub.io/dashboard: "true" # <1> Visible in UI
-    opendatahub.io/managed: "true"
-  annotations:
-    opendatahub.io/connection-type: "corporate-minio-standard" # <2> Links to our Type
-    openshift.io/display-name: "Finance Data Lake"
-type: Opaque
-stringData:
-  Endpoint: "http://minio-service.rhoai-model-registry-lab.svc.cluster.local:9000"
-  Bucket: "finance-records"
-  Access Key: "minio"
-  Secret Key: "minio123"
-----
-<1> **Required Label:** Without this, the secret is invisible to RHOAI.
-<2> **Binding:** This links the secret to the schema we defined in Step 1.
-
-[source,bash]
-----
-oc apply -f 02-finance-connection.yaml
-----
-
-== Phase 3: The Brain (Database Connection)
-
-RHOAI 3 requires databases for Model Registries. Let's wire up the MySQL instance.
-
-=== Step 1: Define the Database Standard
-**File:** `03-db-type.yaml`
-[source,yaml]
-----
-apiVersion: dashboard.opendatahub.io/v1alpha
-kind: ConnectionType
-metadata:
-  name: corporate-mysql
-  labels:
-    opendatahub.io/dashboard: "true"
-spec:
-  displayName: "Corporate MySQL"
-  category: "Database"
+  displayName: "Corporate PostgreSQL"
+  description: "Standard connection for read-only transactional databases."
+  category: "Database" 
   fields:
     - name: Host
       type: text
-      envVar: DB_HOST
+      required: true
+      envVar: DB_HOST 
     - name: Port
       type: text
-      defaultValue: "3306"
-      envVar: DB_PORT
+      defaultValue: "5432"
+      required: true
+      envVar: DB_PORT 
+    - name: Database
+      type: text
+      required: true
+      envVar: DB_NAME 
     - name: Username
       type: text
-      envVar: DB_USER
+      required: true
+      envVar: DB_USER 
     - name: Password
-      type: password
+      type: password # <2>
+      required: true
       envVar: DB_PASSWORD
 ----
-[source,bash]
-----
-oc apply -f 03-db-type.yaml
-----
+<1> **UI Visibility:** The `opendatahub.io/managed: "true"` label is mandatory. Without it, the dashboard will entirely ignore this template.
+<2> **Security Masking:** Declaring `type: password` ensures the input is obscured in the UI and mounted securely as an opaque Kubernetes Secret.
 
-=== Step 2: Create the DB Connection
-**File:** `04-registry-db.yaml`
-[source,yaml]
+Once you apply this CR, developers simply select "Corporate PostgreSQL" from a dropdown in the UI. 
+
+They can then write clean, portable code using `os.getenv("DB_PASSWORD")` without ever seeing or exposing the underlying credentials in their repositories.
+
+[source,python]
 ----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: registry-db-connection
-  namespace: rhoai-model-registry-lab
-  labels:
-    opendatahub.io/dashboard: "true"
-  annotations:
-    opendatahub.io/connection-type: "corporate-minio-standard" 
-    opendatahub.io/connection-type-protocol: "s3" # <-- ADD THIS
-    openshift.io/display-name: "Finance Data Lake"
-type: Opaque
-stringData:
-  Host: "mysql.rhoai-model-registry-lab.svc.cluster.local"
-  Port: "3306"
-  Username: "admin"
-  Password: "mysql-admin"
-----
-[source,bash]
-----
-oc apply -f 04-registry-db.yaml
+import os
+import psycopg2
+
+# The Platform injects the correct values based on the environment.
+conn = psycopg2.connect(
+    host=os.getenv("DB_HOST"),
+    database=os.getenv("DB_NAME"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD")
+)
 ----
 
-== Phase 4: Verification (The Payoff)
-
-You have successfully used GitOps to wire up a complete Data Supply Chain. Let's verify it in the interface.
-
-1.  Open the **Red Hat OpenShift AI Dashboard**.
-2.  Navigate to **Data Science Projects**.
-3.  Select the project **rhoai-model-registry-lab** (created by the script).
-4.  Click the **Data connections** tab.
-
-**Success Criteria:**
-* [ ] You see **"Finance Data Lake"** listed under *Object Storage*.
-* [ ] You see **"Model Registry Database"** listed under *Database*.
-* [ ] The connection details are hidden from view, ensuring security.
-
-
-**You have now built a standardized, automated data layer that can be replicated across any environment.**
+---

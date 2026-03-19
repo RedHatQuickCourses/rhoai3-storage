@@ -1,4 +1,4 @@
-= Extending the Mesh: Custom Connections & Databases
+= Custom Connections & Databases
 :navtitle: Custom Connections
 :role: Advanced Configuration
 :audience: Platform Engineers

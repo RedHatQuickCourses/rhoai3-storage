@@ -1,84 +1,71 @@
-= The Blueprint: Anatomy of RHOAI Storage
-:role: Technical Deep Dive
+= Capabilities & Features
+:navtitle: Capabilities & Features
+:role: Enablement Course
 :audience: Platform Engineers & Architects
-:description: A detailed breakdown of the storage subsystems, protocol abstractions, and persistence layers in RHOAI 3.3.
+:description: A high-level menu of the storage subsystems, protocol abstractions, and persistence layers available in RHOAI 3.3.
 
 [.lead]
-*To build a factory that scales, you must master the machinery under the floorboards.*
+*To build a factory that scales, you must master the machinery behind the scenes.*
 
-As a Platform Engineer, you are not just managing disks; you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory." To build a stable platform, you must respect the physics of the underlying infrastructure. 
+As a Platform Engineer, you are not just managing disks; you are managing the lifecycle of data as it transitions from "Cold Object Storage" to "Hot Shared Memory". 
 
-If you treat a 70GB model like a standard web application asset and force your pods to download it to local ephemeral disk (`emptyDir`) on every startup, you will trigger severe network saturation and node bandwidth. 
+OpenShift AI 3.3 introduces a suite of capabilities designed to abstract complex storage physics away from the data scientist, while giving you, the architect, absolute control over performance and security. 
 
-This module breaks down the architecture required to prevent that, categorized into four layers: **The Primitives**, **The Gateway**, **The Workspace**, and **The Foundation**.
+Here is the menu of capabilities that form your AI Data Supply Chain.
 
 == 1. Data Connections
 
-To achieve **Zero-Touch Security** and environment parity, RHOAI 3 separates the *definition* of a credential from the *usage* of a credential. 
+To achieve Zero-Touch Security and environment parity, RHOAI 3 separates the definition of a credential from the usage of a credential. We use a "Socket and Plug" model:
 
-* **Connection Types (The Template):** Think of this as the "Electrical Socket" on the wall. The Administrator defines the shape of the socket to ensure safety and standardization (e.g., creating a "Corporate S3" type requiring a Bucket and Endpoint).
-* **Data Connections (The Instance):** Think of this as the "Plug." It is the specific instance where a user provides their credentials to fit the socket. It is stored securely as a Kubernetes Secret and injected into Pods at runtime.
+* **Connection Types (The Socket):** Think of this as the "Electrical Socket" on the wall. The Administrator defines the shape of the socket to ensure safety and standardization. This tells the dashboard how to render a form and how to map user inputs to standard Environment Variables. While default types exist for S3 and OCI, you can create custom types for structured data like Snowflake, MongoDB, MySQL, or Milvus.
+* **Data Connections (The Plug):** This is the specific instance where a user provides their credentials to fit the socket. It is stored securely as a Kubernetes Secret and injected into Pods at runtime.
 
-=== The "Day 1" Secret: UI Visibility vs. Backend Routing
-Many Platform Engineers deploy connection secrets via automation that route perfectly, but fail to appear in the Data Science dashboard. To master the Connections API, you must explicitly separate backend routing from frontend visibility:
+[IMPORTANT]
+.The "Day 1" Secret: Visibility vs. Routing
+====
+Many Platform Engineers deploy connection secrets via GitOps that route perfectly but fail to appear in the Data Science dashboard. You must explicitly add these two labels:
 
-* **Frontend Visibility (The Label):** You *must* apply the label `opendatahub.io/managed: "true"`. This tells the OpenShift AI Dashboard to expose this connection to Data Scientists in the UI. Without it, the connection is functionally invisible.
-* **Backend Routing (The Annotation):** You *must* apply the annotation `opendatahub.io/connection-type-protocol: <type>` (e.g., `s3`, `oci`, `uri`). This tells the underlying Inference Service or Pipeline engine how to mechanically pull the data.
+ * **Frontend Visibility:** You must apply the label `opendatahub.io/managed: "true"`. This tells the OpenShift AI Dashboard to expose this connection to Data Scientists in the UI. Without it, the connection is functionally invisible.
+ * **Backend Routing:** You must apply the annotation `opendatahub.io/connection-type-protocol: <type>` (e.g., `s3`, `oci`, `uri`). This tells the underlying Inference Service or Pipeline engine how to mechanically pull the data.
+====
 
-== 2. External Storage Protocols
+== 2. The Multi-Protocol Engine
 
-Not all data moves the same way. RHOAI provides three primary protocols to optimize for capacity, speed, or precision.
+Not all data moves the same way. RHOAI provides multiple native protocols to optimize for capacity, speed, or precision:
 
-=== A. S3-Compatible Object Storage (`s3`)
-* **The Role:** The Warehouse.
-* **Usage:** Massive datasets, data lakes, and standard model serving.
-* **The "Sharp Edge":** When using on-premise object stores (like MinIO, S4, etc.) secured with self-signed certificates, you must inject the **Cluster CA Bundle** into the platform's `DSCI` resource, or the connections will fail silently.
-
-=== B. OCI Model Registries (`oci`)
-* **The Role:** The Accelerator.
-* **Usage:** High-speed model inference and distribution via "Modelcars."
-* **The Physics:** Instead of downloading models as loose files, we package them as container images. It leverages the node's CRI-O container cache. If 10 users need the same model, the node pulls the layers *once*, and all 10 pods start instantly, producing massive deduplication.
-
-=== C. Direct URIs (`uri`)
-* **The Role:** The Precision Link.
-* **Usage:** Direct HTTP/HTTPS access to specific model versions or files without exposing the entire root bucket.
-
-=== Syntax Cheat Sheet: Direct Model URIs
-When configuring an Inference Service to pull a model, RHOAI 3.3 standardizes the routing using specific URI prefixes. You must use the exact format based on your storage backend:
-
-[cols="1,2"]
+[cols="1,2,2"]
 |===
-| Storage Backend | URI Syntax Example
+| Protocol | The Role | The Physics & Usage
 
-| **S3 Bucket**
-| `s3://<bucket-name>/<object-key>`
+| **`s3://`**
+| The Warehouse
+| Standard S3-compatible object storage used for massive datasets, data lakes, and standard model serving.
 
-| **Local PVC (Air-Gapped)**
-| `pvc://<claim-name>/<pvc-path>`
+| **`oci://`**
+| The Accelerator
+| High-speed model inference and distribution via "Modelcars". Instead of downloading loose files, models are packaged as container images. It leverages the node's CRI-O container cache. If 10 users need the same model, the node pulls the layers once, and all 10 pods start instantly, producing massive deduplication.
 
-| **OCI Container Registry**
-| `oci://<registry-host>/<org>/<repo>:<tag>`
+| **`pvc://`**
+| The Air-Gapped Drive
+| Allows deployments to route directly to a local Persistent Volume Claim (PVC), which is critical for highly secure, disconnected environments.
 
-| **Hugging Face Hub**
-| `hf://<model-id>/<optional-hash>`
+| **`uri://` / `hf://`**
+| The Precision Link
+| Provides direct HTTP/HTTPS access to specific model versions or files without exposing the entire root bucket.
 |===
 
-== 3. The Workspace: Internal Persistence
+== 3. Cluster Storage: The Physics of Workspaces (RWO vs. RWX)
 
-Once data arrives from the "Warehouse," it needs a high-speed place to live while it is being processed. This is governed by your OpenShift Storage Classes.
+Once data arrives from the "Warehouse," it needs a high-speed place to live while it is being processed. This is governed by your OpenShift Storage Classes. You must align the storage physics to your developers' collaboration needs:
 
-=== RWO vs RWX: The Physics of Access
-* **ReadWriteOnce (RWO) - "The Scratchpad":** High-speed block storage (EBS, vSphere). It maps 1:1 with a user's Workbench. It is physically incapable of attaching to multiple nodes simultaneously.
-* **ReadWriteMany (RWX) - "The Collaboration Zone":** Network file storage (CephFS, NFS). It mounts to multiple nodes simultaneously. It is strictly required for shared team folders and distributed training architectures.
+* **ReadWriteOnce (RWO) - "The Scratchpad":** High-speed block storage (e.g., AWS EBS, vSphere). It maps 1:1 with a user's Workbench. Because it is physically incapable of attaching to multiple nodes simultaneously, it provides strict private storage.
+* **ReadWriteMany (RWX) - "The Collaboration Zone":** Network file storage (e.g., CephFS, NFS). It mounts to multiple nodes simultaneously. It is strictly required for shared team folders, sharing models across developers, and distributed training architectures.
 
-=== The 3.3 Shift: Dual-Storage AI Pipelines
+== 4. Dual-Storage Pipeline Workspaces
 
-In previous versions, AI Pipelines passed intermediate data between tasks by constantly uploading to and downloading from an S3 bucket (with a charge for each read / write). 
+In previous versions, AI Pipelines passed intermediate data between tasks by constantly uploading to and downloading from an S3 bucket (with a charge for each read / write). OpenShift AI 3.3 fundamentally shifts this by adopting a **Dual-Storage (Hybrid) Architecture**:
 
-OpenShift AI 3.3 fundamentally shifts this by adopting a **Dual-Storage (Hybrid) Architecture** for the Data Science Pipelines Application (DSPA). You must configure both of the following to activate a hybrid pipeline server:
+* **The Archive (S3):** An S3-compatible connection is strictly required to instantiate the pipeline server. It acts as the permanent control-plane archive, storing the compiled pipeline YAML, step-by-step execution logs, and final output artifacts.
+* **The Workspace (PVC):** To eliminate cloud egress costs and latency, RHOAI 3.3 utilizes Persistent Volume Claims (PVCs) for the data plane. The pipeline engine dynamically creates an ephemeral shared PVC during the pipeline run. Components exchange massive intermediate datasets directly via the local cluster disk.
 
-1. **The Archive (S3 Object Storage):** An S3-compatible connection is strictly required to instantiate the pipeline server. This bucket acts as the permanent control-plane archive. It stores the compiled pipeline YAML, the step-by-step execution logs, and the final output artifacts.
-2. **The Workbench (PVC Workspaces):** To eliminate the cloud egress costs and latency of "S3 back and forth," RHOAI 3.3 utilizes Persistent Volume Claims (PVCs) for the data plane. The DSPA dynamically creates an ephemeral shared PVC during the pipeline run. Pipeline components exchange massive intermediate datasets directly via the local cluster disk.
-
-
-*Now that you understand the blueprint, let's examine how to extend it for structured data and databases.*
+---
