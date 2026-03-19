@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Field Notes &amp; Troubleshooting :: Architecting AI Storage Logistics in OpenShift AI</title>
+    <link rel="prev" href="storage-lab.html">
+    <meta name="description" content="Critical configuration warnings, custom connection enforcement, timeout adjustments, and data safety protocols for production AI in RHOAI 3.3.">
+    <meta name="generator" content="Antora 3.1.3">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://www.redhat.com" target="_blank"><img src="../../../_/img/redhat-logo.png" height="40px" alt="Red Hat"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">Architecting AI Storage Logistics in OpenShift AI</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://github.com/RedHatQuickCourses/REPLACEREPONAME/issues" target="_blank">Report Issues</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="rhoai3-storage" data-version="3.3">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../index.html">Architecting AI Storage Logistics in OpenShift AI</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction &amp; Value</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section1.html">Architecture Deep Dive</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section2.html">Data Connection Types</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="storage-lab.html">Storage Lab Exercises</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="section5.html">Field Notes for Platform Engineers</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Architecting AI Storage Logistics in OpenShift AI</span>
+    <span class="version">3.3</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../index.html">Architecting AI Storage Logistics in OpenShift AI</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">3.3</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Architecting AI Storage Logistics in OpenShift AI</a></li>
+    <li><a href="section5.html">Field Notes for Platform Engineers</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Field Notes &amp; Troubleshooting</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>Configuration is easy. Day-2 Operations are where the battle is won.</strong></p>
+</div>
+<div class="paragraph">
+<p>Now that you understand the physics of AI storage, Custom Connection Types, and the new OpenShift AI 3.3 Pipeline architecture, you need to maintain it under heavy load.</p>
+</div>
+<div class="paragraph">
+<p>In a high-velocity industrial AI environment, default Kubernetes settings will could sabotage your Generative AI workloads. Based on real-world deployments and the latest 3.3 architectural shifts, here are the configurations and operational patterns that help separate a stable platform from a fragile one.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_1_the_custom_connection_mandate_preventing_rogue_data_access"><a class="anchor" href="#_1_the_custom_connection_mandate_preventing_rogue_data_access"></a>1. The Custom Connection Mandate (Preventing Rogue Data Access)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>We discussed Custom Connections in earlier phases, but it remains your number one operational defense on Day 2.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Shadow AI Failure:</strong> Data scientists bypassing the platform to manually hardcode database credentials or connect to untrusted external buckets directly in their Python code.</p>
+</li>
+<li>
+<p><strong>The Factory Fix:</strong> You must enforce the use of <code>ConnectionType</code> Custom Resources for all structured and unstructured data. By strictly defining the "Socket" (e.g., Corporate PostgreSQL, Amazon S3, MinIO) and injecting the "Plug" (Data Connection secrets), you ensure all data access is auditable, repeatable, and managed by GitOps.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="title">The "Protocol" Pitfall (Connectivity)</div>
+<div class="paragraph">
+<p>When configuring Data Connections for S3-compatible stores (MinIO, Ceph) via the UI or GitOps, the most frequent operational error is Endpoint Formatting.</p>
+</div>
+<div class="paragraph">
+<p>Entering <code>minio-api.cluster.local:9000</code> into the dashboard connection form will fail. You <strong>must</strong> include the HTTP/HTTPS protocol scheme (e.g., <code><a href="http://minio-api.cluster.local:9000" class="bare">http://minio-api.cluster.local:9000</a></code>). The underlying Boto3 clients injected into workbenches and pipelines strictly require the full URI scheme to resolve correctly.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_2_the_timeout_trap_oci_modelcars"><a class="anchor" href="#_2_the_timeout_trap_oci_modelcars"></a>2. The "Timeout" Trap (OCI Modelcars)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When you use the OCI protocol to stream a massive foundation model (e.g., 70GB Granite or Llama model), the underlying container runtime (CRI-O) must pull all layers over the network before the Pod can transition to a "Ready" state.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Shadow AI Failure:</strong> Knative (the serverless engine behind Model Serving) defaults to a <code>progress-deadline</code> of 600 seconds (10 minutes). If your network takes 11 minutes to pull the image, Knative marks the deployment as <code>Failed</code> and ruthlessly kills the pod—even if it was 99% complete.</p>
+</li>
+<li>
+<p><strong>The Factory Fix:</strong> You must explicitly override the default physics. Increase the <code>progressDeadlineSeconds</code> in your <code>InferenceService</code> (or global Knative config) to <strong>1800s (30 mins)</strong> or higher to accommodate large LLM pulls and protect your Time-to-First-Token (TTFT) metrics.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_3_the_workspace_import_trap_3_3_pipelines"><a class="anchor" href="#_3_the_workspace_import_trap_3_3_pipelines"></a>3. The "Workspace Import" Trap (3.3 Pipelines)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>OpenShift AI 3.3 introduces Ephemeral Pipeline Workspaces (PVCs) for high-speed data transit between tasks. However, you cannot directly download an OCI Modelcar into a workspace volume natively.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Shadow AI Failure:</strong> If a pipeline task expects an OCI image but you only provide the <code>oci://</code> URI, the pipeline task will fail because it cannot find the extracted model files on the workspace disk.</p>
+</li>
+<li>
+<p><strong>The Factory Fix (Side-Loading):</strong> You must explicitly define an <code>importer</code> component in your pipeline code to pull the OCI artifact. Then, you must use a subsequent Python component (e.g., using <code>shutil.copytree</code>) to physically copy the artifact from the importer into the <code>dsl.WORKSPACE_PATH_PLACEHOLDER</code>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_4_the_dirty_database_migration_error"><a class="anchor" href="#_4_the_dirty_database_migration_error"></a>4. The "Dirty Database" Migration Error</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In OpenShift AI 3.3, the ML Metadata (MLMD) server was completely removed from the Model Registry. The registry now interacts directly with your mandated external database (MySQL/MariaDB).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Shadow AI Failure:</strong> If you are upgrading from a previous version, your database schema migration might fail. Your Model Registry pod will crash with the following log: <code>error: error connecting to datastore: Dirty database version {version}. Fix and force version.</code>.</p>
+</li>
+<li>
+<p><strong>The Factory Fix:</strong> You must manually intervene as the database administrator to reset the "dirty" state. Exec into the database pod and run the following command:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Reset the schema migration state to allow the Model Registry to start
+mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "USE &lt;your-db-name&gt;; UPDATE schema_migrations SET dirty=0;"</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_5_the_data_loss_risk_pvc_reclaim_policy"><a class="anchor" href="#_5_the_data_loss_risk_pvc_reclaim_policy"></a>5. The "Data Loss" Risk (PVC Reclaim Policy)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>By default, standard cloud Storage Classes (like AWS <code>gp3-csi</code>) have a <code>reclaimPolicy</code> set to <code>Delete</code>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Shadow AI Failure:</strong> A Data Scientist accidentally deletes their project namespace. The underlying cloud volume is immediately scrubbed by the cloud provider. The multi-terabyte "Golden Dataset" or active Pipeline Workspace is gone forever.</p>
+</li>
+<li>
+<p><strong>The Factory Fix:</strong> For any Shared Storage (RWX) or Persistent Volume hosting critical, irreplaceable assets, you must patch the physical PV to <code>Retain</code>.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Protect your Golden Dataset from accidental namespace deletion
+oc patch pv &lt;pv-name&gt; -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_6_the_trust_gap_certificates"><a class="anchor" href="#_6_the_trust_gap_certificates"></a>6. The "Trust" Gap (Certificates)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If you are using an on-premise Object Store (MinIO, Ceph) or an external database (Amazon RDS) secured with Self-Signed Certificates, your Data Connections will fail silently.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Shadow AI Failure:</strong> Workbenches hang, pipelines fail to compile, or you see <code>tls: failed to verify certificate: x509: certificate signed by unknown authority</code>.</p>
+</li>
+<li>
+<p><strong>The Factory Fix:</strong> You must inject your OpenShift Cluster&#8217;s <code>kube-root-ca.crt</code> bundle into the <code>DSCI</code> (Data Science Cluster Initialization) resource. Platform components (Pipelines, Model Registry) will not trust your storage backend without it.</p>
+</li>
+</ul>
+</div>
+<hr>
+<div class="paragraph">
+<p><strong>This concludes the core enablement for OpenShift AI Storage Logistics. By transitioning from Shadow AI to the Factory Model, you have secured your connections, protected your datasets, and optimized your GPU ROI.</strong></p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="storage-lab.html">Storage Lab Exercises</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <img src="../../../_/img/rhl-logo-red.png" height="40px" alt="Red Hat"  href="https://redhat.com" >
+</footer><script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

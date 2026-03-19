@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Architecting AI Storage Logistics in OpenShift AI :: Architecting AI Storage Logistics in OpenShift AI</title>
+    <meta name="description" content="Moving beyond basic connectivity to designing a high-performance, resilient AI storage layer for OpenShift AI 3.3 to maximize GPU ROI.">
+    <meta name="generator" content="Antora 3.1.3">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://www.redhat.com" target="_blank"><img src="../../../_/img/redhat-logo.png" height="40px" alt="Red Hat"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">Architecting AI Storage Logistics in OpenShift AI</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://github.com/RedHatQuickCourses/REPLACEREPONAME/issues" target="_blank">Report Issues</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="rhoai3-storage" data-version="3.3">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../index.html">Architecting AI Storage Logistics in OpenShift AI</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction &amp; Value</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section1.html">Architecture Deep Dive</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section2.html">Data Connection Types</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="storage-lab.html">Storage Lab Exercises</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section5.html">Field Notes for Platform Engineers</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Architecting AI Storage Logistics in OpenShift AI</span>
+    <span class="version">3.3</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../index.html">Architecting AI Storage Logistics in OpenShift AI</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">3.3</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Architecting AI Storage Logistics in OpenShift AI</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Architecting AI Storage Logistics in OpenShift AI</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>Connectivity is easy. Performance is engineering.</strong></p>
+</div>
+<div class="paragraph">
+<p>In the early stages of AI adoption, the primary challenge for Platform Engineers was simply access: "How do I connect my data scientist&#8217;s Jupyter Notebook to an S3 bucket without exposing the root password?"</p>
+</div>
+<div class="paragraph">
+<p>But as your organization moves from a "Science Project" to a "Production Service," the challenges shift dramatically. You are no longer moving 1GB CSV files; you are serving 70GB Large Language Models (LLMs) to thousands of concurrent users, and automating complex, multi-stage AI Pipelines.</p>
+</div>
+<div class="paragraph">
+<p>At this scale, storage is no longer just a place to keep files—it becomes the primary bottleneck of your entire platform.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_cost_of_shadow_ai_storage"><a class="anchor" href="#_the_cost_of_shadow_ai_storage"></a>The Cost of "Shadow AI" Storage</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When data scientists operate outside of a governed architecture, they default to what is easiest. While fine for a laptop, this ad-hoc "Shadow AI" approach is disastrous for production Kubernetes clusters and destroys your GPU Return on Investment (ROI).</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>The Network Flood:</strong> If every pod downloads a massive foundation model on startup to a local ephemeral disk (emptyDir), you trigger severe network saturation and node bandwidth exhaustion.</p>
+</li>
+<li>
+<p><strong>The Egress Cost:</strong> If your automated AI pipelines pass massive intermediate datasets back and forth to an external S3 bucket between every single task, your cloud egress bills explode and your pipeline execution crawls to a halt.</p>
+</li>
+<li>
+<p><strong>The Uptime Threat:</strong> If you rely on ephemeral storage for production serving, a single node reboot can take down your inference service for 20 minutes while it re-downloads assets. Every minute your expensive GPUs sit idle waiting for a storage download is burned capital.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_three_pillars_of_the_ai_storage_factory"><a class="anchor" href="#_the_three_pillars_of_the_ai_storage_factory"></a>The Three Pillars of the AI Storage Factory</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To build a stable platform, you must respect the physics of the underlying infrastructure. In this course, we replace the manual, "One-Size-Fits-All" storage approach with a tiered, GitOps-driven strategy specifically engineered for OpenShift AI 3.x workloads.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 40%;">
+<col style="width: 40%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">The Pillar</th>
+<th class="tableblock halign-left valign-top">The Shadow AI Problem</th>
+<th class="tableblock halign-left valign-top">The Factory Solution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>The Velocity Tier</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Initialization Latency: Waiting 15 minutes for a model to download over the network before a pod becomes "Ready".</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Boot-from-Registry (OCI Modelcars): By packaging models as OCI images, you leverage the cluster&#8217;s native container runtime (CRI-O) cache. Scaling from 1 to 50 replicas takes seconds, not hours, because the data layers are already on the node.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>The Persistence Tier</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">S3 Ping-Ponging: Constantly uploading and downloading intermediate datasets between tasks causes severe latency and high cloud costs.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Dual-Storage Pipelines: OpenShift AI 3.3 introduces a hybrid architecture. We use S3 strictly as the permanent archive for logs/artifacts, paired with high-speed Persistent Volume Claims (PVCs) for ephemeral workspaces. Data moves directly via the local cluster disk.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>The Abstraction Tier</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fragile Governance: Hardcoded AWS keys in Jupyter notebooks and manual UI configuration.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Kubernetes-Native Abstraction: We utilize the Connections API to inject standard URIs (s3://, pvc://, oci://) via Kubernetes Secrets. Your entire data foundation is managed by GitOps (e.g., Argo CD), ensuring perfect environment parity.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title">The Shift in Mindset</div>
+We are stopping the practice of treating models like loose "files." In the industrialized AI Factory, we treat models, datasets, and pipelines like software artifacts—versioned, immutable, and natively integrated into the Kubernetes control plane.
+Your mission is to build the Data Supply Chain. In the next sections, we will architect the highway, secure the vault, and automate deployment using provided scripts.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <img src="../../../_/img/rhl-logo-red.png" height="40px" alt="Red Hat"  href="https://redhat.com" >
+</footer><script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

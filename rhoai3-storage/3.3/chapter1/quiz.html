@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Knowledge Check: Verify Your Architecture Skills :: Architecting AI Storage Logistics in OpenShift AI</title>
+    <meta name="description" content="A short quiz to validate your understanding of OpenShift AI 3.3 Storage, Connectivity, and Pipeline architectures.">
+    <meta name="generator" content="Antora 3.1.3">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://www.redhat.com" target="_blank"><img src="../../../_/img/redhat-logo.png" height="40px" alt="Red Hat"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="../../..">Architecting AI Storage Logistics in OpenShift AI</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://github.com/RedHatQuickCourses/REPLACEREPONAME/issues" target="_blank">Report Issues</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="rhoai3-storage" data-version="3.3">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../index.html">Architecting AI Storage Logistics in OpenShift AI</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction &amp; Value</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section1.html">Architecture Deep Dive</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section2.html">Data Connection Types</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="storage-lab.html">Storage Lab Exercises</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="section5.html">Field Notes for Platform Engineers</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Architecting AI Storage Logistics in OpenShift AI</span>
+    <span class="version">3.3</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../index.html">Architecting AI Storage Logistics in OpenShift AI</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">3.3</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Architecting AI Storage Logistics in OpenShift AI</a></li>
+    <li><a href="quiz.html">Knowledge Check: Verify Your Architecture Skills</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Knowledge Check: Verify Your Architecture Skills</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph lead">
+<p><strong>Did you master the factory floor? Let&#8217;s find out.</strong></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_question_1_the_pipeline_strategy"><a class="anchor" href="#_question_1_the_pipeline_strategy"></a>Question 1: The Pipeline Strategy</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Scenario:</strong> You are architecting a new AI Pipeline. The tasks need to pass a massive 50GB intermediate dataset between each other.
+<strong>What is the most efficient storage strategy in OpenShift AI 3.3 to handle this data transfer?</strong></p>
+</div>
+<div class="ulist checklist">
+<ul class="checklist">
+<li>
+<p><i class="fa fa-square-o"></i> A. Upload the dataset to an external S3 bucket at the end of each task and download it at the start of the next.</p>
+</li>
+<li>
+<p><i class="fa fa-check-square-o"></i> B. Use an Ephemeral Pipeline Workspace backed by a Persistent Volume Claim (PVC).</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> C. Store the data inside the internal MySQL database.</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> D. Package the intermediate data into an OCI container image.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><em>Answer: B. OpenShift AI 3.3 introduces Pipeline Workspaces. This allows pipeline components to exchange large intermediate data directly via local cluster disk, improving performance and reducing object storage costs.</em></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_question_2_the_security"><a class="anchor" href="#_question_2_the_security"></a>Question 2: The Security</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Scenario:</strong> You need to rotate the AWS Access Keys used by the "Fraud Detection" team.
+<strong>How do you update the credentials without breaking the data scientist&#8217;s code?</strong></p>
+</div>
+<div class="ulist checklist">
+<ul class="checklist">
+<li>
+<p><i class="fa fa-square-o"></i> A. Email the new keys to the team and ask them to update their Jupyter notebooks.</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> B. Update the hardcoded values in the <code>deployment.yaml</code> file.</p>
+</li>
+<li>
+<p><i class="fa fa-check-square-o"></i> C. Update the Kubernetes Secret associated with the Data Connection.</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> D. Delete the workbench and recreate it.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><em>Answer: C. Data Connections abstract credentials into Kubernetes Secrets. Updating the Secret automatically propagates the new values to the environment variables.</em></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_question_3_the_architecture_gitops"><a class="anchor" href="#_question_3_the_architecture_gitops"></a>Question 3: The Architecture (GitOps)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Scenario:</strong> Your organization requires that all production AI Pipelines be managed via GitOps (e.g., using Argo CD).
+<strong>How must you configure your pipeline server to support this?</strong></p>
+</div>
+<div class="ulist checklist">
+<ul class="checklist">
+<li>
+<p><i class="fa fa-square-o"></i> A. Set the pipeline server to store definitions in the internal MariaDB database.</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> B. Export the pipelines manually as ZIP files and upload them to Git.</p>
+</li>
+<li>
+<p><i class="fa fa-check-square-o"></i> C. Configure the pipeline server to use Kubernetes API storage (<code>spec.apiServer.pipelineStore: kubernetes</code>).</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> D. Pipelines cannot be managed by GitOps tools.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><em>Answer: C. By using the Kubernetes API storage mode, pipelines and pipeline versions are stored as standard Custom Resources (<code>Pipeline</code> and <code>PipelineVersion</code>) in the cluster, making them natively compatible with GitOps tools.</em></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_question_4_the_operational_hazard"><a class="anchor" href="#_question_4_the_operational_hazard"></a>Question 4: The Operational Hazard</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Scenario:</strong> You are deploying a 70GB Foundation Model using the <code>oci://</code> protocol (Modelcar). The network is healthy, but the deployment repeatedly fails and marks the pod as "Failed" after exactly 10 minutes.
+<strong>What is the most likely cause?</strong></p>
+</div>
+<div class="ulist checklist">
+<ul class="checklist">
+<li>
+<p><i class="fa fa-square-o"></i> A. The CRI-O node cache is completely full.</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> B. The OCI registry requires a different connection type.</p>
+</li>
+<li>
+<p><i class="fa fa-check-square-o"></i> C. The deployment exceeded the default Knative <code>progress-deadline</code> timeout.</p>
+</li>
+<li>
+<p><i class="fa fa-square-o"></i> D. The Persistent Volume Claim (PVC) is set to <code>ReadOnlyMany</code>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><em>Answer: C. Pulling massive multi-gigabyte container images can easily exceed the default 10-minute timeout configured in underlying Knative Serving objects. You must explicitly annotate the InferenceService to increase this threshold.</em></p>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <img src="../../../_/img/rhl-logo-red.png" height="40px" alt="Red Hat"  href="https://redhat.com" >
+</footer><script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
