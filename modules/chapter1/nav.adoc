@@ -3,6 +3,5 @@
 * xref:section2.adoc[Data Connection Types]
 //* xref:section3.adoc[CHangeMe]
 * xref:storage-lab.adoc[Storage Lab Exercises]
-// * xref:section2.adoc[Lab: Review for Inclusion]
 * xref:section5.adoc[Field Notes for Platform Engineers]
 // * xref:quiz.adoc[Quiz]
