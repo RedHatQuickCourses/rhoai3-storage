@@ -30,13 +30,7 @@ chmod +x *.sh
 oc new-project ai-supply-chain
 ----
 
-== Part 1: The Foundation (Pipeline Workspaces)
-
-
-
-In OpenShift AI 3.3, activating AI Pipelines requires a dual-storage approach. S3-compatible object storage is still strictly required to instantiate the pipeline server and act as the permanent archive for your logs and final pipeline artifacts. 
-
-However, during the actual pipeline execution, Persistent Volume Claims (PVCs) act as high-speed **Pipeline Workspaces**. This allows pipelines to pass massive intermediate datasets between tasks directly on the local cluster disk, avoiding constant S3 ingress/egress charges and cloud latency.
+== Part 1: Adjust the Deployment for your Storage
 
 === Action: Discover Your Storage Capabilities
 Not every cluster uses the same underlying storage. Cloud block storage (like AWS EBS) behaves very differently than network file storage (like CephFS). You must identify what is available on your cluster.
@@ -59,7 +53,7 @@ Now, you must adapt the baseline deployment script to match your cluster's physi
     * Leave it as `- ReadWriteMany` if using file storage (like CephFS).
 4. Save the file.
 
-=== Action: Provision & Force Binding
+== Action: Provision & Force Binding
 Because cloud block storage often waits for a consumer, we will provision the claim and immediately spin up a "Binder Pod" to force the cloud provider to create the physical hard drive.
 
 [source,bash]
