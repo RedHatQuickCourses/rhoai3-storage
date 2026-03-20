@@ -149,14 +149,8 @@ oc new-project ai-supply-chain</code></pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_part_1_the_foundation_pipeline_workspaces"><a class="anchor" href="#_part_1_the_foundation_pipeline_workspaces"></a>Part 1: The Foundation (Pipeline Workspaces)</h2>
+<h2 id="_part_1_adjust_the_deployment_for_your_storage"><a class="anchor" href="#_part_1_adjust_the_deployment_for_your_storage"></a>Part 1: Adjust the Deployment for your Storage</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>In OpenShift AI 3.3, activating AI Pipelines requires a dual-storage approach. S3-compatible object storage is still strictly required to instantiate the pipeline server and act as the permanent archive for your logs and final pipeline artifacts.</p>
-</div>
-<div class="paragraph">
-<p>However, during the actual pipeline execution, Persistent Volume Claims (PVCs) act as high-speed <strong>Pipeline Workspaces</strong>. This allows pipelines to pass massive intermediate datasets between tasks directly on the local cluster disk, avoiding constant S3 ingress/egress charges and cloud latency.</p>
-</div>
 <div class="sect2">
 <h3 id="_action_discover_your_storage_capabilities"><a class="anchor" href="#_action_discover_your_storage_capabilities"></a>Action: Discover Your Storage Capabilities</h3>
 <div class="paragraph">
@@ -211,8 +205,11 @@ oc get sc</code></pre>
 </ol>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_action_provision_force_binding"><a class="anchor" href="#_action_provision_force_binding"></a>Action: Provision &amp; Force Binding</h3>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_action_provision_force_binding"><a class="anchor" href="#_action_provision_force_binding"></a>Action: Provision &amp; Force Binding</h2>
+<div class="sectionbody">
 <div class="paragraph">
 <p>Because cloud block storage often waits for a consumer, we will provision the claim and immediately spin up a "Binder Pod" to force the cloud provider to create the physical hard drive.</p>
 </div>
@@ -248,7 +245,6 @@ EOF
 # 3. Wait for the disk to be created and attached
 echo "⏳ Waiting for cloud storage to provision..."
 oc wait --for=condition=Ready pod/storage-binder -n ai-supply-chain --timeout=120s</code></pre>
-</div>
 </div>
 </div>
 <div class="sect2">
